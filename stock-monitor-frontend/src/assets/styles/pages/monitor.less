@@ -1,0 +1,80 @@
+/**
+ * @fileOverview monitor
+ * @date 2023-07-06
+ * @author poohlaha
+ */
+.process-page,
+.command-page,
+.directory-page {
+  font-size: @font;
+
+  .breadcrumb-top {
+    .top-add {
+      color: @theme;
+
+      .add-item,
+      .refresh-item {
+        cursor: pointer;
+        user-select: none;
+
+        .svg-icon {
+          margin-right: 5px;
+        }
+      }
+
+      .add-item {
+        margin-right: 10px;
+      }
+    }
+  }
+}
+
+.command-page {
+  .command-form {
+    .ant-card-body {
+      .form-item:not(:last-child) {
+        margin-bottom: 20px;
+      }
+
+      label {
+        margin-right: 10px;
+        width: 60px;
+      }
+
+      .ant-input {
+        width: unset !important;
+        flex: 1;
+      }
+    }
+  }
+
+  .command-content {
+    margin-top: 50px;
+    .exec-column {
+      p {
+        color: @theme;
+      }
+    }
+
+    .options {
+      a:not(:last-child) {
+        margin-right: 5px;
+      }
+    }
+  }
+}
+
+.directory-page {
+}
+
+.ant-drawer {
+  .ant-drawer-content-wrapper {
+    width: 600px !important;
+  }
+}
+
+.process-page {
+  .description-exec.ant-descriptions-item-content {
+    min-width: 150px;
+  }
+}

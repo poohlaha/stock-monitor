@@ -1,0 +1,83 @@
+[package]
+name = "stock-monitor"
+version = "1.0.0"
+description = "N Nacos"
+authors = ["poohlaha"]
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[build-dependencies]
+tauri-build = { version = "2.2.0", features = [] }
+
+[dependencies]
+# Tauri
+tauri = { version = "2.5.1", features = ["tray-icon", "image-png"] }
+tauri-plugin-shell = "2.2.1"
+tauri-plugin-dialog = "2.2.1"
+tauri-plugin-log = "2.4.0"
+tauri-plugin-autostart = "2.3.0"
+tauri-plugin-single-instance = "2.2.4"
+tauri-plugin-positioner = { version = "2.2.0",  features = ["tray-icon"] }
+tauri-plugin-notification = "2"
+tauri-plugin-fs = "2"
+tauri-plugin-upload = "2"
+tauri-plugin-process = "2"
+tauri-plugin-websocket = "2"
+tauri-plugin-opener = "2"
+
+# Tokio/Async
+tokio = { version = "1.0", features = ["full"] }
+async-trait = "0.1.81"
+async-std = "1.12"
+futures = "0.3.30"
+
+# 数据库 & 网络
+mysql = "25.0.1"
+sqlx = { version = "0.8.0", features = ["mysql", "runtime-async-std", "chrono"] }
+dotenvy = "0.15"
+
+# 文件和系统
+cocoa = "0.26"
+dirs = "5.0"
+
+# 其他常用
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+lazy_static = "1.4"
+log = { version = "0.4", features = ["max_level_debug", "release_max_level_debug"] }
+thiserror = "1.0"
+rayon = "1.8"
+chrono = "0.4.35"
+base64 = "0.21"
+colored = "2.0"
+
+# 远程工具（使用了 git 源）
+handlers = {git = "https://github.com/poohlaha/rust-tools", branch = "main", package = "handlers", version = "0.1.2"}
+http = {git = "https://github.com/poohlaha/rust-tools", branch = "main", package = "http", version = "0.1.2"}
+regex = "1.12.4"
+
+[dependencies.uuid]
+version = "1.4.0"
+features = [
+    "v4",                # Lets you generate random UUIDs
+    "fast-rng",          # Use a faster (but still sufficiently random) RNG
+    "macro-diagnostics", # Enable better diagnostics for compile-time UUIDs
+]
+
+[features]
+# this feature is used for production builds or when `devPath` points to the filesystem
+# DO NOT REMOVE!!
+custom-protocol = ["tauri/custom-protocol"]
+
+[profile.dev]
+incremental = true # 以较小的步骤编译二进制文件。
+
+# 启用 LTO
+[profile.release]
+codegen-units = 1 # 允许 LLVM 执行更好的优化。
+lto = true # 启用链接时优化。
+opt-level = "s" # 优先考虑小的二进制文件大小。如果您更喜欢速度，请使用 `3`。
+panic = "abort" # 通过禁用 panic 处理程序来提高性能。
+strip = true # 确保移除调试符号。
+

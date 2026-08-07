@@ -1,0 +1,60 @@
+# 前端路由, 需要按模块分
+MAIN_URL = '/'
+NOT_FOUND_URL = '/404'
+
+PROCESS_URL = '/process'
+COMMAND_URL = '/command'
+DIRECTORY_URL = '/directory'
+NGINX_URL = '/nginx'
+
+# 控制台
+[DASHBOARD]
+KEY = 'dashboard'
+NAME = '控制台'
+URL = '/'
+
+# 服务器
+[MY]
+KEY = 'my'
+NAME = '我的自选'
+URL = ''
+
+[MY.LIST]
+KEY = 'myList'
+NAME = '我的自选'
+URL = '/myList'
+DESCRIPTION = '我的自选列表'
+
+# 设置
+[SETTING]
+KEY = 'setting'
+NAME = '设置'
+URL = ''
+
+[SETTING.SYSTEM]
+KEY = 'system'
+NAME = '偏好设置'
+URL = '/system'
+
+[SDK]
+[SDK.TRAY]
+[SDK.TRAY.MENU]
+KEY = 'trayMenu'
+NAME = '托盘菜单'
+URL = '/trayMenu'
+
+[MARKET]
+KEY = 'market'
+NAME = '市场'
+URL = '/market'
+DESCRIPTION = '市场'
+
+[MARKET.DETAIL]
+KEY = 'marketDetail'
+NAME = '市场详情'
+URL = '/marketDetail'
+DESCRIPTION = '市场详情'
+
+
+
+

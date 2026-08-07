@@ -1,0 +1,17 @@
+public
+scripts
+!scripts/proxy.json
+src/assets/styles/common
+!src/assets/styles/common/main.less
+src/communal
+!src/communal/configs
+!src/communal/layout.tsx
+src/route/not-found
+src/views/stores/base
+src/views/pages/first-screen
+src/views/components/loading
+src/views/components/noData
+.env.dev
+.env.local
+.env.prod
+.env.simulate
