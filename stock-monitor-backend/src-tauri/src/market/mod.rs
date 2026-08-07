@@ -56,7 +56,7 @@ impl Market {
     **/
     pub async fn query_market_status() -> Result<HttpResponse, String> {
         let url = format!("{}/sapi/v1/marketquote?bizType=marketStatus&finClientType=pc", BD_HTTP_URL_PREFIX);
-        info!("{} query market status url {}", LOGGER_PREFIX.cyan().bold(), url);
+        // info!("{} query market status url {}", LOGGER_PREFIX.cyan().bold(), url);
 
         Utils::get_time_response(&url).await
     }

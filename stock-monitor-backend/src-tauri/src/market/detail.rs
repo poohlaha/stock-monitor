@@ -5,7 +5,7 @@
 use crate::market::{Args, MarketType};
 use crate::prepare::HttpResponse;
 use crate::utils::Utils;
-use crate::{BD_HTTP_URL_PREFIX, LOGGER_PREFIX};
+use crate::{BD_HTTP_URL_PREFIX, BD_HTTP_URL_PREFIX2, LOGGER_PREFIX};
 use colored::Colorize;
 use log::info;
 
@@ -22,7 +22,7 @@ impl MarketDetailInfo {
             );
         }
 
-        info!("{} query position distribution url {}", LOGGER_PREFIX.cyan().bold(), url);
+        // info!("{} query position distribution url {}", LOGGER_PREFIX.cyan().bold(), url);
         Utils::get_time_response(&url).await
     }
 
@@ -33,7 +33,7 @@ impl MarketDetailInfo {
             url = format!("{}sapi/v1/basicinfo?code={}&financeType={}&market={}&finClientType=pc", BD_HTTP_URL_PREFIX, args.code, args._type, args.market);
         }
 
-        info!("{} query brief url {}", LOGGER_PREFIX.cyan().bold(), url);
+        // info!("{} query brief url {}", LOGGER_PREFIX.cyan().bold(), url);
         Utils::get_time_response(&url).await
     }
 
@@ -44,7 +44,14 @@ impl MarketDetailInfo {
             url = format!("{}sapi/v1/rating?code={}&financeType={}&market={}&bizType=all&finClientType=pc", BD_HTTP_URL_PREFIX, args.code, args._type, args.market);
         }
 
-        info!("{} query income url {}", LOGGER_PREFIX.cyan().bold(), url);
+        // info!("{} query income url {}", LOGGER_PREFIX.cyan().bold(), url);
+        Utils::get_time_response(&url).await
+    }
+
+    // 获取十大持仓等数据
+    pub async fn query_open_data(code: &str) -> Result<HttpResponse, String> {
+        let url = format!("{}opendata?query={}&resource_id=5803&finClientType=pc", BD_HTTP_URL_PREFIX2, code);
+        info!("{} query open data url {}", LOGGER_PREFIX.cyan().bold(), url);
         Utils::get_time_response(&url).await
     }
 }

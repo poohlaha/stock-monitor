@@ -131,9 +131,16 @@ const MarketDetail = (): ReactElement => {
 
     queue.push(
         new Promise(async resolve => {
-          const res = marketStore.onGetIncome(c, m, t)
+          const res = marketStore.onGetOpenData(c)
           resolve(res)
         })
+    )
+
+    queue.push(
+      new Promise(async resolve => {
+        const res = marketStore.onGetIncome(c, m, t)
+        resolve(res)
+      })
     )
 
     queue.push(
@@ -443,19 +450,21 @@ const MarketDetail = (): ReactElement => {
       const data = list.slice(1, list.length) || []
       xAxisData = data.map((l: Array<string> = []) => l[0] || '') || []
 
-      const total = oneData.length > 1 ? oneData.length: 0
+      const total = oneData.length > 1 ? oneData.length : 0
       if (total > 0) {
-        for(let i = 1; i < total; i++) {
+        for (let i = 1; i < total; i++) {
           const name = oneData[i] || ''
-          const serieData = data.map((l: Array<string> = []) => {
-            if (l[i] === '--') {
-              return null
-            }
+          const serieData = data
+            .map((l: Array<string> = []) => {
+              if (l[i] === '--') {
+                return null
+              }
 
-            let value = l[i] || '0.00%'
-            value = (value.replace('%', '') || '').trim()
-            return Number(value)
-          }).filter((s) => s !== null)
+              let value = l[i] || '0.00%'
+              value = (value.replace('%', '') || '').trim()
+              return Number(value)
+            })
+            .filter(s => s !== null)
           series.push({
             name,
             type: 'bar',
@@ -485,12 +494,12 @@ const MarketDetail = (): ReactElement => {
       legend: {
         show: false
       },
-      xAxis:  {
+      xAxis: {
         type: 'category',
         data: xAxisData,
         axisLine: { show: false },
         axisTick: { show: false },
-        splitLine: { show: false },
+        splitLine: { show: false }
       },
       yAxis: {
         type: 'value'

@@ -33,7 +33,13 @@ impl Utils {
                 method: Some(String::from("GET")),
                 data: None,
                 form: None,
-                headers: None,
+                headers: Some(serde_json::json!({
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36",
+                    "Referer": "https://finance.sina.com.cn/",
+                    "Accept": "*/*",
+                    "Accept-Language": "zh-CN,zh;q=0.9",
+                    "Connection": "keep-alive"
+                })),
                 timeout: Some(10),
             },
             false,
@@ -49,7 +55,14 @@ impl Utils {
                 }
 
                 let body = res.body;
-                let data = body.get("Result").unwrap();
+                let data = match body.get("Result") {
+                    Some(value) => value.clone(),
+                    None => {
+                        error!("{} missing Result, body: {:#?}", LOGGER_PREFIX, body);
+                        return Ok(crate::prepare::get_error_response("missing Result"));
+                    }
+                };
+
                 Ok(get_success_response(Some(data.clone())))
             }
             Err(err) => {

@@ -17,6 +17,7 @@ class MarketStore extends BaseStore {
   @observable basicInfo: Record<string, any> = {} // 基本信息
   @observable marketInfo: Record<string, any> = {}
   @observable briefInfo: Record<string, any> = {} // 间况
+  @observable openDataInfo: Record<string, any> = {} // 间况
   @observable pankouInfo: Record<string, any> = {} // 盘口信息
   @observable positionDistributionInfo: Record<string, any> = {} // 持仓信息
   @observable xLabels: Array<string> = [] // x 轴标签
@@ -90,20 +91,39 @@ class MarketStore extends BaseStore {
   async onGetIncome(code: string = '', market: string = '', type: string = '') {
     try {
       let result: { [K: string]: any } =
-          (await invoke('query_income', {
-            args: {
-              code,
-              market,
-              type,
-              queryType: '',
-              ktype: ''
-            }
-          })) || {}
+        (await invoke('query_income', {
+          args: {
+            code,
+            market,
+            type,
+            queryType: '',
+            ktype: ''
+          }
+        })) || {}
 
       let data = this.handleResult(result) || {}
       const content = ((data || {}).content || {}).gradeInfo || {}
       this.incomeList = content.performance || []
       console.log('incomeList: ', content.performance || [])
+      return result || {}
+    } catch (e: any) {
+      this.loading = false
+      throw new Error(e)
+    }
+  }
+
+  /**
+   * 获取十大持仓等数据
+   */
+  async onGetOpenData(code: string = '') {
+    try {
+      let result: { [K: string]: any } =
+        (await invoke('query_open_data', {
+          code
+        })) || {}
+      let data = this.handleResult(result) || {}
+      this.openDataInfo = (data || {}).basicinfo || {}
+      console.log('open data info: ', data)
       return result || {}
     } catch (e: any) {
       this.loading = false

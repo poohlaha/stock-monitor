@@ -39,7 +39,7 @@ impl Timeline {
             url = format!("{}&ktype={}", url, args.ktype);
         }
 
-        info!("{} get time url {}", LOGGER_PREFIX.cyan().bold(), url);
+        // info!("{} get time url {}", LOGGER_PREFIX.cyan().bold(), url);
         Utils::get_time_response(&url).await
     }
 }

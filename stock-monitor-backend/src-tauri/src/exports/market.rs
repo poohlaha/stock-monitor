@@ -36,3 +36,9 @@ pub async fn query_brief(args: Args) -> Result<HttpResponse, String> {
 pub async fn query_income(args: Args) -> Result<HttpResponse, String> {
     MarketDetailInfo::query_income(&args).await
 }
+
+/// 获取十大持仓等数据
+#[tauri::command]
+pub async fn query_open_data(code: &str) -> Result<HttpResponse, String> {
+    MarketDetailInfo::query_open_data(code).await
+}

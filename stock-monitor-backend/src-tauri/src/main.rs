@@ -21,7 +21,7 @@ use rayon::ThreadPoolBuilder;
 
 use crate::database::Database;
 use crate::system::tray::Tray;
-use exports::market::{get_time_data, query_brief, query_market_status, query_position_distribution, query_income};
+use exports::market::{get_time_data, query_brief, query_market_status, query_position_distribution, query_income, query_open_data};
 use exports::my::{add_to_my_fund_watchlist, find_by_fund_code, find_by_fund_codes};
 use exports::search::search;
 use exports::settings::{get_setting, hide_dock, save_setting, show_dock};
@@ -36,6 +36,7 @@ const LOGGER_PREFIX: &str = "[Stock Monitor]: ";
 
 // 百度
 const BD_HTTP_URL_PREFIX: &str = "https://finance.pae.baidu.com/";
+const BD_HTTP_URL_PREFIX2: &str = "https://finance.baidu.com/";
 
 pub(crate) const MAX_THREAD_COUNT: u32 = 4;
 
@@ -154,7 +155,8 @@ async fn main() {
             query_market_status,
             query_position_distribution,
             query_income,
-            query_brief
+            query_brief,
+            query_open_data
         ])
         .build(tauri::generate_context!())
         .expect("error while running tauri application");
