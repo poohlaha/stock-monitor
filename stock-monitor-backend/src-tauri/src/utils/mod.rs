@@ -40,7 +40,7 @@ impl Utils {
         )
         .await;
 
-        info!("{} get data response {:#?} .", LOGGER_PREFIX.cyan().bold(), response);
+        // info!("{} get data response {:#?} .", LOGGER_PREFIX.cyan().bold(), response);
 
         match response {
             Ok(res) => {

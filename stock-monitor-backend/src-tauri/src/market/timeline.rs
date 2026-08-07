@@ -1,26 +1,16 @@
 /*!
-  分时图
+分时图
 */
+use crate::market::Args;
 use crate::prepare::HttpResponse;
 use crate::utils::Utils;
 use crate::{BD_HTTP_URL_PREFIX, LOGGER_PREFIX};
 use colored::Colorize;
-use log::{info};
+use log::info;
 use serde::{Deserialize, Serialize};
-use serde_json::{json, to_value, Error, Value};
+use serde_json::{to_value, Error, Value};
 
 pub struct Timeline {}
-
-#[derive(Default, Debug, Clone, Serialize, Deserialize)]
-pub struct Args {
-    pub market: String,
-    pub code: String,
-    #[serde(rename = "type")]
-    pub _type: String,
-    #[serde(rename = "queryType")]
-    pub query_type: String, // 查询类型: minute, fiveday, kline
-    pub ktype: String // day, week, month, quarter, year
-}
 
 impl Timeline {
     /**
@@ -36,24 +26,20 @@ impl Timeline {
             return Ok(crate::prepare::get_error_response("`code` is empty !"));
         }
 
-        if args._type.is_empty() {
-            return Ok(crate::prepare::get_error_response("`type` is empty !"));
-        }
-
         if args.query_type.is_empty() {
             return Ok(crate::prepare::get_error_response("`queryType` is empty !"));
         }
 
         let mut url = format!(
             "{}vapi/v1/getquotation?pointType=string&group=quotation_{}_{}&query={}&code={}&market_type={}&newFormat=1&is_kc=1&finClientType=pc&financeType={}&finClientType=pc",
-            BD_HTTP_URL_PREFIX, args.query_type, args.market, args.code, args.code, args.market, args._type
+            BD_HTTP_URL_PREFIX, args.query_type, args.market, args.code, args.code, args.market, args._type.to_string(),
         );
 
         if args.query_type == "kline" {
             url = format!("{}&ktype={}", url, args.ktype);
         }
 
-        info!("{} get time url {} .", LOGGER_PREFIX.cyan().bold(), url);
+        info!("{} get time url {}", LOGGER_PREFIX.cyan().bold(), url);
         Utils::get_time_response(&url).await
     }
 }

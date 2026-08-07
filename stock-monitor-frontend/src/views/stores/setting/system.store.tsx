@@ -167,7 +167,7 @@ class SystemStore extends BaseStore {
   @action
   async getConfig() {
     try {
-      this.loading = true
+      // this.loading = true
       let result: { [K: string]: any } = (await invoke('get_setting', {})) || {}
       console.log('get setting:', result)
 

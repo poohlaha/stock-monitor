@@ -119,7 +119,6 @@ const KLine: React.FC<IKProps> = (props: IKProps): ReactElement => {
     const result = props.onGetMoreData?.()
     if (result && typeof result.then === 'function') {
       result.then(newData => {
-
         if (!newData || newData.length === 0) {
           loadingMoreRef.current = false
           return

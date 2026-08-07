@@ -16,9 +16,13 @@ class MarketStore extends BaseStore {
 
   @observable basicInfo: Record<string, any> = {} // 基本信息
   @observable marketInfo: Record<string, any> = {}
+  @observable briefInfo: Record<string, any> = {} // 间况
   @observable pankouInfo: Record<string, any> = {} // 盘口信息
+  @observable positionDistributionInfo: Record<string, any> = {} // 持仓信息
   @observable xLabels: Array<string> = [] // x 轴标签
+  @observable incomeList: Array<any> = [] // 收益率
   @observable preClosePrice: number = 0 // 收盘价
+  readonly checkTradeSchedule: Array<string> = ['09:30', '11:30', '13:00', '15:00']
 
   @observable isTrade: boolean = false
 
@@ -37,6 +41,95 @@ class MarketStore extends BaseStore {
       let data = this.handleResult(result) || {}
       this.marketInfo = data || {}
       console.log('market info: ', data || {})
+      return result || {}
+    } catch (e: any) {
+      this.loading = false
+      throw new Error(e)
+    }
+  }
+
+  /**
+   * 查询持仓
+   */
+  @action
+  async queryPositionDistribution(code: string = '', market: string = '', type: string = '', callback?: Function) {
+    try {
+      let result: { [K: string]: any } =
+        (await invoke('query_position_distribution', {
+          args: {
+            code,
+            market,
+            type,
+            queryType: '',
+            ktype: ''
+          }
+        })) || {}
+
+      let data = this.handleResult(result) || {}
+      const content = (data || {}).content || []
+
+      this.positionDistributionInfo = {
+        industry:
+          ((content.find((c: Record<string, any> = {}) => c.enCategory === 'industry') || {}).list || {}).body || [], // 行业
+        asset: ((content.find((c: Record<string, any> = {}) => c.enCategory === 'asset') || {}).list || {}).body || [] // 资产配置
+      }
+
+      console.log('position distribution info: ', this.positionDistributionInfo)
+      callback?.()
+      return result || {}
+    } catch (e: any) {
+      this.loading = false
+      throw new Error(e)
+    }
+  }
+
+  /**
+   * 获取收益率
+   */
+  @action
+  async onGetIncome(code: string = '', market: string = '', type: string = '') {
+    try {
+      let result: { [K: string]: any } =
+          (await invoke('query_income', {
+            args: {
+              code,
+              market,
+              type,
+              queryType: '',
+              ktype: ''
+            }
+          })) || {}
+
+      let data = this.handleResult(result) || {}
+      const content = ((data || {}).content || {}).gradeInfo || {}
+      this.incomeList = content.performance || []
+      console.log('incomeList: ', content.performance || [])
+      return result || {}
+    } catch (e: any) {
+      this.loading = false
+      throw new Error(e)
+    }
+  }
+
+  /**
+   * 获取简况
+   */
+  async onGetBrief(code: string = '', market: string = '', type: string = '') {
+    try {
+      let result: { [K: string]: any } =
+        (await invoke('query_brief', {
+          args: {
+            code,
+            market,
+            type,
+            queryType: '',
+            ktype: ''
+          }
+        })) || {}
+      let data = this.handleResult(result) || {}
+      this.briefInfo = (data || {}).basicinfo || {}
+      console.log('brief info: ', this.briefInfo)
+      return result || {}
     } catch (e: any) {
       this.loading = false
       throw new Error(e)
@@ -48,33 +141,38 @@ class MarketStore extends BaseStore {
    */
   async onJudgeIsTrade(market: string = '') {
     if (Utils.isBlank(market || '')) {
-      return
+      return {}
     }
 
-    await this.getMarketStatus()
+    const result = await this.getMarketStatus()
     const marketInfo = this.marketInfo || {}
     if (Utils.isObjectNull(marketInfo || {})) {
-      return
+      return {}
     }
 
     const stock = marketInfo.stock || {}
+    const futures = marketInfo.futures || {}
     const m = stock[market.toLowerCase()] || {}
     if (Utils.isObjectNull(m || {})) {
-      return
+      return {}
+    }
+
+    const f = futures[market.toLowerCase()] || {}
+    if (Utils.isObjectNull(f || {})) {
+      this.isTrade = m.tradeStatus === 'TRADE'
+    } else {
+      this.isTrade = m.tradeStatus === 'TRADE' || f.tradeStatus === 'TRADE'
     }
 
     this.isTrade = m.tradeStatus === 'TRADE'
+    return result || {}
   }
 
   /**
    * 获取行情数据
    */
   @action
-  async getTimelineData(code: string = '', market: string = '', type: string = '', needLoading: boolean = true) {
-    if (needLoading) {
-      this.loading = true
-    }
-
+  async getTimelineData(code: string = '', market: string = '', type: string = '') {
     try {
       let result: { [K: string]: any } =
         (await invoke('get_time_data', {
@@ -87,7 +185,6 @@ class MarketStore extends BaseStore {
           }
         })) || {}
       let data = this.handleResult(result) || {}
-      console.log('time line data: ', data)
 
       // 基本信息
       this.basicInfo = {
@@ -122,6 +219,7 @@ class MarketStore extends BaseStore {
       this.getTimeData(data.newMarketData || {})
       this.preClosePrice = Number((this.pankouInfo?.preClose || {}).value || '0')
       this.loading = false
+      return result || {}
     } catch (e: any) {
       this.loading = false
       throw new Error(e)
@@ -131,7 +229,13 @@ class MarketStore extends BaseStore {
   /**
    * 获取其他分时图数据
    */
-  async onGetOtherTimelineData(code: string = '', market: string = '', type: string = '', queryType: string = '', ktype: string = '') {
+  async onGetOtherTimelineData(
+    code: string = '',
+    market: string = '',
+    type: string = '',
+    queryType: string = '',
+    ktype: string = ''
+  ) {
     try {
       let result: { [K: string]: any } =
         (await invoke('get_time_data', {
@@ -144,7 +248,6 @@ class MarketStore extends BaseStore {
           }
         })) || {}
       let data = this.handleResult(result) || {}
-      console.log('other time line data: ', data)
 
       // 五日数据
       if (queryType === 'fiveday') {
@@ -178,6 +281,7 @@ class MarketStore extends BaseStore {
       }
 
       this.loading = false
+      return result || {}
     } catch (e: any) {
       this.loading = false
       throw new Error(e)
@@ -205,7 +309,6 @@ class MarketStore extends BaseStore {
     this.xLabels = []
     // @ts-ignore
     this.timelineList = this.onGetTimeResult(str) || []
-    console.log('this.timelineList: ', this.timelineList)
   }
 
   /**
@@ -232,8 +335,6 @@ class MarketStore extends BaseStore {
     if (list.length > 0) {
       this.preClosePrice = list[list.length - 1].price || 0
     }
-
-    console.log('time five data:', this.timelineList)
   }
 
   /**
@@ -246,7 +347,6 @@ class MarketStore extends BaseStore {
 
     this.xLabels = []
 
-    console.log('time line data:', this.klineList)
     return this.onGetKlineResult(data.marketData || '') || []
   }
 

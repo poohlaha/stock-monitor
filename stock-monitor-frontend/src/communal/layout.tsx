@@ -88,7 +88,7 @@ const switchSkin = (skin: string = '', font: { [K: string]: any } = {}) => {
 }
 
 const Layout = (): ReactElement => {
-  const { commonStore, systemStore, homeStore, trayStore, pipelineStore } = useStore()
+  const { commonStore, systemStore, homeStore } = useStore()
 
   useEffect(() => {
     switchSkin(commonStore.skin, systemStore.font || {})

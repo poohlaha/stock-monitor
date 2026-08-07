@@ -12,19 +12,19 @@ mod utils;
 mod prepare;
 
 mod helper;
+mod market;
 mod my;
 mod search;
-mod market;
 
 use lazy_static::lazy_static;
 use rayon::ThreadPoolBuilder;
 
 use crate::database::Database;
 use crate::system::tray::Tray;
+use exports::market::{get_time_data, query_brief, query_market_status, query_position_distribution, query_income};
 use exports::my::{add_to_my_fund_watchlist, find_by_fund_code, find_by_fund_codes};
 use exports::search::search;
 use exports::settings::{get_setting, hide_dock, save_setting, show_dock};
-use exports::market::{get_time_data, query_market_status};
 use log::info;
 use sqlx::MySql;
 use std::sync::{Arc, Mutex};
@@ -151,7 +151,10 @@ async fn main() {
             find_by_fund_code,
             find_by_fund_codes,
             get_time_data,
-            query_market_status
+            query_market_status,
+            query_position_distribution,
+            query_income,
+            query_brief
         ])
         .build(tauri::generate_context!())
         .expect("error while running tauri application");
