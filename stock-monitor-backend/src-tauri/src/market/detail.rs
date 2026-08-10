@@ -18,7 +18,10 @@ impl MarketDetailInfo {
         if args._type == MarketType::Etf {
             url = format!(
                 "{}sapi/v1/constituents?code={}&financeType={}&market={}&bizType=etfDistribution&finClientType=pc",
-                BD_HTTP_URL_PREFIX, args.code, args._type.to_string(), args.market
+                BD_HTTP_URL_PREFIX,
+                args.code,
+                args._type.to_string(),
+                args.market
             );
         }
 
@@ -29,7 +32,7 @@ impl MarketDetailInfo {
     // 获取简况(基本信息, 成立日期等)
     pub async fn query_brief(args: &Args) -> Result<HttpResponse, String> {
         let mut url = String::new();
-        if args._type == MarketType::Etf  {
+        if args._type == MarketType::Etf {
             url = format!("{}sapi/v1/basicinfo?code={}&financeType={}&market={}&finClientType=pc", BD_HTTP_URL_PREFIX, args.code, args._type, args.market);
         }
 
@@ -40,7 +43,7 @@ impl MarketDetailInfo {
     // 获取收益
     pub async fn query_income(args: &Args) -> Result<HttpResponse, String> {
         let mut url = String::new();
-        if args._type == MarketType::Etf  {
+        if args._type == MarketType::Etf {
             url = format!("{}sapi/v1/rating?code={}&financeType={}&market={}&bizType=all&finClientType=pc", BD_HTTP_URL_PREFIX, args.code, args._type, args.market);
         }
 

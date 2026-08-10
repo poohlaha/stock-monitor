@@ -32,7 +32,13 @@ impl Timeline {
 
         let mut url = format!(
             "{}vapi/v1/getquotation?pointType=string&group=quotation_{}_{}&query={}&code={}&market_type={}&newFormat=1&is_kc=1&finClientType=pc&financeType={}&finClientType=pc",
-            BD_HTTP_URL_PREFIX, args.query_type, args.market, args.code, args.code, args.market, args._type.to_string(),
+            BD_HTTP_URL_PREFIX,
+            args.query_type,
+            args.market,
+            args.code,
+            args.code,
+            args.market,
+            args._type.to_string(),
         );
 
         if args.query_type == "kline" {
