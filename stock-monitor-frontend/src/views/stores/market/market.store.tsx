@@ -112,18 +112,83 @@ class MarketStore extends BaseStore {
     }
   }
 
+  // 获取基本信息
+  @action
+  getBasicData(openDataInfo: Record<any, any> = {}) {
+    const result = ((openDataInfo || {}).tplData || {}).result || {}
+    if (Utils.isObjectNull(result || {})) {
+      return {
+        recent: [],
+        fundManager: {},
+        brief: {} as Record<string, any>,
+        position: {},
+        tas: []
+      }
+    }
+
+    const recent = result.recent || {} // 涨幅
+
+    // 基金经理
+    const fundMangerList = result.fundMangerList || []
+    const fundManager = fundMangerList.length > 0 ? fundMangerList[0] || {} : {}
+
+    const content = result.content || {}
+
+    const tabs = content.tabs || []
+
+    const briefList =
+      ((((tabs || []).find((t: Record<string, any> = {}) => t.type === 'view') || {}).content || {}).basicInfo || {})
+        .list || []
+    let brief: Record<string, any> = {}
+
+    // 基本信息
+    if (briefList.length > 0) {
+      const lastNumObj = (briefList || []).find((l: Record<string, any> = {}) => l.text === '最新规模') || {}
+      const newest = result.newest || []
+      brief = {
+        // type: ((briefList || []).find((l: Record<string, any> = {}) => l.text === '基金类型') || {}).value || '',
+        newest: (newest || []).find((l: Record<string, any> = {}) => l.text === '净值').value || '',
+        publishDate: ((briefList || []).find((l: Record<string, any> = {}) => l.text === '成立日期') || {}).value || '',
+        lastNum: `${lastNumObj.value || '-'}(${lastNumObj.date || '-'})`,
+        company: ((briefList || []).find((l: Record<string, any> = {}) => l.text === '基金公司') || {}).value || '',
+        primaryAdvisor:
+          ((briefList || []).find((l: Record<string, any> = {}) => l.text === '基金托管人') || {}).value || '',
+        info: ((briefList || []).find((l: Record<string, any> = {}) => l.text === '投资策略') || {}).value || '',
+        fullName: ((briefList || []).find((l: Record<string, any> = {}) => l.text === '基金全称') || {}).value || ''
+      }
+    }
+
+    // 持仓股票/债券
+    const position =
+      ((tabs || []).find((t: Record<string, any> = {}) => t.type === 'position') || {} || {}).content || {}
+
+    // 标签
+    const tagDescriptions = result.tagDescriptions || []
+    return {
+      recent,
+      fundManager,
+      brief,
+      position,
+      tags: tagDescriptions || []
+    }
+  }
+
   /**
    * 获取十大持仓等数据
    */
-  async onGetOpenData(code: string = '') {
+  async onGetOpenData(code: string = '', callback?: Function) {
     try {
       let result: { [K: string]: any } =
         (await invoke('query_open_data', {
           code
         })) || {}
-      let data = this.handleResult(result) || {}
-      this.openDataInfo = (data || {}).basicinfo || {}
+      let data = this.handleResult(result) || []
+      if (data.length > 0) {
+        this.openDataInfo = ((data[0] || {}).DisplayData || {}).resultData || {}
+      }
       console.log('open data info: ', data)
+      const openDataInfo = this.getBasicData(this.openDataInfo || {})
+      callback?.(openDataInfo)
       return result || {}
     } catch (e: any) {
       this.loading = false

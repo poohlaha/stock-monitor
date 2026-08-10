@@ -12,10 +12,10 @@ const Volume: React.FC<IShareVolumeProps> = memo((props: IShareVolumeProps): Rea
     return (
       <rect
         className={`${props.prefixClassName || ''}-volume-rect`}
-        x={props.x}
-        y={props.y}
-        width={props.width}
-        height={props.height}
+        x={props.x || 0}
+        y={props.y || 0}
+        width={props.width || 0}
+        height={props.height || 0}
         fill={props.color}
       />
     )

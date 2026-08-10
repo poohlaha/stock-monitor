@@ -3,6 +3,10 @@
  * @param rate
  */
 export function getRateClassName(rate: string | number = 0) {
+  if (rate === '-' || rate === '--') {
+    return 'color-gray'
+  }
+
   let newRate = 0
   if (typeof rate === 'string') {
     rate = rate.replace('%', '')

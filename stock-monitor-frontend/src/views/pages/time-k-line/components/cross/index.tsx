@@ -91,9 +91,9 @@ const Cross: React.FC<IShareCrossProps> = memo((props: IShareCrossProps): ReactE
           <>
             <rect
               x={AxisDefaultProps.lineWidthOrHeight}
-              y={props.y - leftRectHeight / 2}
-              width={labelProps.leftTextWidth + padding}
-              height={leftRectHeight}
+              y={(props.y || 0) - leftRectHeight / 2}
+              width={(labelProps.leftTextWidth || 0) + padding}
+              height={leftRectHeight || 0}
               fill={props.textBackgroundColor}
               rx={6}
               ry={6}
@@ -116,9 +116,9 @@ const Cross: React.FC<IShareCrossProps> = memo((props: IShareCrossProps): ReactE
           <>
             <rect
               x={props.width - (labelProps.rightTextWidth + AxisDefaultProps.lineWidthOrHeight + padding)}
-              y={props.y - rightRectHeight / 2}
-              width={labelProps.rightTextWidth + padding}
-              height={rightRectHeight}
+              y={(props.y || 0) - (rightRectHeight || 0) / 2}
+              width={(labelProps.rightTextWidth || 0) + padding}
+              height={rightRectHeight || 0}
               fill={props.textBackgroundColor}
               rx={6}
               ry={6}
@@ -152,10 +152,10 @@ const Cross: React.FC<IShareCrossProps> = memo((props: IShareCrossProps): ReactE
       !Utils.isBlank(labelProps.bottomLabel || '') && (
         <>
           <rect
-            x={rectBX}
-            y={rectBY}
+            x={rectBX || 0}
+            y={rectBY || 0}
             width={labelProps.bottomTextWidth + padding}
-            height={bottomRectHeight + padding}
+            height={(bottomRectHeight || 0) + padding}
             fill={props.textBackgroundColor}
             rx={6}
             ry={6}

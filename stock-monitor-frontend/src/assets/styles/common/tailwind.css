@@ -12,3 +12,9 @@
     @apply placeholder:text-sm;
   }
 }
+
+@layer components {
+  .m-ant-tabs .ant-tabs-nav-wrap .ant-tabs-tab-btn {
+    @apply text-base;
+  }
+}

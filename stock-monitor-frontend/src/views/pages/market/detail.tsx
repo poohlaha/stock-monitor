@@ -27,6 +27,7 @@ import * as echarts from 'echarts/core'
 import { BarChart, PieChart, LineChart } from 'echarts/charts'
 import { LabelLayout, UniversalTransition } from 'echarts/features'
 import { CanvasRenderer } from 'echarts/renderers'
+import { Popover, Tabs } from 'antd'
 
 echarts.use([
   LegendComponent,
@@ -63,9 +64,14 @@ const MarketDetail = (): ReactElement => {
   const positionPieChartRef = useRef(null)
   const positionBarChartRef = useRef(null)
   const incomeBarChartRef = useRef(null)
+  const scaleBarChartRef = useRef(null)
+
   const pieChartRef = useRef<echarts.ECharts | null>(null)
   const barChartRef = useRef<echarts.ECharts | null>(null)
   const incomeChartRef = useRef<echarts.ECharts | null>(null)
+  const scaleChartRef = useRef<echarts.ECharts | null>(null)
+
+  const [openDataInfo, setOpenDataInfo] = useState<Record<string, any>>({})
 
   useMount(async () => {
     const c = ADDRESS.getAddressQueryString('code') || ''
@@ -115,7 +121,8 @@ const MarketDetail = (): ReactElement => {
       })
     )
 
-    queue.push(
+    /*
+     queue.push(
       new Promise(async resolve => {
         const res = marketStore.queryPositionDistribution(c, m, t)
         resolve(res)
@@ -128,17 +135,20 @@ const MarketDetail = (): ReactElement => {
         resolve(res)
       })
     )
-
-    queue.push(
-        new Promise(async resolve => {
-          const res = marketStore.onGetOpenData(c)
-          resolve(res)
-        })
-    )
+     */
 
     queue.push(
       new Promise(async resolve => {
         const res = marketStore.onGetIncome(c, m, t)
+        resolve(res)
+      })
+    )
+
+    queue.push(
+      new Promise(async resolve => {
+        const res = marketStore.onGetOpenData(c, (openDataInfo: Record<string, any> = {}) => {
+          setOpenDataInfo(openDataInfo || {})
+        })
         resolve(res)
       })
     )
@@ -330,12 +340,12 @@ const MarketDetail = (): ReactElement => {
     if (!positionPieChartRef.current) return
 
     let data = []
-    let list = (marketStore.positionDistributionInfo || {}).asset || []
+    let list = openDataInfo.position?.industryPositon?.list || []
     if (list.length > 0) {
       for (let l of list) {
         data.push({
-          name: l.section || '',
-          value: Number((l.ratio || '').replace('%', '') || '0.00') || 0.0
+          name: l.text || '',
+          value: Number((l.value || '').replace('%', '') || '0.00') || 0.0
         })
       }
     }
@@ -377,17 +387,17 @@ const MarketDetail = (): ReactElement => {
 
     let data = []
     let yAxisData = []
-    let list = (marketStore.positionDistributionInfo || {}).industry || []
+    let list = openDataInfo.position?.industryPositon?.list || []
     if (list.length > 0) {
       for (let l of list) {
         data.push({
           label: {
             position: 'right'
           },
-          value: Number((l.ratio || '').replace('%', '') || '0.00') || 0.0
+          value: Number((l.value || '').replace('%', '') || '0.00') || 0.0
         })
 
-        yAxisData.push(l.section || '')
+        yAxisData.push(l.text || '')
       }
     }
 
@@ -511,12 +521,70 @@ const MarketDetail = (): ReactElement => {
     return chart
   }
 
+  // 规模变动
+  const getScaleBarChart = () => {
+    if (!scaleBarChartRef.current) return
+
+    let xAxisData: Array<string> = []
+    let serieBarData = []
+
+    let list = openDataInfo.position?.fundScale?.list || []
+    list = list.flatMap((item: Record<string, any> = {}) => item.info || [])
+    list = list.slice(-5)
+
+    if (list.length > 1) {
+      xAxisData = list.map((l: Record<string, any> = {}) => l.date || '') || []
+      serieBarData = list.map((l: Record<string, any> = {}) => l.value || '') || []
+    }
+
+    const chart = echarts.init(scaleBarChartRef.current)
+    let option = {
+      tooltip: {
+        trigger: 'axis'
+      },
+      legend: {
+        show: false
+      },
+      xAxis: {
+        type: 'category',
+        data: xAxisData,
+        axisLine: { show: false },
+        axisTick: { show: false },
+        splitLine: { show: false }
+      },
+      yAxis: {
+        type: 'value'
+      },
+      series: [
+        {
+          type: 'bar',
+          barWidth: 30,
+          barGap: '80%',
+          label: {
+            show: true,
+            position: 'top',
+            formatter: (params: Record<string, any> = {}) => {
+              return `${params.value}亿元`
+            }
+          },
+          emphasis: {
+            focus: 'series'
+          },
+          data: serieBarData || []
+        }
+      ]
+    }
+
+    chart.setOption(option)
+    return chart
+  }
+
   useEffect(() => {
     if (
       !positionBarChartRef.current ||
       !positionPieChartRef.current ||
       !incomeBarChartRef.current ||
-      Utils.isObjectNull(marketStore.positionDistributionInfo || {})
+      !scaleBarChartRef.current
     ) {
       return
     }
@@ -524,6 +592,7 @@ const MarketDetail = (): ReactElement => {
     const positionPieChart = getPositionPieChart()
     const positionBarChart = getPositionBarChart()
     const incomeBarChart = getIncomeBarChart()
+    const scaleBarChart = getScaleBarChart()
 
     // @ts-ignore
     pieChartRef.current = positionPieChart
@@ -534,12 +603,16 @@ const MarketDetail = (): ReactElement => {
     // @ts-ignore
     incomeChartRef.current = incomeBarChart
 
+    // @ts-ignore
+    scaleChartRef.current = scaleBarChart
+
     return () => {
       positionPieChart?.dispose()
       positionBarChart?.dispose()
       incomeBarChart?.dispose()
+      scaleBarChart?.dispose()
     }
-  }, [marketStore.positionDistributionInfo || {}, marketStore.incomeList || []])
+  }, [openDataInfo.position || {}])
 
   useEffect(() => {
     const handleResize = () => {
@@ -555,10 +628,50 @@ const MarketDetail = (): ReactElement => {
     }
   }, [])
 
+  // 基金经理列表
+  const getFundList = (list: Array<Record<string, any>> = []) => {
+    return (
+      <div className="flex-direction-column">
+        <div className="flex-align-center h-8 border-bottom pl-4 pr-4">
+          <p className="flex-1">基金名称</p>
+          <p className="flex-1">管理时间</p>
+          <p className="flex-1">任期年化回报</p>
+        </div>
+
+        <div className="mt-2 overflow-y-auto h-64 no-scrollbar">
+          {(list || []).map((l: Record<string, any> = {}, index: number) => {
+            return (
+              <div className="flex-align-start pt-1 pb-1 border-bottom bg-menu-hover rounded-md pl-4 pr-4" key={index}>
+                <div className="flex-direction-column flex-1 theme-hover">
+                  <p className="">{l.fundName || ''}</p>
+                  <div className="flex-align-center mt-1 color-gray text-xs">
+                    <p>{l.fundCode || ''}</p>
+                    <p className="ml-1 text-xs">{l.fundType || ''}</p>
+                  </div>
+                </div>
+
+                <div className="flex-direction-column flex-1">
+                  <p className="">{l.manageDueDay || ''}</p>
+                  <p className="mt-1 color-gray text-xs">{l.managePeriod || ''}</p>
+                </div>
+
+                <div className="flex-direction-column flex-1">
+                  <p className="">{l.periodAnnReturn || ''}</p>
+                  <p className="mt-1 color-gray text-xs">{l.periodAnnRank || ''}</p>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    )
+  }
+
   const render = () => {
+    const fundManager = openDataInfo.fundManager || {}
     return (
       <Page
-        contentClassName="market-detail-page overflow-y-auto flex-direction-column pt-4 pb-4"
+        contentClassName="market-detail-page overflow-y-auto flex-direction-column pt-4 pb-4 no-scrollbar"
         title={{
           show: false
         }}
@@ -576,29 +689,16 @@ const MarketDetail = (): ReactElement => {
                       {marketStore.basicInfo?.exchange || ''}
                     </p>
                     <p className="ml-1 color-gray font-bold">{marketStore.basicInfo?.code || ''}</p>
-                  </div>
-                </div>
-
-                {/* 基金基本信息 */}
-                <div className="basic-info bg-[#f5f6fa] p-4 flex-wrap mt-4 rounded-md">
-                  <div className="flex-l pr-4 flex-align-center">
-                    <p className="mr-2">成立日期:</p>
-                    <p>{marketStore.briefInfo?.publishDate || '-'}</p>
-                  </div>
-
-                  <div className="flex-l pr-4 pl-4 flex-align-center">
-                    <p className="mr-2">最新规模:</p>
-                    <p>{marketStore.briefInfo?.aum || '-'}</p>
-                  </div>
-
-                  <div className="flex-l pr-4 pl-4 flex-align-center">
-                    <p className="mr-2">管理人:</p>
-                    <p>{marketStore.briefInfo?.primaryAdvisor || '-'}</p>
-                  </div>
-
-                  <div className="flex-l pr-4 pl-4 flex-align-center">
-                    <p className="mr-2">净值(元):</p>
-                    <p>{marketStore.briefInfo?.netWorth || '-'}</p>
+                    {/* tags */}
+                    <div className="tags ml-1">
+                      {(openDataInfo.tags || []).map((tag: Record<string, any> = {}, index: number) => {
+                        return (
+                          <p className="bg-red-500 rounded-md text-xs text-white pt-0.5 pb-0.5 pl-1 pr-1" key={index}>
+                            {tag.text || ''}
+                          </p>
+                        )
+                      })}
+                    </div>
                   </div>
                 </div>
 
@@ -626,8 +726,8 @@ const MarketDetail = (): ReactElement => {
             </div>
 
             {/* 交易中显示分时图 */}
-            <div className="content-box mt-4">
-              <div className="timeline-box border rounded-md flex-wrap">
+            <div className="content-box mt-4 flex-wrap h-[750px]">
+              <div className="timeline-box border rounded-md flex-wrap flex-2">
                 <div className="pankou-info flex-align-center flex-wrap p-4">{getPankouInfo()}</div>
 
                 <div className="chart w100 flex-center">
@@ -705,88 +805,189 @@ const MarketDetail = (): ReactElement => {
                         zoomStep={1.2}
                       />
                     )}
-
-                    {/*
-          <TimeLine
-            className="bg-gray-100 rounded mt-3"
-            width={600}
-            height={356}
-            axis={{
-              // xLabels: ['09:30', '11:30/13:00', '15:00'],
-              // yLabels: [8.1, 8.2, 8.3, 8.4],
-              yPosition: 'left',
-              needXLabelLine: false,
-              needYLabelLine: false,
-              needAxisXLine: true,
-              needAxisYLine: true
-            }}
-            grid={{
-              show: true
-            }}
-            data={TimeData.data.quote_data[0].value || []}
-            fontSize={12}
-            highest={{
-              show: true,
-              lineColor: '#FF4D4F',
-              textColor: 'red'
-            }}
-            cross={{
-              color: '#faad14'
-            }}
-            basic={{
-              show: true,
-              data: TimeData.data.quote_data[0].base_price,
-              lineColor: '#aea5f6',
-              textColor: '#aea5f6'
-            }}
-            tooltip={{
-              className: 'bg-white'
-              // background: '#ededed'
-            }}
-            closingPrice={TimeData.data.quote_data[0].closing_price}
-          />
-
-          <KLine
-            className="bg-gray-100 rounded mt-5"
-            width={650}
-            height={400}
-            data={KData.data?.quote_data[0]?.value || []}
-            axis={{
-              // xLabels: ['09:30', '11:30/13:00', '15:00'],
-              // yLabels: [8.1, 8.2, 8.3, 8.4],
-              yPosition: 'left',
-              needXLabelLine: false,
-              needYLabelLine: false,
-              needAxisXLine: true,
-              needAxisYLine: true
-            }}
-            grid={{
-              show: true
-            }}
-            data={KData.data.quote_data[0].value || []}
-            fontSize={12}
-            highest={{
-              show: true,
-              lineColor: '#FF4D4F',
-              textColor: 'red'
-            }}
-            cross={{
-              color: '#faad14'
-            }}
-            basic={{
-              show: true,
-              data: KData.data.quote_data[0].base_price,
-              lineColor: '#aea5f6',
-              textColor: '#aea5f6'
-            }}
-            tooltip={{
-              className: 'bg-white'
-              // background: '#ededed'
-            }}
-            closingPrice={KData.data.quote_data[0].closing_price}
-          />
-           */}
                   </div>
+                </div>
+              </div>
+
+              {/* 股票持仓 */}
+              <div className="stock-position-box flex-1 pl-4 pr-4 pb-4 flex-direction-column">
+                <p className="font-bold text-base mb-2">{
+                  (((openDataInfo.position || {}).heavyStock || {}).titleHeader || []).length > 0 ? ((openDataInfo.position || {}).heavyStock || {}).titleHeader[0] || '' : '股票持仓'
+                }</p>
+                <div className="stock-position-header flex-align-center h-6 text-xs bg-[#fff4e4] pl-4 pr-4 rounded-md">
+                  <p className="flex-1 text-center">股票名称</p>
+                  <p className="flex-1 text-center">涨跌幅</p>
+                  <p className="flex-1 text-center">持仓占比</p>
+                </div>
+
+                {/* 十大重仓 */}
+                <div className="stock-position-body flex-align-center w100 tex-xs flex-direction-column mt-2">
+                  {(((openDataInfo.position || {}).heavyStock || {}).body || []).map(
+                    (b: Record<string, any> = {}, index: number) => {
+                      return (
+                        <div className="flex-align-center h-8 w100 bg-menu-hover pl-4 pr-4 rounded-md" key={index}>
+                          <p className="flex-1 text-center theme-hover cursor-pointer">{b.name || '-'}</p>
+                          <p className={`flex-1 text-center ${getRateClassName(b.proportionRatio || '-')}`}>
+                            {b.proportionRatio || '-'}
+                          </p>
+                          <p className="flex-1 text-center">{b.positionProportion || '-'}</p>
+                        </div>
+                      )
+                    }
+                  )}
+                </div>
+
+                {/* 债券 */}
+                {(((openDataInfo.position || {}).heavyBond || {}).body || []).length > 0 && (
+                  <div className="mt-4">
+                    <p className="font-bold text-base mb-2">
+                      {
+                        (((openDataInfo.position || {}).heavyStock || {}).titleHeader || []).length > 0 ? ((openDataInfo.position || {}).heavyBond || {}).titleHeader[0] || '' : '债券持仓'
+                      }
+                    </p>
+                    <div className="flex-align-center h-6 text-xs bg-[#fff4e4] pl-4 pr-4">
+                      <p className="flex-1 text-center">债券名称</p>
+                      <p className="flex-1 text-center">持仓占比</p>
+                    </div>
+
+                    <div className="stock-position-body flex-align-center w100 tex-xs flex-direction-column mt-2">
+                      {(((openDataInfo.position || {}).heavyBond || {}).body || []).map(
+                        (b: Array<string> = [], index: number) => {
+                          return (
+                            <div className="flex-align-center h-8 w100 bg-menu-hover pl-4 pr-4 rounded-md" key={index}>
+                              <p className="flex-1 text-center">{b[0] || '-'}</p>
+                              <p className="flex-1 text-center">{b[1] || '-'}</p>
+                            </div>
+                          )
+                        }
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* 涨跌幅 */}
+            <div className="mt-4 bg-[#f7f7f7] flex-align-center h-20 p-4 round-md">
+              {(openDataInfo.recent || []).map((item: Record<string, any> = {}, index: number) => {
+                return (
+                  <div className="flex-1 flex-direction-column" key={index}>
+                    <p>{item.text || ''}</p>
+                    <p className={`${getRateClassName(item.value)} text-xl font-bold`}>{item.value || '-'}</p>
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* 基金基本信息 */}
+            <div className="basic-info bg-[#f5f6fa] p-4 flex-wrap mt-4 rounded-md">
+              <div className="pr-4 flex-align-center">
+                <p className="mr-2 whitespace-nowrap">成立日期:</p>
+                <p className="whitespace-nowrap">{openDataInfo.brief?.publishDate || '-'}</p>
+              </div>
+
+              <div className="pr-4 flex-align-center">
+                <p className="mr-2 whitespace-nowrap">最新规模:</p>
+                <p className="whitespace-nowrap">{openDataInfo.brief?.lastNum || '-'}</p>
+              </div>
+
+              <div className="pr-4 flex-align-center">
+                <p className="mr-2 whitespace-nowrap">管理公司:</p>
+                <p className="whitespace-nowrap">{openDataInfo.brief?.company || '-'}</p>
+              </div>
+
+              <div className="pr-4 flex-align-center">
+                <p className="mr-2 whitespace-nowrap">基金托管人:</p>
+                <p className="whitespace-nowrap">{openDataInfo.brief?.primaryAdvisor || '-'}</p>
+              </div>
+
+              <div className="pr-4 flex-align-center">
+                <p className="mr-2 whitespace-nowrap">净值(元):</p>
+                <p className="whitespace-nowrap">{openDataInfo.brief?.newest || '-'}</p>
+              </div>
+            </div>
+
+            {/* 基金经理 */}
+            <div className="flex-direction-column border w100 rounded-md p-4 mt-4">
+              <p className="text-2xl font-bold">基金经理</p>
+              <div className="mt-4 flex-wrap">
+                <div className="flex-direction-column flex-1">
+                  <div className="bg-[#f5f6fa] rounded-lg p-4 flex-align-center">
+                    <div className="flex-1 flex-direction-column">
+                      <div className="flex-align-center">
+                        <p className="font-bold font-base">{fundManager.name || ''}</p>
+                        <p className="font-bold font-base">{fundManager.corpName || ''}</p>
+                      </div>
+
+                      <p>{fundManager.description || ''}</p>
+                    </div>
+                    {!Utils.isBlank(fundManager.avatar || '') && (
+                      <div className="avatar w-24 h-24">
+                        <img src={fundManager.avatar || ''} className="wh100 rounded-full" />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 回报率 */}
+                  <div className="mt-4 flex-direction-column">
+                    <div className="flex-align-center">
+                      <div className="flex-direction-column flex-1">
+                        <p className="font-bold text-base">任期最高回报</p>
+                        <p className="color-gray">{fundManager.topReport || '-'}</p>
+                      </div>
+                      <div className="flex-direction-column flex-1">
+                        <p className="font-bold text-base">平均年化回报</p>
+                        <p className="color-gray">{fundManager.aveAnn || '-'}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex-align-center mt-4">
+                      <div className="flex-direction-column flex-1">
+                        <p className="font-bold text-base">从业时间</p>
+                        <p className="color-gray">{fundManager.workingYears || '-'}</p>
+                      </div>
+                      <div className="flex-direction-column flex-1">
+                        <p className="font-bold text-base">在管基金</p>
+                        <p className="color-gray">{(fundManager.inManageFunds || []).length}只</p>
+                      </div>
+                    </div>
+
+                    <div className="flex-align-center mt-4">
+                      <div className="flex-direction-column flex-1">
+                        <p className="font-bold text-base">在管规模</p>
+                        <p className="color-gray">{fundManager.manageScale || '-'}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-4">
+                    <Popover
+                      trigger={['hover']}
+                      placement="top"
+                      arrow={false}
+                      content={fundManager.managerResume || ''}
+                    >
+                      <p className="over-two-ellipsis cursor-pointer">{fundManager.managerResume || ''}</p>
+                    </Popover>
+                  </div>
+                </div>
+
+                <div className="pb-4 pl-4 pr-4 flex-1">
+                  <Tabs
+                    className="m-ant-tabs"
+                    items={[
+                      {
+                        key: '1',
+                        label: '在管基金',
+                        children: getFundList(fundManager.inManageFunds || [])
+                      },
+                      {
+                        key: '2',
+                        label: '离任基金',
+                        children: getFundList(fundManager.outManageFunds || [])
+                      }
+                    ]}
+                  />
                 </div>
               </div>
             </div>
@@ -807,6 +1008,14 @@ const MarketDetail = (): ReactElement => {
                 <p className="text-2xl font-bold">收益率</p>
                 <div className="mt-2 h-96">
                   <div className="aspect-square h-full" ref={incomeBarChartRef}></div>
+                </div>
+              </div>
+
+              {/* 规模变动 */}
+              <div className="flex-direction-column border rounded-md p-4 w100 mt-4">
+                <p className="text-2xl font-bold">规模变动</p>
+                <div className="mt-2 h-96">
+                  <div className="aspect-square h-full" ref={scaleBarChartRef}></div>
                 </div>
               </div>
             </div>

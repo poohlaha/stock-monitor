@@ -779,7 +779,13 @@ const KLine: React.FC<IKProps> = (props: IKProps): ReactElement => {
                 strokeWidth={1}
               />
               {/* 实体矩形 */}
-              <rect x={x} y={candleTop} width={candleWidth} height={candleHeight} fill={candleColor} />
+              <rect
+                x={x || 0}
+                y={candleTop || 0}
+                width={candleWidth || 0}
+                height={candleHeight || 0}
+                fill={candleColor}
+              />
             </g>
           )
         })}
