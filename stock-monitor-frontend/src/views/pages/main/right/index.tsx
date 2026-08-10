@@ -47,7 +47,6 @@ const Right = (): ReactElement => {
         }
 
         // 处理详情页
-        /*
         if (route.url) {
           routeList.push(
             <Route
@@ -62,7 +61,6 @@ const Right = (): ReactElement => {
             />
           )
         }
-         */
 
         return routeList
       })

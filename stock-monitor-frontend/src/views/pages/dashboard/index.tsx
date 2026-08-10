@@ -67,11 +67,8 @@ const Dashboard = (): ReactElement => {
                     const type = item.type || '' // 类型: etf | fund | stock
                     const market = item.market || '' // 市场: ab | hk | us | sg
                     homeStore.selectedMenu = `${RouterUrls.MARKET.KEY || ''}-${homeStore.MENU_LIST[2].key || ''}`
-                    console.log(
-                      `${RouterUrls.MARKET.URL}${RouterUrls.MARKET.DETAIL.URL}?code=${item.code || ''}&type=${type || ''}&market=${market || ''}`
-                    )
                     navigate(
-                      `${RouterUrls.MARKET.URL}${RouterUrls.MARKET.DETAIL.URL}?code=${item.code || ''}&type=${type || ''}&market=${market || ''}`
+                      `${RouterUrls.MARKET.URL}${RouterUrls.MARKET.DETAIL.URL}/${item.code || ''}?code=${item.code || ''}&type=${type || ''}&market=${market || ''}`
                     )
                   }}
                 >

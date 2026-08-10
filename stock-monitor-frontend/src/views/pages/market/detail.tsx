@@ -5,13 +5,13 @@
  */
 import React, { ReactElement, useEffect, useRef, useState } from 'react'
 import { observer } from 'mobx-react-lite'
-import useMount from '@hooks/useMount'
 import { ADDRESS } from '@utils/base'
 import { useStore } from '@views/stores'
 import { ShareLine } from '@pages/time-k-line'
 import Page from '@views/modules/page'
 import Utils from '@utils/utils'
 import { getRateClassName } from '@pages/utils'
+import { useNavigate } from 'react-router'
 import Loading from '@views/components/loading/loading'
 
 import {
@@ -28,6 +28,7 @@ import { BarChart, PieChart, LineChart } from 'echarts/charts'
 import { LabelLayout, UniversalTransition } from 'echarts/features'
 import { CanvasRenderer } from 'echarts/renderers'
 import { Popover, Tabs } from 'antd'
+import RouterUrls from "@route/router.url.toml";
 
 echarts.use([
   LegendComponent,
@@ -45,7 +46,8 @@ echarts.use([
 ])
 
 const MarketDetail = (): ReactElement => {
-  const { marketStore } = useStore()
+  const { marketStore, homeStore } = useStore()
+  const navigate = useNavigate()
 
   const count = 100 // 首次加载100条
   const limit = 30 // 每次加载30条数据
@@ -73,8 +75,9 @@ const MarketDetail = (): ReactElement => {
 
   const [openDataInfo, setOpenDataInfo] = useState<Record<string, any>>({})
 
-  useMount(async () => {
-    const c = ADDRESS.getAddressQueryString('code') || ''
+  const c = ADDRESS.getAddressQueryString('code') || ''
+
+  useEffect(() => {
     setCode(c)
 
     // 类型: etf | fund | stock
@@ -95,8 +98,8 @@ const MarketDetail = (): ReactElement => {
     }
 
     resetSize()
-    await onInit(c, m, t)
-  })
+    onInit(c, m, t)
+  }, [c])
 
   const resetSize = () => {
     let chart = document.querySelector('.chart')
@@ -340,7 +343,7 @@ const MarketDetail = (): ReactElement => {
     if (!positionPieChartRef.current) return
 
     let data = []
-    let list = openDataInfo.position?.industryPositon?.list || []
+    let list = openDataInfo.position?.fundPositon?.list || []
     if (list.length > 0) {
       for (let l of list) {
         data.push({
@@ -699,6 +702,27 @@ const MarketDetail = (): ReactElement => {
                         )
                       })}
                     </div>
+
+                    {/* 行业等标签 */}
+                    {
+                        (marketStore.tagList || []).length > 0 && (
+                            <div className="flex-align-center">
+                              {
+                                (marketStore.tagList || []).map((t: Record<string, any> = {}, index: number) => {
+                                  return (
+                                      <div className="flex-align-center ml-1 cursor-pointer" key={index}>
+                                        {
+                                          !Utils.isBlank(t.imageUrl || '') && <img src={t.imageUrl || ''} className="w-3 h-3 mr-1" />
+                                        }
+                                        <p>{t.desc || ''}</p>
+                                      </div>
+                                  )
+                                })
+                              }
+                            </div>
+                        )
+                    }
+
                   </div>
                 </div>
 
@@ -810,61 +834,74 @@ const MarketDetail = (): ReactElement => {
               </div>
 
               {/* 股票持仓 */}
-              <div className="stock-position-box flex-1 pl-4 pr-4 pb-4 flex-direction-column">
-                <p className="font-bold text-base mb-2">{
-                  (((openDataInfo.position || {}).heavyStock || {}).titleHeader || []).length > 0 ? ((openDataInfo.position || {}).heavyStock || {}).titleHeader[0] || '' : '股票持仓'
-                }</p>
-                <div className="stock-position-header flex-align-center h-6 text-xs bg-[#fff4e4] pl-4 pr-4 rounded-md">
-                  <p className="flex-1 text-center">股票名称</p>
-                  <p className="flex-1 text-center">涨跌幅</p>
-                  <p className="flex-1 text-center">持仓占比</p>
-                </div>
-
-                {/* 十大重仓 */}
-                <div className="stock-position-body flex-align-center w100 tex-xs flex-direction-column mt-2">
-                  {(((openDataInfo.position || {}).heavyStock || {}).body || []).map(
-                    (b: Record<string, any> = {}, index: number) => {
-                      return (
-                        <div className="flex-align-center h-8 w100 bg-menu-hover pl-4 pr-4 rounded-md" key={index}>
-                          <p className="flex-1 text-center theme-hover cursor-pointer">{b.name || '-'}</p>
-                          <p className={`flex-1 text-center ${getRateClassName(b.proportionRatio || '-')}`}>
-                            {b.proportionRatio || '-'}
-                          </p>
-                          <p className="flex-1 text-center">{b.positionProportion || '-'}</p>
+              {
+                type !== 'stock' && (
+                      <div className="stock-position-box flex-1 pl-4 pr-4 pb-4 flex-direction-column">
+                        <p className="font-bold text-base mb-2">{
+                          (((openDataInfo.position || {}).heavyStock || {}).titleHeader || []).length > 0 ? ((openDataInfo.position || {}).heavyStock || {}).titleHeader[0] || '' : '股票持仓'
+                        }</p>
+                        <div className="stock-position-header flex-align-center h-6 text-xs bg-[#fff4e4] pl-4 pr-4 rounded-md">
+                          <p className="flex-1 text-center">股票名称</p>
+                          <p className="flex-1 text-center">涨跌幅</p>
+                          <p className="flex-1 text-center">持仓占比</p>
                         </div>
-                      )
-                    }
-                  )}
-                </div>
 
-                {/* 债券 */}
-                {(((openDataInfo.position || {}).heavyBond || {}).body || []).length > 0 && (
-                  <div className="mt-4">
-                    <p className="font-bold text-base mb-2">
-                      {
-                        (((openDataInfo.position || {}).heavyStock || {}).titleHeader || []).length > 0 ? ((openDataInfo.position || {}).heavyBond || {}).titleHeader[0] || '' : '债券持仓'
-                      }
-                    </p>
-                    <div className="flex-align-center h-6 text-xs bg-[#fff4e4] pl-4 pr-4">
-                      <p className="flex-1 text-center">债券名称</p>
-                      <p className="flex-1 text-center">持仓占比</p>
-                    </div>
+                        {/* 十大重仓 */}
+                        <div className="stock-position-body flex-align-center w100 tex-xs flex-direction-column mt-2">
+                          {(((openDataInfo.position || {}).heavyStock || {}).body || []).map(
+                              (b: Record<string, any> = {}, index: number) => {
+                                return (
+                                    <div className="flex-align-center h-8 w100 bg-menu-hover pl-4 pr-4 rounded-md" key={index}>
+                                      <p className="flex-1 text-center theme-hover cursor-pointer"
+                                         onClick={() => {
+                                           const type = 'stock' // 类型: etf | fund | stock
+                                           const market = b.market || '' // 市场: ab | hk | us | sg
+                                           homeStore.selectedMenu = `${RouterUrls.MARKET.KEY || ''}-${homeStore.MENU_LIST[2].key || ''}`
+                                           navigate(
+                                               `${RouterUrls.MARKET.URL}${RouterUrls.MARKET.DETAIL.URL}/${b.code || ''}?code=${b.code || ''}&type=${type || ''}&market=${market || ''}`
+                                           )
+                                         }}
+                                      >{b.name || '-'}</p>
+                                      <p className={`flex-1 text-center ${getRateClassName(b.proportionRatio || '-')}`}>
+                                        {b.proportionRatio || '-'}
+                                      </p>
+                                      <p className="flex-1 text-center">{b.positionProportion || '-'}</p>
+                                    </div>
+                                )
+                              }
+                          )}
+                        </div>
 
-                    <div className="stock-position-body flex-align-center w100 tex-xs flex-direction-column mt-2">
-                      {(((openDataInfo.position || {}).heavyBond || {}).body || []).map(
-                        (b: Array<string> = [], index: number) => {
-                          return (
-                            <div className="flex-align-center h-8 w100 bg-menu-hover pl-4 pr-4 rounded-md" key={index}>
-                              <p className="flex-1 text-center">{b[0] || '-'}</p>
-                              <p className="flex-1 text-center">{b[1] || '-'}</p>
+                        {/* 债券 */}
+                        {(((openDataInfo.position || {}).heavyBond || {}).body || []).length > 0 && (
+                            <div className="mt-4">
+                              <p className="font-bold text-base mb-2">
+                                {
+                                  (((openDataInfo.position || {}).heavyStock || {}).titleHeader || []).length > 0 ? ((openDataInfo.position || {}).heavyBond || {}).titleHeader[0] || '' : '债券持仓'
+                                }
+                              </p>
+                              <div className="flex-align-center h-6 text-xs bg-[#fff4e4] pl-4 pr-4">
+                                <p className="flex-1 text-center">债券名称</p>
+                                <p className="flex-1 text-center">持仓占比</p>
+                              </div>
+
+                              <div className="stock-position-body flex-align-center w100 tex-xs flex-direction-column mt-2">
+                                {(((openDataInfo.position || {}).heavyBond || {}).body || []).map(
+                                    (b: Array<string> = [], index: number) => {
+                                      return (
+                                          <div className="flex-align-center h-8 w100 bg-menu-hover pl-4 pr-4 rounded-md" key={index}>
+                                            <p className="flex-1 text-center">{b[0] || '-'}</p>
+                                            <p className="flex-1 text-center">{b[1] || '-'}</p>
+                                          </div>
+                                      )
+                                    }
+                                )}
+                              </div>
                             </div>
-                          )
-                        }
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
+                        )}
+                      </div>
+                  )
+              }
             </div>
 
             {/* 涨跌幅 */}

@@ -116,6 +116,11 @@ class HomeStore extends BaseStore {
   getSelectMenuByUrl() {
     let { addressUrl } = ADDRESS.getAddress()
     console.log('addressUrl', addressUrl)
+    if (Utils.isBlank(addressUrl || '') || addressUrl === '/') {
+      this.selectedMenu = RouterUrls.DASHBOARD.KEY
+      return
+    }
+
     if (addressUrl === RouterUrls.SETTING.SYSTEM.URL) {
       this.selectedMenu = RouterUrls.SETTING.SYSTEM.KEY
       return

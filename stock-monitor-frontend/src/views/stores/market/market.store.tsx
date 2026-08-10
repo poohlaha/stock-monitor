@@ -19,6 +19,7 @@ class MarketStore extends BaseStore {
   @observable briefInfo: Record<string, any> = {} // 间况
   @observable openDataInfo: Record<string, any> = {} // 间况
   @observable pankouInfo: Record<string, any> = {} // 盘口信息
+  @observable tagList: Array<Record<string, any> >= [] // 行业标签
   @observable positionDistributionInfo: Record<string, any> = {} // 持仓信息
   @observable xLabels: Array<string> = [] // x 轴标签
   @observable incomeList: Array<any> = [] // 收益率
@@ -299,6 +300,9 @@ class MarketStore extends BaseStore {
         peratio: pankouList.find((l: Record<string, any> = {}) => l.ename === 'peratio') || {}, // 市盈(TTM)
         lyr: pankouList.find((l: Record<string, any> = {}) => l.ename === 'lyr') || {} // 市盈(静)
       }
+
+      // 行业标签
+      this.tagList = data.tag_list || []
 
       // 分时图数据
       this.getTimeData(data.newMarketData || {})
