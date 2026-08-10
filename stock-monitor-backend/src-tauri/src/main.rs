@@ -25,7 +25,7 @@ use exports::market::{
     get_time_data, query_brief, query_economic_indicators, query_hot_indicators, query_income, query_industrial_chain, query_market_status, query_open_data, query_other_market_center, query_position_distribution, query_worldwide,
     query_worldwide_market_center,
 };
-use exports::my::{add_to_my_fund_watchlist, find_by_fund_code, find_by_fund_codes};
+use exports::my::{add_to_my_fund_watchlist, find_by_fund_code, find_by_fund_codes, query_watchlist};
 use exports::search::search;
 use exports::settings::{get_setting, hide_dock, save_setting, show_dock};
 use log::info;
@@ -165,7 +165,8 @@ async fn main() {
             query_other_market_center,
             query_industrial_chain,
             query_economic_indicators,
-            query_hot_indicators
+            query_hot_indicators,
+            query_watchlist
         ])
         .build(tauri::generate_context!())
         .expect("error while running tauri application");

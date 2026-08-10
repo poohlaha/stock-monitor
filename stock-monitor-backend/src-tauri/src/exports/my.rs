@@ -9,6 +9,12 @@ pub async fn add_to_my_fund_watchlist(args: Args) -> Result<HttpResponse, String
     crate::my::MyFund::add(&args).await
 }
 
+/// 查找自选列表
+#[tauri::command]
+pub async fn query_watchlist() -> Result<HttpResponse, String> {
+    crate::my::MyFund::query_list().await
+}
+
 /// 根据基金代码查找基金
 #[tauri::command]
 pub async fn find_by_fund_code(fund_code: &str) -> Result<HttpResponse, String> {

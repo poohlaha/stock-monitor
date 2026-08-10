@@ -133,4 +133,31 @@ impl MyFund {
 
         DBHelper::execute_query(query).await
     }
+
+    /**
+      查找自选列表
+    */
+    pub async fn query_list() -> Result<HttpResponse, String> {
+        let sql = String::from(
+            r#"
+            SELECT
+                id,
+                user_id,
+                fund_name,
+                fund_code,
+                alias_name,
+                group_name,
+                is_pinned,
+                sort_order,
+                create_time,
+                update_time
+            FROM
+                my_fund_watchlist
+            ORDER BY create_time DESC
+           "#,
+        );
+
+        let query = sqlx::query_as::<_, MyFundWatch>(&sql);
+        DBHelper::execute_query(query).await
+    }
 }
