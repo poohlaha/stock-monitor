@@ -42,3 +42,39 @@ pub async fn query_income(args: Args) -> Result<HttpResponse, String> {
 pub async fn query_open_data(code: &str) -> Result<HttpResponse, String> {
     MarketDetailInfo::query_open_data(code).await
 }
+
+/// 获取全球市场数据
+#[tauri::command]
+pub async fn query_worldwide(market: &str) -> Result<HttpResponse, String> {
+    Market::query_worldwide(market).await
+}
+
+/// 获取行情中心(全球)
+#[tauri::command]
+pub async fn query_worldwide_market_center() -> Result<HttpResponse, String> {
+    Market::query_worldwide_market_center().await
+}
+
+/// 获取A股、港股等行情
+#[tauri::command]
+pub async fn query_other_market_center(market: &str) -> Result<HttpResponse, String> {
+    Market::query_other_market_center(market).await
+}
+
+/// 获取A股、港股等行情
+#[tauri::command]
+pub async fn query_industrial_chain() -> Result<HttpResponse, String> {
+    Market::query_industrial_chain().await
+}
+
+/// 查询经济指标
+#[tauri::command]
+pub async fn query_economic_indicators() -> Result<HttpResponse, String> {
+    Market::query_economic_indicators().await
+}
+
+/// 查询热门指标
+#[tauri::command]
+pub async fn query_hot_indicators(name: &str) -> Result<HttpResponse, String> {
+    Market::query_hot_indicators(name).await
+}

@@ -19,11 +19,17 @@ class MarketStore extends BaseStore {
   @observable briefInfo: Record<string, any> = {} // 间况
   @observable openDataInfo: Record<string, any> = {} // 间况
   @observable pankouInfo: Record<string, any> = {} // 盘口信息
-  @observable tagList: Array<Record<string, any> >= [] // 行业标签
+  @observable tagList: Array<Record<string, any>> = [] // 行业标签
   @observable positionDistributionInfo: Record<string, any> = {} // 持仓信息
   @observable xLabels: Array<string> = [] // x 轴标签
   @observable incomeList: Array<any> = [] // 收益率
   @observable preClosePrice: number = 0 // 收盘价
+  @observable worldwide: Record<string, any> = {} // 全球市场数据
+  @observable worldwideMarket: Record<string, any> = {} // 行情中心(全球)
+  @observable otherMarket: Record<string, any> = {} // A股、港股等行情
+  @observable industrialChainMarket: Array<Record<string, any>> = [] // 产业链
+  @observable economicIndicators: Record<string, any> = {} // 主要经济指标
+  @observable hotIndicators: Record<string, any> = {} // 热门指标
   readonly checkTradeSchedule: Array<string> = ['09:30', '11:30', '13:00', '15:00']
 
   @observable isTrade: boolean = false
@@ -507,6 +513,140 @@ class MarketStore extends BaseStore {
       })
 
     return list.filter((l: Record<string, any> = {}) => !Utils.isObjectNull(l || {})) || []
+  }
+
+  /**
+   * 获取全球市场名称
+   */
+  async onGetWorldwideName(market: string = '', callback?: Function) {
+    try {
+      let result: { [K: string]: any } = (await invoke('query_worldwide', { market })) || {}
+      let data = this.handleResult(result) || {}
+      this.worldwide = data || {}
+      if (!Utils.isObjectNull(this.worldwide || {})) {
+        this.worldwide.tabs = (this.worldwide.tabs || []).map((w: Record<string, any> = {}) => {
+          return {
+            ...w,
+            label: w.text || '',
+            key: w.market || ''
+          }
+        })
+      }
+
+      console.log('worldwide: ', this.worldwide)
+      callback?.(data.curtab || '')
+      return result || {}
+    } catch (e: any) {
+      this.loading = false
+      throw new Error(e)
+    }
+  }
+
+  /**
+   * 获取行情中心(全球)
+   */
+  async onGetWorldwideMarketCenter(callback?: Function) {
+    try {
+      let result: { [K: string]: any } = (await invoke('query_worldwide_market_center', {})) || {}
+      let data = this.handleResult(result) || {}
+      if (data.length > 0) {
+        this.worldwideMarket = (data[0] || {}).TplData?.result || {}
+      } else {
+        this.worldwideMarket = {}
+      }
+
+      console.log('worldwide market: ', this.worldwideMarket)
+      callback?.(this.worldwideMarket?.hot_index_code || '')
+      return result || {}
+    } catch (e: any) {
+      this.loading = false
+      throw new Error(e)
+    }
+  }
+
+  /**
+   * 获取A股、港股等行情
+   */
+  async onGetOtherMarketCenter(market: string = '') {
+    try {
+      let result: { [K: string]: any } = (await invoke('query_other_market_center', { market })) || {}
+      let data = this.handleResult(result) || {}
+      console.log('other worldwide market: ', data)
+      if (data.length > 0) {
+        this.otherMarket = (data[0] || {}).blocks || []
+      } else {
+        this.otherMarket = {}
+      }
+
+      console.log('other worldwide market2: ', this.otherMarket)
+      return result || {}
+    } catch (e: any) {
+      this.loading = false
+      throw new Error(e)
+    }
+  }
+
+  /**
+   * 获取产业链
+   */
+  async onGetIndustrialChain(callback?: Function) {
+    try {
+      let result: { [K: string]: any } = (await invoke('query_industrial_chain', {})) || {}
+      let data = this.handleResult(result) || {}
+      if (!Utils.isObjectNull(data || {})) {
+        this.industrialChainMarket = data.primaryIndustryChains || []
+      } else {
+        this.industrialChainMarket = []
+      }
+
+      let tabIndex = ''
+      if (this.industrialChainMarket.length > 0) {
+        tabIndex = this.industrialChainMarket[0].id || ''
+      }
+
+      callback?.(tabIndex)
+      console.log('industrial chain: ', this.industrialChainMarket)
+      return result || {}
+    } catch (e: any) {
+      this.loading = false
+      throw new Error(e)
+    }
+  }
+
+  /**
+   * 查询经济指标
+   */
+  async onGetEconomicIndicators() {
+    try {
+      let result: { [K: string]: any } = (await invoke('query_economic_indicators', {})) || {}
+      this.economicIndicators = this.handleResult(result) || {}
+
+      console.log('economic indicators: ', this.economicIndicators)
+      return result || {}
+    } catch (e: any) {
+      this.loading = false
+      throw new Error(e)
+    }
+  }
+
+  /**
+   * 查询热门指标
+   */
+  async onGetHotIndicators(country: string = '') {
+    try {
+      let result: { [K: string]: any } = (await invoke('query_hot_indicators', { name: country })) || {}
+      const data = this.handleResult(result) || {}
+      if ((this.hotIndicators.tabs || []).length === 0) {
+        this.hotIndicators.tabs = data.tabs || []
+      }
+
+      this.hotIndicators.list = data.list || []
+      console.log('hot indicators: ', this.hotIndicators)
+      return result || {}
+    } catch (e: any) {
+      this.loading = false
+      throw new Error(e)
+    }
   }
 }
 

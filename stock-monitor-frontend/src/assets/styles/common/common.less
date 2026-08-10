@@ -246,6 +246,16 @@
   &:hover {
     background: @color_menu_active;
   }
+
+  &.change-color {
+    &:hover {
+      color: @theme;
+    }
+  }
+}
+
+.theme-color {
+  color: @theme;
 }
 
 .border-hover {
@@ -270,8 +280,11 @@
   background: @color_menu_active;
 }
 
-.bg-line-active {
-  background: #f0f0f0;
+.bg-line-hover {
+  &:hover {
+    cursor: pointer;
+    background: #f5f6fa;
+  }
 }
 
 .bg-card {

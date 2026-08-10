@@ -4,15 +4,20 @@ use base64::Engine;
 use colored::Colorize;
 use http::options::Options;
 use log::{error, info};
+use std::sync::OnceLock;
 
 pub(crate) mod cache;
 pub mod file;
 
 pub struct Utils;
 
-pub struct Cache;
+static BAIDU_COOKIE: OnceLock<String> = OnceLock::new();
 
 impl Utils {
+    fn get_cookie() -> String {
+        BAIDU_COOKIE.get().cloned().unwrap_or_default()
+    }
+
     /// 生成 base64 图片
     pub fn generate_image(data: Vec<u8>) -> String {
         let str = base64::engine::general_purpose::STANDARD.encode::<Vec<u8>>(data);
@@ -34,11 +39,20 @@ impl Utils {
                 data: None,
                 form: None,
                 headers: Some(serde_json::json!({
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36",
-                    "Referer": "https://finance.sina.com.cn/",
-                    "Accept": "*/*",
+                    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36",
+                    "Origin": "https://finance.baidu.com",
+                    "Referer": "https://finance.baidu.com/",
+                     "Accept": "application/vnd.finance-web.v1+json",
+                     "Accept-Encoding": "gzip, deflate, br, zstd",
                     "Accept-Language": "zh-CN,zh;q=0.9",
-                    "Connection": "keep-alive"
+                    "Connection": "keep-alive",
+                    "Cache-Control": "no-cache",
+                    "Pragma": "no-cache",
+                    "Sec-Ch-Ua-Mobile": "?0",
+                    "Sec-Ch-Ua-Platform": "macos",
+                    "Sec-Fetch-Dest": "empty",
+                    "Sec-Fetch-Mode": "cors",
+                    // "Cookie": Utils::get_cookie()
                 })),
                 timeout: Some(10),
             },
@@ -46,12 +60,18 @@ impl Utils {
         )
         .await;
 
-        // info!("{} get data response {:#?} .", LOGGER_PREFIX.cyan().bold(), response);
+        info!("{} get data response {:#?} .", LOGGER_PREFIX.cyan().bold(), response);
 
         match response {
             Ok(res) => {
                 if res.status_code != 200 {
                     return Ok(crate::prepare::get_error_response("get data error!"));
+                }
+
+                if let Some(cookie) = res.headers.get("set-cookie") {
+                    let cookie = cookie.split(';').next().unwrap().to_string();
+
+                    let _ = BAIDU_COOKIE.set(cookie);
                 }
 
                 let body = res.body;
