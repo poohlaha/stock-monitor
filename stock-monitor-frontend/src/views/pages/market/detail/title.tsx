@@ -35,15 +35,12 @@ const MarketDetailTitle = (props: IMarketDetailTitleProps): ReactElement => {
               <p className="text-3xl font-bold">{props.name || ''}</p>
 
               {/* 信息披露 */}
-              {
-                !Utils.isObjectNull(props.basicInfo?.financeReport || {}) && (
-                      <div className="flex-align-center p-2 rounded-md notice-tag-theme ml-2 text-xs select-none">
-                        <img src={NoticePng} className="w-4 h-4 mr-1"/>
-                        <p>{(props.basicInfo?.financeReport || {}).text || ''}</p>
-                      </div>
-                  )
-              }
-
+              {!Utils.isObjectNull(props.basicInfo?.financeReport || {}) && (
+                <div className="flex-align-center p-2 rounded-md notice-tag-theme ml-2 text-xs select-none">
+                  <img src={NoticePng} className="w-4 h-4 mr-1" />
+                  <p>{(props.basicInfo?.financeReport || {}).text || ''}</p>
+                </div>
+              )}
             </div>
             <div className="flex-align-center mt-1">
               <p className="bg-purple-500 rounded-md text-xs text-white pt-0.5 pb-0.5 pl-1 pr-1">
@@ -104,22 +101,24 @@ const MarketDetailTitle = (props: IMarketDetailTitleProps): ReactElement => {
           {props.type === 'fund' && (
             <div className="mt-4 flex-align-center h-16">
               <div className="flex-direction-column flex-center">
-                <p className={`${getRateClassName(props.basicInfo?.railFall?.value)} font-bold text-3xl h-9`}>
-                  {props.basicInfo?.railFall?.value || '-'}
+                <p className={`${getRateClassName(props.basicInfo?.railFallNewest?.value)} font-bold text-3xl h-9`}>
+                  {props.basicInfo?.railFallNewest?.value || '-'}
                 </p>
-                <p className="mt-2">{props.basicInfo?.railFall?.text || '-'}</p>
+                <p className="mt-2">{props.basicInfo?.railFallNewest?.text || '-'}</p>
               </div>
 
               <div className="ml-6 flex-direction-column flex-center">
-                <div className="font-bold text-xl h-9 flex-align-end">{props.basicInfo?.price?.value}</div>
-                <p className="mt-2">{props.basicInfo?.price?.text || '-'}</p>
+                <div className="font-bold text-xl h-9 flex-align-end">{props.basicInfo?.priceNewest?.value}</div>
+                <p className="mt-2">{props.basicInfo?.priceNewest?.text || '-'}</p>
               </div>
 
               <div className="ml-6 flex-direction-column flex-center">
-                <div className={`font-bold text-xl h-9 flex-align-end ${getRateClassName(props.basicInfo?.ratio?.value)}`}>
-                  {props.basicInfo?.ratio?.value}
+                <div
+                  className={`font-bold text-xl h-9 flex-align-end ${getRateClassName(props.basicInfo?.ratioNewest?.value)}`}
+                >
+                  {props.basicInfo?.ratioNewest?.value}
                 </div>
-                <p className="mt-2">{props.basicInfo?.ratio?.text || '-'}</p>
+                <p className="mt-2">{props.basicInfo?.ratioNewest?.text || '-'}</p>
               </div>
             </div>
           )}

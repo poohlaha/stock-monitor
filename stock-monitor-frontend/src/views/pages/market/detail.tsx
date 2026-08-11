@@ -143,10 +143,10 @@ const MarketDetail = (): ReactElement => {
 
     if (t !== 'fund') {
       queue.push(
-          new Promise(async resolve => {
-            const res = marketStore.onJudgeIsTrade(m)
-            resolve(res)
-          })
+        new Promise(async resolve => {
+          const res = marketStore.onJudgeIsTrade(m)
+          resolve(res)
+        })
       )
 
       queue.push(
@@ -763,7 +763,7 @@ const MarketDetail = (): ReactElement => {
             </div>
 
             {/* 交易中显示分时图 */}
-            <div className="content-box mt-4 h-[750px] flex">
+            <div className="content-box mt-4 h-[550px] flex">
               <div className="timeline-box border rounded-md">
                 <div className="pankou-info flex-align-center flex-wrap p-4">{getPankouInfo()}</div>
 

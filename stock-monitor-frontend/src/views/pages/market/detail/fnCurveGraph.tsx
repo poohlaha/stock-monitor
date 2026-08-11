@@ -3,10 +3,10 @@
  * @date 2023-08-28
  * @author poohlaha
  */
-import React, {ReactElement, useEffect, useRef, useState} from 'react'
-import {observer} from 'mobx-react-lite'
-import * as echarts from "echarts/core";
-import {Tabs} from "antd";
+import React, { ReactElement, useEffect, useRef, useState } from 'react'
+import { observer } from 'mobx-react-lite'
+import * as echarts from 'echarts/core'
+import { Tabs } from 'antd'
 
 interface IMarketDetailFnCurveGraphProps {
   resetSize: Function
@@ -18,7 +18,6 @@ interface IMarketDetailFnCurveGraphProps {
 }
 
 const MarketDetailFnCurveGraph = (props: IMarketDetailFnCurveGraphProps): ReactElement => {
-
   const items = [
     {
       label: '近1月',
@@ -59,7 +58,6 @@ const MarketDetailFnCurveGraph = (props: IMarketDetailFnCurveGraphProps): ReactE
   const performanceChartRef = useRef<echarts.ECharts | null>(null)
   const networthChartRef = useRef<echarts.ECharts | null>(null)
 
-
   // 获取净值曲线
   const onGetNetworthLineChart = () => {
     if (!networthLineChartRef.current || (props.networthGraph || []).length === 0) {
@@ -70,7 +68,7 @@ const MarketDetailFnCurveGraph = (props: IMarketDetailFnCurveGraphProps): ReactE
     const chart = echarts.init(networthLineChartRef.current)
 
     const d = data[0].data || []
-    const xAxisData = (d || []).map((dd: Record<string, any> = {})=> dd.date) || []
+    const xAxisData = (d || []).map((dd: Record<string, any> = {}) => dd.date) || []
 
     const convertToCumulative = (list: number[]) => {
       let total = 1
@@ -83,13 +81,17 @@ const MarketDetailFnCurveGraph = (props: IMarketDetailFnCurveGraphProps): ReactE
     }
 
     const series = data.map((d: Record<string, any>) => {
-      const dd = (d.data || []).length > 0 ? d.data.map((l: Record<string, any> = {}) => l.value2 || 0).filter(Boolean) : []
+      const dd =
+        (d.data || []).length > 0 ? d.data.map((l: Record<string, any> = {}) => l.value2 || 0).filter(Boolean) : []
       return {
         ...d,
         lineStyle: {
           width: 1
         },
-        dataOld: (d.data || []).length > 0 ? d.data.map((l: Record<string, any> = {}) => [l.value1 || 0, l.value2 || 0, l.value3 || 0]).filter(Boolean) : [],
+        dataOld:
+          (d.data || []).length > 0
+            ? d.data.map((l: Record<string, any> = {}) => [l.value1 || 0, l.value2 || 0, l.value3 || 0]).filter(Boolean)
+            : [],
         data: convertToCumulative(dd || [])
       }
     })
@@ -102,11 +104,12 @@ const MarketDetailFnCurveGraph = (props: IMarketDetailFnCurveGraphProps): ReactE
           params.forEach((item: Record<string, any>) => {
             const value = Number(item.value || 0)
 
-            const color = value > 0
-                ? '#f5222d'   // 红
+            const color =
+              value > 0
+                ? '#f5222d' // 红
                 : value < 0
-                    ? '#00a854' // 绿
-                    : '#333'
+                  ? '#00a854' // 绿
+                  : '#333'
 
             html += `
               ${item.marker}
@@ -138,19 +141,19 @@ const MarketDetailFnCurveGraph = (props: IMarketDetailFnCurveGraphProps): ReactE
         }
       },
       yAxis: {
-          type: false,
+        type: false,
 
-          axisLine: {
-              show: false
-          },
+        axisLine: {
+          show: false
+        },
 
-          axisTick: {
-              show: false
-          },
+        axisTick: {
+          show: false
+        },
 
-          splitLine: {
-              show: false
-          }
+        splitLine: {
+          show: false
+        }
       },
       series
     }
@@ -171,7 +174,7 @@ const MarketDetailFnCurveGraph = (props: IMarketDetailFnCurveGraphProps): ReactE
     const legendData = (data || []).map((d: Record<string, any>) => d.name || '') || []
 
     const d = data[0].data || []
-    const xAxisData = (d || []).map((dd: Record<string, any> = {})=> dd.date) || []
+    const xAxisData = (d || []).map((dd: Record<string, any> = {}) => dd.date) || []
 
     const series = data.map((d: Record<string, any>) => {
       return {
@@ -194,11 +197,12 @@ const MarketDetailFnCurveGraph = (props: IMarketDetailFnCurveGraphProps): ReactE
           params.forEach((item: Record<string, any>) => {
             const value = Number(item.value || 0)
 
-            const color = value > 0
-                ? '#f5222d'   // 红
+            const color =
+              value > 0
+                ? '#f5222d' // 红
                 : value < 0
-                    ? '#00a854' // 绿
-                    : '#333'
+                  ? '#00a854' // 绿
+                  : '#333'
 
             html += `
               ${item.marker}
@@ -265,13 +269,11 @@ const MarketDetailFnCurveGraph = (props: IMarketDetailFnCurveGraphProps): ReactE
     // @ts-ignore
     networthChartRef.current = networthLineChart
 
-
     return () => {
       performanceLineChart?.dispose()
       networthLineChart?.dispose()
     }
   }, [props.performanceGraph || [], props.networthGraph || []])
-
 
   useEffect(() => {
     const handleResize = () => {
@@ -288,69 +290,82 @@ const MarketDetailFnCurveGraph = (props: IMarketDetailFnCurveGraphProps): ReactE
   }, [])
 
   const render = () => {
-        return (
-            <div className="chart w100" style={{ width: props.size?.width || 0, background: 'white' }}>
-              <Tabs
-                  activeKey={fundPNCurveGraphTabIndex}
-                  items={[
-                    {
-                      key: '0',
-                      label: '业绩走势'
-                    },
-                    {
-                      key: '1',
-                      label: '净值曲线'
-                    }
-                  ]}
-                  onChange={async tabIndex => {
-                    if (tabIndex === fundPNCurveGraphTabIndex) return
-                    setFundPNCurveGraphTabIndex(tabIndex)
-                    props.onTabChange?.(tabIndex, (props.tabs || []).length > 0 ? props.tabs[Number(tabIndex)].param : '', Number(tabIndex), itemTabIndex)
-                  }}
-              />
+    return (
+      <div className="chart w100" style={{ width: props.size?.width || 0, background: 'white' }}>
+        <Tabs
+          activeKey={fundPNCurveGraphTabIndex}
+          items={[
+            {
+              key: '0',
+              label: '业绩走势'
+            },
+            {
+              key: '1',
+              label: '净值曲线'
+            }
+          ]}
+          onChange={async tabIndex => {
+            if (tabIndex === fundPNCurveGraphTabIndex) return
+            setFundPNCurveGraphTabIndex(tabIndex)
+            props.onTabChange?.(
+              tabIndex,
+              (props.tabs || []).length > 0 ? props.tabs[Number(tabIndex)].param : '',
+              Number(tabIndex),
+              itemTabIndex
+            )
+          }}
+        />
 
-              <div className="flex-align-center mt-2">
-                <div className="flex-align-center flex-wrap gap-2.5">
-                  {(items || []).map((item: Record<string, any> = {}) => {
-                    const active = itemTabIndex === item.value
-                    return (
-                        <div
-                            className={`${active ? 'hot-active active' : ''} menu-item pl-2 pr-2 pt-1 pb-1 rounded-lg mr-2 change-color cursor-pointer`}
-                            key={item.value}
-                            onClick={async () => {
-                              setItemTabIndex(item.value)
-                              props.onTabChange?.(item.value, (props.tabs || []).length > 0 ? props.tabs[Number(fundPNCurveGraphTabIndex)].param : '', Number(fundPNCurveGraphTabIndex), item.value)
-                            }}
-                        >
-                          <p className="whitespace-nowrap">{item.label || ''}</p>
-                        </div>
+        <div className="flex-align-center mt-2">
+          <div className="flex-align-center flex-wrap gap-2.5">
+            {(items || []).map((item: Record<string, any> = {}) => {
+              const active = itemTabIndex === item.value
+              return (
+                <div
+                  className={`${active ? 'hot-active active' : ''} menu-item pl-2 pr-2 pt-1 pb-1 rounded-lg mr-2 change-color cursor-pointer`}
+                  key={item.value}
+                  onClick={async () => {
+                    setItemTabIndex(item.value)
+                    props.onTabChange?.(
+                      item.value,
+                      (props.tabs || []).length > 0 ? props.tabs[Number(fundPNCurveGraphTabIndex)].param : '',
+                      Number(fundPNCurveGraphTabIndex),
+                      item.value
                     )
-                  })}
+                  }}
+                >
+                  <p className="whitespace-nowrap">{item.label || ''}</p>
                 </div>
-              </div>
+              )
+            })}
+          </div>
+        </div>
 
-              {
-                  fundPNCurveGraphTabIndex === '0' && (
-                      <div className="mt-2 flex h100">
-                        <div className="flex-1 min-w-0 aspect-square h-full border-right performance-line" style={{
-                          height: 500
-                        }} ref={performanceLineChartRef}></div>
-                      </div>
-                  )
-              }
+        {fundPNCurveGraphTabIndex === '0' && (
+          <div className="mt-2 flex h100">
+            <div
+              className="flex-1 min-w-0 aspect-square h-full border-right performance-line"
+              style={{
+                height: 500
+              }}
+              ref={performanceLineChartRef}
+            ></div>
+          </div>
+        )}
 
-              {
-                  fundPNCurveGraphTabIndex === '1' && (
-                      <div className="mt-2 flex h100">
-                        <div className="flex-1 min-w-0 aspect-square h-full border-right networth-line" ref={networthLineChartRef}></div>
-                      </div>
-                  )
-              }
-            </div>
-        )
-    }
+        {fundPNCurveGraphTabIndex === '1' && (
+          <div className="mt-2 flex h100">
+            <div
+              className="flex-1 min-w-0 aspect-square h-full border-right networth-line"
+              ref={networthLineChartRef}
+            ></div>
+          </div>
+        )}
+      </div>
+    )
+  }
 
-    return render()
+  return render()
 }
 
 export default observer(MarketDetailFnCurveGraph)

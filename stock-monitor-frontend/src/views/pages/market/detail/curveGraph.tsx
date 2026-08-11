@@ -326,16 +326,14 @@ const MarketDetailCurveGraph = (props: IMarketDetailCurveGraphProps): ReactEleme
         </div>
 
         {/* 收益率 */}
-        {
-          props.needIncomeGraph && (
-                <div className="flex-direction-column border rounded-md p-4 w100 mt-4">
-                  <p className="text-2xl font-bold">收益率</p>
-                  <div className="mt-2 h-96">
-                    <div className="aspect-square h-full" ref={incomeBarChartRef}></div>
-                  </div>
-                </div>
-            )
-        }
+        {props.needIncomeGraph && (
+          <div className="flex-direction-column border rounded-md p-4 w100 mt-4">
+            <p className="text-2xl font-bold">收益率</p>
+            <div className="mt-2 h-96">
+              <div className="aspect-square h-full" ref={incomeBarChartRef}></div>
+            </div>
+          </div>
+        )}
 
         {/* 规模变动 */}
         <div className="flex-direction-column border rounded-md p-4 w100 mt-4">

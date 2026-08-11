@@ -44,4 +44,5 @@ impl Timeline {
         // info!("{} get time url {}", LOGGER_PREFIX.cyan().bold(), url);
         Utils::get_time_response(&url).await
     }
+
 }

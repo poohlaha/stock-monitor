@@ -120,4 +120,21 @@ impl Market {
         // info!("{} query hot indicators url {}", LOGGER_PREFIX.cyan().bold(), url);
         Utils::get_time_response(&url).await
     }
+
+    /**
+      行业资金流向
+      例: https://finance.pae.baidu.com/vapi/v1/fundflow?finance_type=stock&fund_flow_type=&market=ab&code=300502&type=stock&finClientType=pc
+    */
+    pub async fn query_industry_fund_flow(args: &Args) -> Result<HttpResponse, String> {
+        if args.market.is_empty() {
+            return Ok(crate::prepare::get_error_response("`market` is empty !"));
+        }
+
+        if args.code.is_empty() {
+            return Ok(crate::prepare::get_error_response("`code` is empty !"));
+        }
+
+        let url = format!("{}/vapi/v1/fundflow?finance_type=stock&fund_flow_type=&market={}&code={}&type=stock&finClientType=pc", BD_HTTP_URL_PREFIX, args.market, args.code);
+        Utils::get_time_response(&url).await
+    }
 }

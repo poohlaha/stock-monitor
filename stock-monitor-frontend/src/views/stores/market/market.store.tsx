@@ -34,6 +34,7 @@ class MarketStore extends BaseStore {
   @observable watchList: Array<Record<string, any>> = [] // 我的自选列表
   @observable performanceGraph: Array<Record<string, any>> = []
   @observable networthGraph: Array<Record<string, any>> = []
+  @observable industryFundFlow: Record<string, any> = {}
 
   readonly checkTradeSchedule: Array<string> = ['09:30', '11:30', '13:11', '15:00']
 
@@ -283,7 +284,7 @@ class MarketStore extends BaseStore {
           ((briefList || []).find((l: Record<string, any> = {}) => l.text === '基金托管人') || {}).value || '',
         info: ((briefList || []).find((l: Record<string, any> = {}) => l.text === '投资策略') || {}).value || '',
         fullName: ((briefList || []).find((l: Record<string, any> = {}) => l.text === '基金全称') || {}).value || '',
-        code: ((briefList || []).find((l: Record<string, any> = {}) => l.text === '基金代码') || {}).value || '',
+        code: ((briefList || []).find((l: Record<string, any> = {}) => l.text === '基金代码') || {}).value || ''
       }
     }
 
@@ -324,7 +325,7 @@ class MarketStore extends BaseStore {
       let tabs = []
       if (type === 'fund') {
         tabs = openDataInfo.result?.tabs || []
-        if(tabs.length > 0) {
+        if (tabs.length > 0) {
           await this.onGetPNGraph(tabs[0].param || 'ai', code)
         }
       }
@@ -917,17 +918,17 @@ class MarketStore extends BaseStore {
     }
   }
 
-
   /**
    * 查询业绩走势和净值曲线
    */
   async onGetPNGraph(name: string = '', code: string = '', type: number = 0, month: string = '12') {
     try {
-      let result: { [K: string]: any } = (await invoke('query_fund_graph', {
-        name,
-        code,
-        month: Utils.isBlank(month || '')? '12' : month
-      })) || {}
+      let result: { [K: string]: any } =
+        (await invoke('query_fund_graph', {
+          name,
+          code,
+          month: Utils.isBlank(month || '') ? '12' : month
+        })) || {}
       const data = this.handleResult(result) || []
 
       this.performanceGraph = []
@@ -938,10 +939,8 @@ class MarketStore extends BaseStore {
       const series = ((((data[0] || {}).DisplayData || {}).resultData || {}).tplData || {}).series || []
       const newSeries = []
 
-      for(let s of series) {
-        const values = (s.value || '')
-            .split(';')
-            .filter(Boolean) || []
+      for (let s of series) {
+        const values = (s.value || '').split(';').filter(Boolean) || []
 
         let newValues = []
         if (type === 0) {
@@ -961,7 +960,7 @@ class MarketStore extends BaseStore {
               date,
               value1: Number(value1.replace('%', '')),
               value2: Number(value2.replace('%', '')),
-              value3: Number(value3.replace('%', '')),
+              value3: Number(value3.replace('%', ''))
             }
           })
         }
@@ -982,6 +981,33 @@ class MarketStore extends BaseStore {
       }
 
       console.log('newSeries: ', newSeries)
+      return result || {}
+    } catch (e: any) {
+      this.loading = false
+      throw new Error(e)
+    }
+  }
+
+  /**
+   * 查询行业资金流向
+   */
+
+  async onGetIndustryFundFlow(code: string = '', market: string = '') {
+    try {
+      let result: { [K: string]: any } =
+        (await invoke('query_industry_fund_flow', {
+          args: {
+            code,
+            market,
+            type: 'stock',
+            queryType: '',
+            ktype: ''
+          }
+        })) || {}
+      const data = this.handleResult(result) || {}
+      this.industryFundFlow = data.content || {}
+
+      console.log('industry fund flow: ', this.industryFundFlow)
       return result || {}
     } catch (e: any) {
       this.loading = false
