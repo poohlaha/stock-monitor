@@ -8,19 +8,13 @@ import { observer } from 'mobx-react-lite'
 import { useStore } from '@stores/index'
 import Page from '@views/modules/page'
 import useMount from '@hooks/useMount'
+import RouterUrls from "@route/router.url.toml";
+import {useNavigate} from "react-router";
 
 const Dashboard = (): ReactElement => {
-  const { marketStore } = useStore()
+  const { marketStore, homeStore } = useStore()
 
-  /*
   const navigate = useNavigate()
-
-  const toPage = (index: number = 0) => {
-    const menu = homeStore.MENU_LIST[index]
-    homeStore.onSetSelectMenu(menu.key)
-    navigate(`${menu.parentUrl || ''}${menu.url || ''}`)
-  }
-     */
 
   useMount(async () => {
     await marketStore.onGetWatchList()
@@ -43,8 +37,16 @@ const Dashboard = (): ReactElement => {
               {(marketStore.watchList || []).map((w: Record<string, any> = {}) => {
                 return (
                   <div
-                    className="border rounded-lg flex-direction-column w-[300px] p-4 bg-line-hover hover:shadow-md"
+                    className="border rounded-lg flex-direction-column w-[300px] p-4 bg-line-hover hover:shadow-md select-none"
                     key={w.id || ''}
+                    onClick={() => {
+                      const type = w.fundType || '' // 类型: etf | fund | stock
+                      const market = w.market || '' // 市场: ab | hk | us | sg
+                      homeStore.selectedMenu = `${RouterUrls.MARKET.KEY || ''}-${homeStore.MENU_LIST[2].key || ''}`
+                      navigate(
+                          `${RouterUrls.MARKET.URL}${RouterUrls.MARKET.DETAIL.URL}/${w.fundCode || ''}?code=${w.fundCode || ''}&type=${type || ''}&market=${market || ''}`
+                      )
+                    }}
                   >
                     <div className="flex">
                       <p className="font-bold">{w.fundName || ''}</p>

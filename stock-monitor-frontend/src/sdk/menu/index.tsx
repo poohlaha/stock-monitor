@@ -124,6 +124,8 @@ const TrayMenu = (): ReactElement => {
     const delay = next.getTime() - now.getTime()
 
     tradeStatusTimerRef.current = setTimeout(async () => {
+      console.log('timer start ...')
+      await marketStore.onGetWatchListTimer((hasAllInTrade: boolean = false) => setHasAllInTrade(hasAllInTrade))
       scheduleTradeStatus()
     }, delay)
   }
@@ -213,7 +215,7 @@ const TrayMenu = (): ReactElement => {
                   <p className={`font-bold ${getRateClassName(w.basicInfo?.increase)} mr-2`}>
                     {w.basicInfo?.increase || '0'}
                   </p>
-                  <p className={`font-bold ${getRateClassName(w.basicInfo?.ratio)}`}>{w.basicInfo?.ratio || '0'}%</p>
+                  <p className={`font-bold ${getRateClassName(w.basicInfo?.ratio)}`}>{w.basicInfo?.ratio || '0'}</p>
                 </div>
               </div>
             </div>

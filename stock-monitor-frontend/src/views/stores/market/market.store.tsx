@@ -33,7 +33,7 @@ class MarketStore extends BaseStore {
   @observable hotIndicators: Record<string, any> = {} // 热门指标
   @observable watchList: Array<Record<string, any>> = [] // 我的自选列表
 
-  readonly checkTradeSchedule: Array<string> = ['09:30', '11:30', '13:00', '15:00']
+  readonly checkTradeSchedule: Array<string> = ['09:30', '11:30', '13:11', '15:00']
 
   @observable isTrade: boolean = false
   readonly SEARCH_OPTIONS = [
