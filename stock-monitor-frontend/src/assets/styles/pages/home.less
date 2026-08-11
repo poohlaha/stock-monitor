@@ -362,8 +362,13 @@ svg {
 }
 
 .menu-item {
+  &.active {
+    background: @theme_to;
+    color: @theme;
+  }
+
   &:hover {
-    background: @theme;
-    color: @color_theme_inner;
+    background: @theme_to;
+    color: @theme;
   }
 }

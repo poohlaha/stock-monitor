@@ -55,7 +55,7 @@ class HomeStore extends BaseStore {
           label: RouterUrls.MARKET.DETAIL.NAME,
           url: RouterUrls.MARKET.DETAIL.URL,
           icon: null,
-          component: lazy(() => import(/* webpackChunkName:'timeline' */ '@pages/market/detail'))
+          component: lazy(() => import(/* webpackChunkName:'timeline' */ '@pages/market/detail/index'))
         }
       ]
     },
@@ -75,7 +75,7 @@ class HomeStore extends BaseStore {
   constructor() {
     super()
     makeObservable(this)
-    this.getSelectMenuByUrl()
+    // this.getSelectMenuByUrl()
   }
 
   /**

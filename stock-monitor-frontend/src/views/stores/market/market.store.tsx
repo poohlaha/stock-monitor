@@ -32,6 +32,8 @@ class MarketStore extends BaseStore {
   @observable economicIndicators: Record<string, any> = {} // 主要经济指标
   @observable hotIndicators: Record<string, any> = {} // 热门指标
   @observable watchList: Array<Record<string, any>> = [] // 我的自选列表
+  @observable performanceGraph: Array<Record<string, any>> = []
+  @observable networthGraph: Array<Record<string, any>> = []
 
   readonly checkTradeSchedule: Array<string> = ['09:30', '11:30', '13:11', '15:00']
 
@@ -246,7 +248,9 @@ class MarketStore extends BaseStore {
         fundManager: {},
         brief: {} as Record<string, any>,
         position: {},
-        tas: []
+        tas: [],
+        name: '',
+        result: {}
       }
     }
 
@@ -264,11 +268,11 @@ class MarketStore extends BaseStore {
       ((((tabs || []).find((t: Record<string, any> = {}) => t.type === 'view') || {}).content || {}).basicInfo || {})
         .list || []
     let brief: Record<string, any> = {}
+    const newest = result.newest || []
 
     // 基本信息
     if (briefList.length > 0) {
       const lastNumObj = (briefList || []).find((l: Record<string, any> = {}) => l.text === '最新规模') || {}
-      const newest = result.newest || []
       brief = {
         // type: ((briefList || []).find((l: Record<string, any> = {}) => l.text === '基金类型') || {}).value || '',
         newest: (newest || []).find((l: Record<string, any> = {}) => l.text === '净值').value || '',
@@ -278,7 +282,8 @@ class MarketStore extends BaseStore {
         primaryAdvisor:
           ((briefList || []).find((l: Record<string, any> = {}) => l.text === '基金托管人') || {}).value || '',
         info: ((briefList || []).find((l: Record<string, any> = {}) => l.text === '投资策略') || {}).value || '',
-        fullName: ((briefList || []).find((l: Record<string, any> = {}) => l.text === '基金全称') || {}).value || ''
+        fullName: ((briefList || []).find((l: Record<string, any> = {}) => l.text === '基金全称') || {}).value || '',
+        code: ((briefList || []).find((l: Record<string, any> = {}) => l.text === '基金代码') || {}).value || '',
       }
     }
 
@@ -293,14 +298,17 @@ class MarketStore extends BaseStore {
       fundManager,
       brief,
       position,
-      tags: tagDescriptions || []
+      newest,
+      tags: tagDescriptions || [],
+      name: result.title || '',
+      result
     }
   }
 
   /**
    * 获取十大持仓等数据
    */
-  async onGetOpenData(code: string = '', callback?: Function) {
+  async onGetOpenData(code: string = '', callback?: Function, type: string = '') {
     try {
       let result: { [K: string]: any } =
         (await invoke('query_open_data', {
@@ -312,7 +320,17 @@ class MarketStore extends BaseStore {
       }
       console.log('open data info: ', data)
       const openDataInfo = this.getBasicData(this.openDataInfo || {})
-      callback?.(openDataInfo)
+
+      let tabs = []
+      if (type === 'fund') {
+        tabs = openDataInfo.result?.tabs || []
+        if(tabs.length > 0) {
+          await this.onGetPNGraph(tabs[0].param || 'ai', code)
+        }
+      }
+
+      callback?.(openDataInfo, tabs)
+
       return result || {}
     } catch (e: any) {
       this.loading = false
@@ -454,7 +472,6 @@ class MarketStore extends BaseStore {
           w.data = this.getTimeData(klineData.newMarketData || {})
           w.prices = w.data.map((item: Record<string, any> = {}) => Number(item.price))
         }
-
       }
 
       callback?.(hasAllInTrade)
@@ -882,6 +899,78 @@ class MarketStore extends BaseStore {
 
       this.hotIndicators.list = data.list || []
       console.log('hot indicators: ', this.hotIndicators)
+      return result || {}
+    } catch (e: any) {
+      this.loading = false
+      throw new Error(e)
+    }
+  }
+
+
+  /**
+   * 查询业绩走势和净值曲线
+   */
+  async onGetPNGraph(name: string = '', code: string = '', type: number = 0, month: string = '12') {
+    try {
+      let result: { [K: string]: any } = (await invoke('query_fund_graph', {
+        name,
+        code,
+        month: Utils.isBlank(month || '')? '12' : month
+      })) || {}
+      const data = this.handleResult(result) || []
+
+      this.performanceGraph = []
+      if (data.length === 0) {
+        return
+      }
+
+      const series = ((((data[0] || {}).DisplayData || {}).resultData || {}).tplData || {}).series || []
+      const newSeries = []
+
+      for(let s of series) {
+        const values = (s.value || '')
+            .split(';')
+            .filter(Boolean) || []
+
+        let newValues = []
+        if (type === 0) {
+          newValues = values.map((item: string = '') => {
+            const [date, value] = item.split(',')
+
+            return {
+              date,
+              value: Number(value.replace('%', ''))
+            }
+          })
+        } else {
+          newValues = values.map((item: string = '') => {
+            const [date, value1, value2, value3] = item.split(',')
+
+            return {
+              date,
+              value1: Number(value1.replace('%', '')),
+              value2: Number(value2.replace('%', '')),
+              value3: Number(value3.replace('%', '')),
+            }
+          })
+        }
+
+        newSeries.push({
+          name: (s.label || []).length > 0 ? s.label[0] || '' : '',
+          type: 'line',
+          smooth: false,
+          symbol: 'none',
+          data: newValues || []
+        })
+      }
+
+      if (type === 0) {
+        this.performanceGraph = newSeries || []
+      } else {
+        this.networthGraph = newSeries || []
+      }
+
+      console.log('newSeries: ', newSeries)
       return result || {}
     } catch (e: any) {
       this.loading = false

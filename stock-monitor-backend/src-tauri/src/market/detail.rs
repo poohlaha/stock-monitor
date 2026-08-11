@@ -57,4 +57,11 @@ impl MarketDetailInfo {
         info!("{} query open data url {}", LOGGER_PREFIX.cyan().bold(), url);
         Utils::get_time_response(&url).await
     }
+
+    // 查询基金曲线
+    pub async fn query_fund_graph(code: &str, name: &str, month: &str) -> Result<HttpResponse, String> {
+        let url = format!("{}opendata?query={}&resource_id=5824&finClientType=pc&t={}&m={}", BD_HTTP_URL_PREFIX2, code, name, month);
+        info!("{} query open data url {}", LOGGER_PREFIX.cyan().bold(), url);
+        Utils::get_time_response(&url).await
+    }
 }

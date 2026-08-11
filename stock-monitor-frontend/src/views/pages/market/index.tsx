@@ -178,9 +178,10 @@ const Market = (): ReactElement => {
                   onMouseDown={() => {
                     const type = item.type || '' // 类型: etf | fund | stock
                     const market = item.market || '' // 市场: ab | hk | us | sg
+                    const exchange = item.exchange || ''
                     homeStore.selectedMenu = `${RouterUrls.MARKET.KEY || ''}-${homeStore.MENU_LIST[2].key || ''}`
                     navigate(
-                      `${RouterUrls.MARKET.URL}${RouterUrls.MARKET.DETAIL.URL}/${item.code || ''}?code=${item.code || ''}&type=${type || ''}&market=${market || ''}`
+                      `${RouterUrls.MARKET.URL}${RouterUrls.MARKET.DETAIL.URL}/${item.code || ''}?code=${item.code || ''}&type=${type || ''}&market=${market || ''}&exchange=${exchange || ''}`
                     )
                   }}
                 >
@@ -430,7 +431,7 @@ const Market = (): ReactElement => {
                           const active = hotWorldwideMarketTabIndex === h.area
                           return (
                             <div
-                              className={`${active ? 'hot-active theme-bg' : ''} menu-item pl-2 pr-2 pt-1 pb-1 rounded-lg mr-2 change-color cursor-pointer`}
+                              className={`${active ? 'hot-active active' : ''} menu-item pl-2 pr-2 pt-1 pb-1 rounded-lg mr-2 change-color cursor-pointer`}
                               key={h.area || ''}
                               onClick={() => {
                                 setHotWorldwideMarketTabIndex(h.area)
@@ -595,7 +596,7 @@ const Market = (): ReactElement => {
                     const active = hotIndicatorTabIndex === index
                     return (
                       <div
-                        className={`${active ? 'hot-active theme-bg' : ''} menu-item pl-2 pr-2 pt-1 pb-1 rounded-lg mr-2 change-color cursor-pointer`}
+                        className={`${active ? 'hot-active active' : ''} menu-item pl-2 pr-2 pt-1 pb-1 rounded-lg mr-2 change-color cursor-pointer`}
                         key={index}
                         onClick={async () => {
                           setHotIndicatorTabIndex(index)

@@ -55,6 +55,8 @@ const MarketDetail = (): ReactElement => {
   const [code, setCode] = useState('')
   const [type, setType] = useState('stock')
   const [market, setMarket] = useState('ab')
+  const [exchange, setExchange] = useState('sh')
+
   const [dailyEndIndex, setDailyEndIndex] = useState(count)
   const [weekEndIndex, setWeekEndIndex] = useState(count)
   const [monthEndIndex, setMonthEndIndex] = useState(count)
@@ -88,6 +90,10 @@ const MarketDetail = (): ReactElement => {
     const m = ADDRESS.getAddressQueryString('market') || ''
     setMarket(m)
 
+    // 市场: ab | hk | us | sg
+    const e = ADDRESS.getAddressQueryString('exchange') || ''
+    setExchange(e)
+
     resetSize()
     onInit(c, m, t)
   }, [c])
@@ -107,13 +113,8 @@ const MarketDetail = (): ReactElement => {
   }
 
   const onInit = async (c: string = '', m: string = '', t: string = '') => {
+    console.log(`code: ${code}, type: ${t}, market: ${market}, exchange: ${exchange}`)
     const queue = []
-    queue.push(
-      new Promise(async resolve => {
-        const res = marketStore.onJudgeIsTrade(m)
-        resolve(res)
-      })
-    )
 
     /*
      queue.push(
@@ -129,16 +130,7 @@ const MarketDetail = (): ReactElement => {
         resolve(res)
       })
     )
-
-
      */
-
-    queue.push(
-      new Promise(async resolve => {
-        const res = marketStore.onGetIncome(c, m, t)
-        resolve(res)
-      })
-    )
 
     queue.push(
       new Promise(async resolve => {
@@ -149,39 +141,59 @@ const MarketDetail = (): ReactElement => {
       })
     )
 
-    queue.push(
-      new Promise(async resolve => {
-        const res = marketStore.getTimelineData(c, m, t)
-        resolve(res)
-      })
-    )
+    if (t !== 'fund') {
+      queue.push(
+          new Promise(async resolve => {
+            const res = marketStore.onJudgeIsTrade(m)
+            resolve(res)
+          })
+      )
 
-    queue.push(
-      new Promise(async resolve => {
-        const res = marketStore.onGetOtherTimelineData(c, m, t, 'kline', 'day')
-        resolve(res)
-      })
-    )
+      queue.push(
+        new Promise(async resolve => {
+          const res = marketStore.onGetIncome(c, m, t)
+          resolve(res)
+        })
+      )
 
-    queue.push(
-      new Promise(async resolve => {
-        const res = marketStore.onGetOtherTimelineData(c, m, t, 'kline', 'week')
-        resolve(res)
-      })
-    )
+      queue.push(
+        new Promise(async resolve => {
+          const res = marketStore.getTimelineData(c, m, t)
+          resolve(res)
+        })
+      )
 
-    queue.push(
-      new Promise(async resolve => {
-        const res = marketStore.onGetOtherTimelineData(c, m, t, 'kline', 'month')
-        resolve(res)
-      })
-    )
+      queue.push(
+        new Promise(async resolve => {
+          const res = marketStore.onGetOtherTimelineData(c, m, t, 'kline', 'day')
+          resolve(res)
+        })
+      )
+
+      queue.push(
+        new Promise(async resolve => {
+          const res = marketStore.onGetOtherTimelineData(c, m, t, 'kline', 'week')
+          resolve(res)
+        })
+      )
+
+      queue.push(
+        new Promise(async resolve => {
+          const res = marketStore.onGetOtherTimelineData(c, m, t, 'kline', 'month')
+          resolve(res)
+        })
+      )
+    }
 
     await marketStore.batchSend(queue)
   }
 
   // 定时查询是否开盘
   const scheduleTradeStatus = () => {
+    if (type === 'fund') {
+      return
+    }
+
     const now = new Date()
 
     const next = (marketStore.checkTradeSchedule || [])
@@ -663,6 +675,14 @@ const MarketDetail = (): ReactElement => {
     )
   }
 
+  const getExchange = () => {
+    if (!Utils.isBlank(marketStore.basicInfo?.exchange || '')) {
+      return marketStore.basicInfo?.exchange || ''
+    }
+
+    return exchange || ''
+  }
+
   const render = () => {
     const fundManager = openDataInfo.fundManager || {}
     return (
@@ -679,17 +699,22 @@ const MarketDetail = (): ReactElement => {
               <div className="flex-direction-column pl-4 pr-4 rounded-md">
                 {/* 标题 */}
                 <div className="flex-direction-column">
-                  <p className="text-3xl font-bold">{marketStore.basicInfo?.name || ''}</p>
+                  <p className="text-3xl font-bold">{marketStore.basicInfo?.name || openDataInfo.name || ''}</p>
                   <div className="flex-align-center mt-1">
                     <p className="bg-purple-500 rounded-md text-xs text-white pt-0.5 pb-0.5 pl-1 pr-1">
-                      {marketStore.basicInfo?.exchange || ''}
+                      {getExchange()}
                     </p>
-                    <p className="ml-1 color-gray font-bold">{marketStore.basicInfo?.code || ''}</p>
+                    <p className="ml-1 color-gray font-bold">
+                      {marketStore.basicInfo?.code || openDataInfo.brief?.code || ''}
+                    </p>
                     {/* tags */}
-                    <div className="tags ml-1">
+                    <div className="tags ml-1 flex-align-center">
                       {(openDataInfo.tags || []).map((tag: Record<string, any> = {}, index: number) => {
                         return (
-                          <p className="bg-red-500 rounded-md text-xs text-white pt-0.5 pb-0.5 pl-1 pr-1" key={index}>
+                          <p
+                            className="bg-red-500 rounded-md text-xs text-white pt-0.5 pb-0.5 pl-1 pr-1 mr-1"
+                            key={index}
+                          >
                             {tag.text || ''}
                           </p>
                         )
@@ -946,8 +971,8 @@ const MarketDetail = (): ReactElement => {
                   <div className="bg-[#f5f6fa] rounded-lg p-4 flex-align-center">
                     <div className="flex-1 flex-direction-column">
                       <div className="flex-align-center">
-                        <p className="font-bold font-base">{fundManager.name || ''}</p>
-                        <p className="font-bold font-base">{fundManager.corpName || ''}</p>
+                        <p className="font-bold font-lg">{fundManager.name || ''}</p>
+                        <p className="font-bold font-base ml-1">{fundManager.corpName || ''}</p>
                       </div>
 
                       <p>{fundManager.description || ''}</p>
@@ -1035,12 +1060,14 @@ const MarketDetail = (): ReactElement => {
               </div>
 
               {/* 收益率 */}
-              <div className="flex-direction-column border rounded-md p-4 w100 mt-4">
-                <p className="text-2xl font-bold">收益率</p>
-                <div className="mt-2 h-96">
-                  <div className="aspect-square h-full" ref={incomeBarChartRef}></div>
+              {type === 'etf' && (
+                <div className="flex-direction-column border rounded-md p-4 w100 mt-4">
+                  <p className="text-2xl font-bold">收益率</p>
+                  <div className="mt-2 h-96">
+                    <div className="aspect-square h-full" ref={incomeBarChartRef}></div>
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* 规模变动 */}
               <div className="flex-direction-column border rounded-md p-4 w100 mt-4">

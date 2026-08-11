@@ -43,6 +43,12 @@ pub async fn query_open_data(code: &str) -> Result<HttpResponse, String> {
     MarketDetailInfo::query_open_data(code).await
 }
 
+///  查询基金曲线
+#[tauri::command]
+pub async fn query_fund_graph(code: &str, name: &str, month: &str) -> Result<HttpResponse, String> {
+    MarketDetailInfo::query_fund_graph(code, name, month).await
+}
+
 /// 获取全球市场数据
 #[tauri::command]
 pub async fn query_worldwide(market: &str) -> Result<HttpResponse, String> {
