@@ -10,7 +10,7 @@ import Page from '@views/modules/page'
 import useMount from '@hooks/useMount'
 
 const Dashboard = (): ReactElement => {
-  const { dashboardStore } = useStore()
+  const { marketStore } = useStore()
 
   /*
   const navigate = useNavigate()
@@ -23,7 +23,7 @@ const Dashboard = (): ReactElement => {
      */
 
   useMount(async () => {
-    await dashboardStore.onGetWatchList()
+    await marketStore.onGetWatchList()
   })
 
   const render = () => {
@@ -40,14 +40,22 @@ const Dashboard = (): ReactElement => {
           <div className="flex-direction-column">
             <p className="font-bold text-lg">自选列表</p>
             <div className="mt-4 flex-wrap gap-5">
-              {(dashboardStore.watchList || []).map((w: Record<string, any> = {}) => {
+              {(marketStore.watchList || []).map((w: Record<string, any> = {}) => {
                 return (
                   <div
-                    className="border rounded-lg flex-direction-column w-[220px] p-4 bg-line-hover hover:shadow-md"
+                    className="border rounded-lg flex-direction-column w-[300px] p-4 bg-line-hover hover:shadow-md"
                     key={w.id || ''}
                   >
-                    <p className="font-bold">{w.fundName || ''}</p>
-                    <p className="color-gray mt-1 text-xs">{w.fundCode || ''}</p>
+                    <div className="flex">
+                      <p className="font-bold">{w.fundName || ''}</p>
+                      <p className="ml-1 red rounded-md text-xs pt-0.5 pb-0.5 pl-1 pr-1">
+                        {(w.fundType || '').toUpperCase()}
+                      </p>
+                    </div>
+                    <div className="flex-align-center mt-1">
+                      <p className="exchange-tag rounded-md text-xs pt-0.5 pb-0.5 pl-1 pr-1">{w.exchange || ''}</p>
+                      <p className="color-gray ml-1 text-xs">{w.fundCode || ''}</p>
+                    </div>
                   </div>
                 )
               })}

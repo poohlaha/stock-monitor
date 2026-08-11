@@ -66,39 +66,6 @@ const Market = (): ReactElement => {
     await marketStore.batchSend(queue)
   }
 
-  // 生成 spartline 图
-  // @ts-ignore
-  const createSparkline = (data: number[], color: string) => {
-    const width = 100
-    const height = 40
-
-    const max = Math.max(...data)
-    const min = Math.min(...data)
-
-    const points = data
-      .map((item, index) => {
-        const x = (index / (data.length - 1)) * width
-        const y = height - ((item - min) / (max - min)) * height
-        return `${x},${y}`
-      })
-      .join(' ')
-
-    const svg = `
-        <svg 
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 ${width} ${height}"
-        >
-            <polyline
-                fill="none"
-                stroke="${color}"
-                stroke-width="2"
-                points="${points}"
-            />
-        </svg>
-    `
-    return `url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}")`
-  }
-
   const items: Array<any> = [
     {
       key: '1',
@@ -206,9 +173,9 @@ const Market = (): ReactElement => {
               const hasCollect = item.hasCollect ?? false
               return (
                 <div
-                  className="search-item h-16 flex-align-center cursor-pointer pl-4 pr-4 border-bottom bg-line-hover"
+                  className="search-item flex-align-center cursor-pointer pt-2 pb-2 pl-4 pr-4 border-bottom bg-line-hover"
                   key={index}
-                  onClick={() => {
+                  onMouseDown={() => {
                     const type = item.type || '' // 类型: etf | fund | stock
                     const market = item.market || '' // 市场: ab | hk | us | sg
                     homeStore.selectedMenu = `${RouterUrls.MARKET.KEY || ''}-${homeStore.MENU_LIST[2].key || ''}`
@@ -229,7 +196,7 @@ const Market = (): ReactElement => {
                     </div>
                     <p className="pl-1 w-24 font-bold text-center">{item.price}</p>
                     <p className={`pl-1 w-24 font-bold text-center ${getRateClassName(item.ratio)}`}>{item.ratio}</p>
-                    <p className="w-24 ml-2 text-right">
+                    <p className="w-8 ml-2 text-right">
                       {!hasCollect && (
                         <svg
                           className="w-4 h-4 color-svg"
@@ -237,6 +204,9 @@ const Market = (): ReactElement => {
                           version="1.1"
                           xmlns="http://www.w3.org/2000/svg"
                           onClick={() => marketStore.onAddToMyFundWatchlist(item || {})}
+                          onMouseDown={e => {
+                            e.stopPropagation()
+                          }}
                         >
                           <path
                             d="M953.37931 512C953.37931 268.232939 755.767084 70.62069 512 70.62069 268.232934 70.62069 70.62069 268.232939 70.62069 512 70.62069 755.767061 268.232934 953.37931 512 953.37931 755.767084 953.37931 953.37931 755.767061 953.37931 512ZM547.310345 476.689655 547.310345 264.858364C547.310345 245.21731 531.501374 229.517241 512 229.517241 492.362681 229.517241 476.689655 245.340001 476.689655 264.858364L476.689655 476.689655 264.858359 476.689655C245.217315 476.689655 229.517241 492.498635 229.517241 512 229.517241 531.637326 245.340001 547.310345 264.858359 547.310345L476.689655 547.310345 476.689655 759.141636C476.689655 778.78269 492.498626 794.482759 512 794.482759 531.637319 794.482759 547.310345 778.659999 547.310345 759.141636L547.310345 547.310345 759.141694 547.310345C778.78272 547.310345 794.482759 531.501365 794.482759 512 794.482759 492.362674 778.660017 476.689655 759.141694 476.689655L547.310345 476.689655ZM0 512C0 229.230209 229.230204 0 512 0 794.769832 0 1024 229.230209 1024 512 1024 794.769791 794.769832 1024 512 1024 229.230204 1024 0 794.769791 0 512Z"
@@ -293,7 +263,13 @@ const Market = (): ReactElement => {
                   marketStore.showSearchDialog = false
                 }
               }}
-              onBlur={() => (marketStore.showSearchDialog = false)}
+              onBlur={e => {
+                if (e.currentTarget.parentElement?.contains(e.relatedTarget)) {
+                  return
+                }
+
+                marketStore.showSearchDialog = false
+              }}
               onPressEnter={async () => {
                 if (!Utils.isBlank(marketStore.search.value)) {
                   await marketStore.onSearch()
@@ -397,7 +373,7 @@ const Market = (): ReactElement => {
             {worldwideMarketActiveTabIndex === '1' && (
               <div className="mt-4">
                 <div className="mt-2 flex-wrap worldwide-center">
-                  <div className="flex-2 flex-direction-column">
+                  <div className="flex-1 flex-direction-column">
                     <p className="font-bold text-xl">全球指数</p>
                     <div className="h-8 color-gray flex-align-center pl-2 pr-2">
                       <div className="flex-2">名称</div>
@@ -446,7 +422,7 @@ const Market = (): ReactElement => {
                   </div>
 
                   {/* 热门全球指数 */}
-                  <div className="min-w-96 h-full flex-1 pl-2 pr-2">
+                  <div className="min-w-[350px] flex-1 h-full pl-2 pr-2">
                     <p className="font-bold text-xl">热门全球指数</p>
                     <div className="mt-4 flex-direction-column">
                       <div className="flex-align-center">
@@ -454,10 +430,13 @@ const Market = (): ReactElement => {
                           const active = hotWorldwideMarketTabIndex === h.area
                           return (
                             <div
-                              className={`${active ? 'hot-active bg-menu-active' : ''} p-2 rounded-lg mr-2 bg-menu-hover change-color cursor-pointer`}
+                              className={`${active ? 'hot-active theme-bg' : ''} menu-item pl-2 pr-2 pt-1 pb-1 rounded-lg mr-2 change-color cursor-pointer`}
                               key={h.area || ''}
+                              onClick={() => {
+                                setHotWorldwideMarketTabIndex(h.area)
+                              }}
                             >
-                              <p className={`${active ? 'theme-color' : ''}`}>{h.name || ''}</p>
+                              <p className="">{h.name || ''}</p>
                             </div>
                           )
                         })}
@@ -468,7 +447,7 @@ const Market = (): ReactElement => {
                           <div className="flex-2">代码/名称</div>
                           <div className="flex-1">最新价</div>
                           <div className="flex-1">涨跌幅</div>
-                          <div className="flex-1">加自选</div>
+                          <div className="w-12">加自选</div>
                         </div>
 
                         <div className="mt-2">
@@ -478,19 +457,19 @@ const Market = (): ReactElement => {
                                 className="flex-align-center pt-2 pb-2 bg-line-hover pl-2 pr-2 rounded-md mb-2"
                                 key={l.code || '-'}
                               >
-                                <div className="flex-2 flex-align-center">
+                                <div className="flex-2 flex-align-center pr-1">
                                   <div className="mr-1">
                                     <img src={l.logo?.logo || ''} className="h-10 w-10 rounded-full" />
                                   </div>
 
-                                  <div className="flex-direction-column">
+                                  <div className="flex-direction-column flex-1">
                                     <p className="font-bold">{l.name || '-'}</p>
 
                                     <div className="flex-align-center">
-                                      <p className="color-gray text-xs overflow-ellipsis overflow-hidden w-10 whitespace-nowrap">
+                                      <p className="color-gray text-xs overflow-ellipsis overflow-hidden whitespace-nowrap">
                                         {l.code || '-'}
                                       </p>
-                                      <p className="color text-xs ml-1 bg-menu-active p-0.5 rounded">
+                                      <p className="color text-xs ml-1 bg-menu-active p-0.5 rounded whitespace-nowrap">
                                         {l.status || '-'}
                                       </p>
                                     </div>
@@ -505,7 +484,7 @@ const Market = (): ReactElement => {
                                   <p className={getRateClassName(l.px_change_rate || '-')}>{l.px_change_rate || '-'}</p>
                                 </div>
 
-                                <div className="flex-1">
+                                <div className="w-12">
                                   <svg
                                     className="w-4 h-4 color-svg"
                                     viewBox="0 0 1024 1024"
@@ -616,14 +595,14 @@ const Market = (): ReactElement => {
                     const active = hotIndicatorTabIndex === index
                     return (
                       <div
-                        className={`${active ? 'hot-active bg-menu-active' : ''} p-2 rounded-lg mr-2 bg-menu-hover change-color cursor-pointer`}
+                        className={`${active ? 'hot-active theme-bg' : ''} menu-item pl-2 pr-2 pt-1 pb-1 rounded-lg mr-2 change-color cursor-pointer`}
                         key={index}
                         onClick={async () => {
                           setHotIndicatorTabIndex(index)
                           await marketStore.onGetHotIndicators(h.name || '')
                         }}
                       >
-                        <p className={`${active ? 'theme-color' : ''} whitespace-nowrap`}>{h.name || ''}</p>
+                        <p className="whitespace-nowrap">{h.name || ''}</p>
                       </div>
                     )
                   })}

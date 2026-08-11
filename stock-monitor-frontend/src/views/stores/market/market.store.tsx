@@ -31,6 +31,8 @@ class MarketStore extends BaseStore {
   @observable industrialChainMarket: Array<Record<string, any>> = [] // 产业链
   @observable economicIndicators: Record<string, any> = {} // 主要经济指标
   @observable hotIndicators: Record<string, any> = {} // 热门指标
+  @observable watchList: Array<Record<string, any>> = [] // 我的自选列表
+
   readonly checkTradeSchedule: Array<string> = ['09:30', '11:30', '13:00', '15:00']
 
   @observable isTrade: boolean = false
@@ -132,7 +134,10 @@ class MarketStore extends BaseStore {
       let result: { [K: string]: any } = await invoke('add_to_my_fund_watchlist', {
         args: {
           fundCode: item.CODE || '',
-          fundName: item.NAME || ''
+          fundName: item.NAME || '',
+          market: item.market || '',
+          exchange: item.exchange || '',
+          fundType: item.type || ''
         }
       })
 
@@ -341,6 +346,126 @@ class MarketStore extends BaseStore {
   }
 
   /**
+   * 查找自选列表
+   */
+  @action
+  async onGetWatchList(needQueryMarketTrends: boolean = false, callback?: Function) {
+    try {
+      let result: { [K: string]: any } = await invoke('query_watchlist', {})
+      this.watchList = this.handleResult(result) || []
+
+      // 查询行情数据
+      let hasAllInTrade = false
+      if (needQueryMarketTrends) {
+        for (let w of this.watchList) {
+          // 查询是否在交易中
+          let tradeResult: { [K: string]: any } = (await invoke('query_market_status', {})) || {}
+          let tradeData = this.handleResult(tradeResult) || {}
+          w.isTrade = this.onGetTrade(tradeData || {}, w.market || '')
+          if (!hasAllInTrade) {
+            hasAllInTrade = w.isTrade
+          }
+
+          // 获取分时图数据
+          let klineResult: { [K: string]: any } =
+            (await invoke('get_time_data', {
+              args: {
+                code: w.fundCode,
+                market: w.market,
+                type: w.fundType,
+                queryType: 'minute',
+                ktype: ''
+              }
+            })) || {}
+
+          const klineData = this.handleResult(klineResult) || {}
+          w.basicInfo = {
+            ...(klineData.basicinfos || {}),
+            ...(klineData.cur || {}),
+            ...(klineData.update || {})
+          }
+          w.data = this.getTimeData(klineData.newMarketData || {})
+          w.prices = w.data.map((item: Record<string, any> = {}) => Number(item.price))
+        }
+      }
+
+      callback?.(hasAllInTrade)
+    } catch (e: any) {
+      TOAST.show({ message: `查找自选列表失败: ${e}`, type: 4 })
+      this.loading = false
+      throw new Error(e)
+    }
+  }
+
+  /**
+   * 定时开启自选列表
+   */
+  @action
+  async onGetWatchListTimer(callback?: Function) {
+    try {
+      let result: { [K: string]: any } = await invoke('query_watchlist', {})
+      const watchList = this.handleResult(result) || []
+      // 查询行情数据
+      let hasAllInTrade = false
+
+      // 根据市场查找是否在交易中
+      let markets = (watchList || []).map((w: Record<any, any> = {}) => w.market) || []
+      // @ts-ignore
+      markets = [...new Set(markets)]
+      if (markets.length === 0) {
+        return
+      }
+
+      const marketTradeMap: Record<string, boolean> = {}
+      let tradeResult: { [K: string]: any } = (await invoke('query_market_status', {})) || {}
+      let tradeData = this.handleResult(tradeResult) || {}
+
+      // 查询是否在交易中
+      for (const market of markets) {
+        marketTradeMap[market] = this.onGetTrade(tradeData || {}, market || '')
+      }
+
+      for (let w of watchList) {
+        w.isTrade = marketTradeMap[w.market] ?? false
+        if (!hasAllInTrade) {
+          hasAllInTrade = w.isTrade
+        }
+
+        // 交易中
+        if (w.isTrade) {
+          // 获取分时图数据
+          let klineResult: { [K: string]: any } =
+            (await invoke('get_time_data', {
+              args: {
+                code: w.fundCode,
+                market: w.market,
+                type: w.fundType,
+                queryType: 'minute',
+                ktype: ''
+              }
+            })) || {}
+
+          const klineData = this.handleResult(klineResult) || {}
+          w.basicInfo = {
+            ...(klineData.basicinfos || {}),
+            ...(klineData.cur || {}),
+            ...(klineData.update || {})
+          }
+          w.data = this.getTimeData(klineData.newMarketData || {})
+          w.prices = w.data.map((item: Record<string, any> = {}) => Number(item.price))
+        }
+
+      }
+
+      callback?.(hasAllInTrade)
+    } catch (e: any) {
+      TOAST.show({ message: `查找自选列表失败: ${e}`, type: 4 })
+      this.loading = false
+      throw new Error(e)
+    }
+  }
+
+  /**
    * 判断是不是交易中
    */
   async onJudgeIsTrade(market: string = '') {
@@ -349,27 +474,30 @@ class MarketStore extends BaseStore {
     }
 
     const result = await this.getMarketStatus()
-    const marketInfo = this.marketInfo || {}
-    if (Utils.isObjectNull(marketInfo || {})) {
-      return {}
+    this.isTrade = this.onGetTrade(this.marketInfo || {}, market)
+    return result || {}
+  }
+
+  onGetTrade(result: Record<string, any> = {}, market: string = '') {
+    if (Utils.isObjectNull(result || {})) {
+      return false
     }
 
-    const stock = marketInfo.stock || {}
-    const futures = marketInfo.futures || {}
+    const stock = result.stock || {}
+    const futures = result.futures || {}
     const m = stock[market.toLowerCase()] || {}
     if (Utils.isObjectNull(m || {})) {
-      return {}
+      return false
     }
 
     const f = futures[market.toLowerCase()] || {}
     if (Utils.isObjectNull(f || {})) {
-      this.isTrade = m.tradeStatus === 'TRADE'
+      return m.tradeStatus === 'TRADE'
     } else {
-      this.isTrade = m.tradeStatus === 'TRADE' || f.tradeStatus === 'TRADE'
+      return m.tradeStatus === 'TRADE' || f.tradeStatus === 'TRADE'
     }
 
-    this.isTrade = m.tradeStatus === 'TRADE'
-    return result || {}
+    return m.tradeStatus === 'TRADE'
   }
 
   /**
@@ -423,7 +551,8 @@ class MarketStore extends BaseStore {
       this.tagList = data.tag_list || []
 
       // 分时图数据
-      this.getTimeData(data.newMarketData || {})
+      this.xLabels = []
+      this.timelineList = this.getTimeData(data.newMarketData || {})
       this.preClosePrice = Number((this.pankouInfo?.preClose || {}).value || '0')
       this.loading = false
       return result || {}
@@ -500,22 +629,21 @@ class MarketStore extends BaseStore {
    */
   getTimeData(data: Record<string, any> = {}) {
     if (Utils.isObjectNull(data || {})) {
-      return
+      return []
     }
 
     const marketData = data.marketData || []
     if (marketData.length === 0) {
-      return
+      return []
     }
 
     const str = (marketData[0] || {}).p || ''
     if (Utils.isBlank(str || '')) {
-      return
+      return []
     }
 
-    this.xLabels = []
     // @ts-ignore
-    this.timelineList = this.onGetTimeResult(str) || []
+    return this.onGetTimeResult(str) || []
   }
 
   /**

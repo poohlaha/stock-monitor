@@ -607,19 +607,22 @@ COMMIT;
 -- ----------------------------
 DROP TABLE IF EXISTS `my_fund_watchlist`;
 CREATE TABLE `my_fund_watchlist` (
-  `id` varchar(255) NOT NULL COMMENT '主键',
-  `user_id` bigint DEFAULT NULL COMMENT '用户ID',
-  `fund_name` varchar(255) DEFAULT NULL,
-  `fund_code` varchar(10) NOT NULL COMMENT '基金代码',
-  `alias_name` varchar(100) DEFAULT NULL COMMENT '自定义名称',
-  `group_name` varchar(50) DEFAULT NULL COMMENT '分组',
-  `is_pinned` tinyint(1) DEFAULT '0' COMMENT '是否置顶',
-  `sort_order` int DEFAULT '0' COMMENT '排序',
-  `create_time` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
-  `update_time` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
-  PRIMARY KEY (`id`) USING BTREE,
-  UNIQUE KEY `uk_user_fund` (`user_id`,`fund_code`),
-  KEY `idx_user` (`user_id`)
+     `id` varchar(255) NOT NULL COMMENT '主键',
+     `user_id` bigint DEFAULT NULL COMMENT '用户ID',
+     `fund_name` varchar(255) DEFAULT NULL,
+     `fund_code` varchar(10) NOT NULL COMMENT '基金代码',
+     `alias_name` varchar(100) DEFAULT NULL COMMENT '自定义名称',
+     `group_name` varchar(50) DEFAULT NULL COMMENT '分组',
+     `is_pinned` tinyint(1) DEFAULT '0' COMMENT '是否置顶',
+     `sort_order` int DEFAULT '0' COMMENT '排序',
+     `exchange` varchar(255) DEFAULT NULL,
+     `market` varchar(255) DEFAULT NULL,
+     `fund_type` varchar(255) DEFAULT NULL,
+     `create_time` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
+     `update_time` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
+     PRIMARY KEY (`id`) USING BTREE,
+     UNIQUE KEY `uk_user_fund` (`user_id`,`fund_code`),
+     KEY `idx_user` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='自选基金表（只存关注关系）';
 
 -- ----------------------------

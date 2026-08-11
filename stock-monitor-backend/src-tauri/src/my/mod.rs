@@ -16,6 +16,15 @@ pub struct Args {
 
     #[serde(rename = "fundName")]
     pub fund_name: String, // 基金代码
+
+    #[serde(rename = "exchange")]
+    pub exchange: i32, // 排序
+
+    #[serde(rename = "fundType")]
+    pub fund_type: i32, // 排序
+
+    #[serde(rename = "market")]
+    pub market: i32, // 排序
 }
 
 // 我的基金
@@ -44,6 +53,15 @@ pub struct MyFundWatch {
     #[serde(rename = "sortOrder")]
     pub sort_order: i32, // 排序
 
+    #[serde(rename = "exchange")]
+    pub exchange: String, // 排序
+
+    #[serde(rename = "fundType")]
+    pub fund_type: String, // 排序
+
+    #[serde(rename = "market")]
+    pub market: String, // 排序
+
     #[serde(rename = "createTime")]
     pub create_time: Option<String>,
 
@@ -62,10 +80,13 @@ impl MyFund {
         }
 
         let time = Utils::get_date(None);
-        let query = sqlx::query::<MySql>("INSERT INTO my_fund_watchlist(id, fund_code, fund_name, create_time) VALUES (?, ?, ?, ?)")
+        let query = sqlx::query::<MySql>("INSERT INTO my_fund_watchlist(id, fund_code, fund_name, exchange, fund_type, market, create_time) VALUES (?, ?, ?, ?, ?, ?, ?)")
             .bind(Uuid::new_v4().to_string())
             .bind(&args.fund_code)
             .bind(&args.fund_name)
+            .bind(&args.exchange)
+            .bind(&args.fund_type)
+            .bind(&args.market)
             .bind(&time);
 
         DBHelper::execute_update(query).await
@@ -88,6 +109,9 @@ impl MyFund {
             group_name,
             is_pinned,
             sort_order,
+            exchange,
+            market,
+            fund_type,
             create_time,
             update_time
             FROM my_fund_watchlist
@@ -118,6 +142,9 @@ impl MyFund {
                group_name,
                is_pinned,
                sort_order,
+               exchange,
+               market,
+               fund_type,
                create_time,
                update_time
             FROM my_fund_watchlist
@@ -149,6 +176,9 @@ impl MyFund {
                 group_name,
                 is_pinned,
                 sort_order,
+                exchange,
+                market,
+                fund_type,
                 create_time,
                 update_time
             FROM

@@ -25,3 +25,39 @@ export function getRateClassName(rate: string | number = 0) {
 
   return 'green'
 }
+
+// 生成 spartline 图
+export function createSparkline(data: number[] = [], color: string = '') {
+  if (data.length === 0) {
+    return
+  }
+
+  const width = 100
+  const height = 40
+
+  const max = Math.max(...data)
+  const min = Math.min(...data)
+
+  const points = data
+    .map((item, index) => {
+      const x = (index / (data.length - 1)) * width
+      const y = height - ((item - min) / (max - min)) * height
+      return `${x},${y}`
+    })
+    .join(' ')
+
+  const svg = `
+        <svg 
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 ${width} ${height}"
+        >
+            <polyline
+                fill="none"
+                stroke="${color}"
+                stroke-width="2"
+                points="${points}"
+            />
+        </svg>
+    `
+  return `url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}")`
+}

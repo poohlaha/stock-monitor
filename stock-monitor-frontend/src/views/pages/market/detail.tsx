@@ -88,25 +88,16 @@ const MarketDetail = (): ReactElement => {
     const m = ADDRESS.getAddressQueryString('market') || ''
     setMarket(m)
 
-    let chart = document.querySelector('.chart')
-    if (!chart) return
-
-    const rect = chart.getBoundingClientRect()
-    let width = rect.width
-    if (width < 500) {
-      width = 500
-    }
-
     resetSize()
     onInit(c, m, t)
   }, [c])
 
   const resetSize = () => {
-    let chart = document.querySelector('.chart')
+    let chart = document.querySelector('.content-box')
     if (!chart) return
 
     const rect = chart.getBoundingClientRect()
-    let width = rect.width
+    let width = rect.width - 400
     if (width < 500) {
       width = 500
     }
@@ -126,18 +117,20 @@ const MarketDetail = (): ReactElement => {
 
     /*
      queue.push(
+        new Promise(async resolve => {
+          const res = marketStore.onGetBrief(c, m, t)
+          resolve(res)
+        })
+    )
+
+     queue.push(
       new Promise(async resolve => {
         const res = marketStore.queryPositionDistribution(c, m, t)
         resolve(res)
       })
     )
 
-    queue.push(
-      new Promise(async resolve => {
-        const res = marketStore.onGetBrief(c, m, t)
-        resolve(res)
-      })
-    )
+
      */
 
     queue.push(
@@ -275,8 +268,8 @@ const MarketDetail = (): ReactElement => {
           key={key}
           style={{ width: '25%' }}
         >
-          <p>{item.name || ''}</p>
-          <p className={`ml-2 font-bold ${statusClassName || ''}`}>{item.value || '-'}</p>
+          <p className="whitespace-nowrap">{item.name || ''}</p>
+          <p className={`ml-2 font-bold whitespace-nowrap ${statusClassName || ''}`}>{item.value || '-'}</p>
         </div>
       )
     }
@@ -745,8 +738,8 @@ const MarketDetail = (): ReactElement => {
             </div>
 
             {/* 交易中显示分时图 */}
-            <div className="content-box mt-4 flex-wrap h-[750px]">
-              <div className="timeline-box border rounded-md flex-wrap flex-2">
+            <div className="content-box mt-4 h-[750px] flex">
+              <div className="timeline-box border rounded-md">
                 <div className="pankou-info flex-align-center flex-wrap p-4">{getPankouInfo()}</div>
 
                 <div className="chart w100 flex-center">
@@ -830,7 +823,7 @@ const MarketDetail = (): ReactElement => {
 
               {/* 股票持仓 */}
               {type !== 'stock' && (
-                <div className="stock-position-box flex-1 pl-4 pr-4 pb-4 flex-direction-column">
+                <div className="stock-position-box min-w-[400px] pl-4 pr-4 pb-4 flex-direction-column">
                   <p className="font-bold text-base mb-2">
                     {(((openDataInfo.position || {}).heavyStock || {}).titleHeader || []).length > 0
                       ? ((openDataInfo.position || {}).heavyStock || {}).titleHeader[0] || ''
