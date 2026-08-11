@@ -10,6 +10,7 @@ import mainStore from './main/main.store'
 import systemStore from './setting/system.store'
 import myStore from './my/my.store'
 import marketStore from './market/market.store'
+import trayStore from './tray/tray.store'
 
 export function createStore() {
   return {
@@ -19,7 +20,8 @@ export function createStore() {
     mainStore,
     systemStore,
     myStore,
-    marketStore
+    marketStore,
+    trayStore
   }
 }
 

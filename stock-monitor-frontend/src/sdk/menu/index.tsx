@@ -3,7 +3,7 @@
  * @date 2023-08-28
  * @author poohlaha
  */
-import React, { ReactElement, useEffect, useState } from 'react'
+import React, { ReactElement, useEffect, useRef, useState } from 'react'
 import { observer } from 'mobx-react-lite'
 import { WebviewWindow } from '@tauri-apps/api/webviewWindow'
 import { exit } from '@tauri-apps/plugin-process'
@@ -12,17 +12,20 @@ import { emitTo, listen } from '@tauri-apps/api/event'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 import { CONSTANT } from '@config/index'
 import Utils from '@utils/utils'
-import { Button, Tabs, Tag } from 'antd'
+import { Button } from 'antd'
 import { useStore } from '@views/stores'
 import NoData from '@views/components/noData'
 import RouterUrls from '@route/router.url.toml'
-import { openPath } from '@tauri-apps/plugin-opener'
 import Page from '@views/modules/page'
-import { TOAST } from '@utils/base'
+import { createSparkline, getRateClassName } from '@pages/utils'
 
 const TrayMenu = (): ReactElement => {
-  const { trayStore, pipelineStore } = useStore()
-  const [activeTabIndex, setActiveTabIndex] = useState<string>('1')
+  const { trayStore, marketStore } = useStore()
+
+  const timerRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined)
+  const tradeStatusTimerRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined)
+
+  const [hasAllInTrade, setHasAllInTrade] = useState(false)
 
   useMount(async () => {
     document.body.style.minWidth = '0'
@@ -69,14 +72,10 @@ const TrayMenu = (): ReactElement => {
   })
 
   useEffect(() => {
-    if (pipelineStore.list.length === 0 && !pipelineStore.loading) {
-      pipelineStore.getList()
+    if (marketStore.watchList.length === 0) {
+      marketStore.onGetWatchList(true, (hasAllInTrade: boolean = false) => setHasAllInTrade(hasAllInTrade))
     }
-
-    if (trayStore.applicationList.length === 0 && !trayStore.loading) {
-      trayStore.getApplicationList()
-    }
-  }, [pipelineStore.list, trayStore.applicationList])
+  }, [marketStore.watchList])
 
   const onHideTrayMenu = async () => {
     // 隐藏托盘菜单
@@ -101,9 +100,67 @@ const TrayMenu = (): ReactElement => {
     await exit(0)
   }
 
-  const getPipelineHtml = () => {
-    if (pipelineStore.loading) return null
-    if (pipelineStore.list.length === 0) {
+  // 定时查询是否开盘
+  const scheduleTradeStatus = () => {
+    const now = new Date()
+
+    const next = (marketStore.checkTradeSchedule || [])
+      .map(time => {
+        const [hour, minute] = time.split(':').map(Number)
+        const date = new Date()
+        date.setHours(hour)
+        date.setMinutes(minute)
+        date.setSeconds(0)
+        date.setMilliseconds(0)
+
+        if (date <= now) {
+          date.setDate(date.getDate() + 1)
+        }
+
+        return date
+      })
+      .sort((a, b) => a.getTime() - b.getTime())[0]
+
+    const delay = next.getTime() - now.getTime()
+
+    tradeStatusTimerRef.current = setTimeout(async () => {
+      scheduleTradeStatus()
+    }, delay)
+  }
+
+  // 开启定时
+  const startTimelineTimer = () => {
+    const loop = async () => {
+      await marketStore.onGetWatchListTimer((hasAllInTrade: boolean = false) => setHasAllInTrade(hasAllInTrade))
+      // @ts-ignore
+      timerRef.current = setTimeout(loop, 3000)
+    }
+
+    loop()
+  }
+
+  useEffect(() => {
+    scheduleTradeStatus()
+
+    return () => {
+      if (tradeStatusTimerRef.current) {
+        clearTimeout(tradeStatusTimerRef.current)
+      }
+    }
+  }, [])
+
+  useEffect(() => {
+    if (hasAllInTrade) {
+      startTimelineTimer()
+    }
+
+    return () => {
+      clearTimeout(timerRef.current)
+    }
+  }, [hasAllInTrade])
+
+  const getWatchListHtml = () => {
+    if (marketStore.watchList.length === 0) {
       return (
         <div className="wh100 flex-center">
           <NoData />
@@ -113,140 +170,58 @@ const TrayMenu = (): ReactElement => {
 
     return (
       <div className="wh100 overflow-y-auto p-4">
-        {pipelineStore.list.map((item: { [K: string]: any } = {}, index: number) => {
-          const basic = item.basic || {}
-          let buttonDisabled = pipelineStore.onDisabledRunButton(item.status || '')
-          let status =
-            pipelineStore.RUN_STATUS.find(
-              (status: { [K: string]: any } = {}) => status.value.toLowerCase() === (item.status || '').toLowerCase()
-            ) || {}
+        {(marketStore.watchList || []).map((w: Record<string, any> = {}, index: number) => {
+          const rateClassName = getRateClassName(w.basicInfo?.ratio)
+          let rateColor = '#333333'
+          if (rateClassName === 'red') {
+            rateColor = '#f5222d'
+          } else if (rateClassName === 'green') {
+            rateColor = '#00a854'
+          }
           return (
             <div
-              className={`card p-4 border rounded-md text-xs ${index !== pipelineStore.list.length - 1 ? 'mb-4' : ''}`}
-              key={index}
+              className={`p-2 bg-line-hover hover:rounded-md flex-direction-column border-bottom ${index !== marketStore.watchList.length - 1 ? 'mb-2' : ''}`}
+              key={w.fundCode}
             >
-              <p className="card-title font-bold text-base">{basic.name || ''}</p>
-              <div className="card-content mt-2">
-                {!Utils.isBlank(basic.desc || '') && (
-                  <div
-                    dangerouslySetInnerHTML={{ __html: basic.desc || '' }}
-                    className="color-desc flex-align-center over-three-ellipsis"
-                    style={{ whiteSpace: 'pre-line' }}
-                  ></div>
-                )}
-
-                <div className="flex-align-center h-6 flex-jsc-between mt-2 color-desc">
-                  <p>运行状态:</p>
-                  <div>
-                    <Tag className="m-ant-tag" color={status.color || ''}>
-                      {status.label || ''}
-                    </Tag>
+              <div className="flex-align-center flex-jsc-between">
+                <div className="flex-direction-column mr-1">
+                  <p className="font-bold">{w.fundName || ''}</p>
+                  <div className="mt-1 flex-align-center text-xs">
+                    <p className="exchange-tag rounded-md text-xs pt-0.5 pb-0.5 pl-1 pr-1">{w.exchange || ''}</p>
+                    <p className="color-gray ml-1 overflow-ellipsis overflow-hidden whitespace-nowrap">
+                      {w.fundCode || ''}
+                    </p>
                   </div>
                 </div>
 
-                <div className="flex-align-center h-6 flex-jsc-between mt-2 color-desc">
-                  <p>上次运行时间:</p>
-                  <div>{item.lastRunTime || '-'}</div>
+                <div
+                  className="sp w-20 h-10"
+                  style={{
+                    backgroundImage: createSparkline(w.prices || [], rateColor),
+                    backgroundRepeat: 'no-repeat',
+                    backgroundPosition: 'center',
+                    backgroundSize: '100% 100%'
+                  }}
+                />
+              </div>
+
+              <div className="flex-align-center flex-jsc-between mt-1">
+                <p className={`font-bold text-base ${getRateClassName(w.basicInfo?.ratio)}`}>
+                  {w.basicInfo?.price || '0'}
+                </p>
+                <div className="flex-align-center">
+                  <p className={`font-bold ${getRateClassName(w.basicInfo?.increase)} mr-2`}>
+                    {w.basicInfo?.increase || '0'}
+                  </p>
+                  <p className={`font-bold ${getRateClassName(w.basicInfo?.ratio)}`}>{w.basicInfo?.ratio || '0'}%</p>
                 </div>
               </div>
-              <div className="card-footer mt-2 flex-jsc-between">
-                {pipelineStore.getTagHtml(basic.tag || '')}
-
-                <a
-                  className={buttonDisabled ? 'disabled' : ''}
-                  onClick={async () => {
-                    if (buttonDisabled) return
-                    // 获取详情
-                    await pipelineStore.getDetailInfo(item.id || '', item.serverId || '')
-                    await pipelineStore.getHistoryList(item.id || '', item.serverId || '')
-                    if (pipelineStore.historyList.length > 0) {
-                      pipelineStore.onRerun(pipelineStore.historyList[0] || {}, undefined)
-                      await pipelineStore.onRun(true, undefined, false)
-                    } else {
-                      TOAST.show({ message: '未找到运行记录, 请打开`主界面->流水线`运行', type: 4 })
-                    }
-                  }}
-                >
-                  重试
-                </a>
-              </div>
             </div>
           )
         })}
       </div>
     )
   }
-
-  const getApplicationHtml = () => {
-    if (trayStore.loading) return null
-    let applicationList = trayStore.applicationList || []
-    if (applicationList.length === 0) {
-      return (
-        <div className="wh100 flex-center">
-          <NoData />
-        </div>
-      )
-    }
-
-    return (
-      <div className="wh100 overflow-y-auto pl-4 pr-4">
-        {applicationList.map((item: { [K: string]: any } = {}, index: number) => {
-          let hasStart = (item.processIds || []).length > 0
-          const name = !Utils.isBlank(item.realName || '') ? item.realName || '' : item.name || ''
-          return (
-            <div
-              className={`menu-item  w100 flex-align-center h-8 bg-menu-hover cursor-pointer pl-2 pr-2 relative rounded-md ${index !== applicationList.length - 1 ? 'mt-1' : 'mb-3'} ${index === 0 ? '!mt-3' : ''}`}
-              key={index}
-            >
-              <div className="flex-1 flex-align-center">
-                <img className="w-6 h-6 mr-2 select-none" src={item.icon || ''} />
-                <p className="select-none">{name || ''}</p>
-              </div>
-
-              <Button
-                className={`m-ant-button ${hasStart ? '' : 'hidden'}`}
-                type="link"
-                onClick={async () => {
-                  onHideTrayMenu()
-
-                  if (hasStart) {
-                    // 结束进程
-                    await trayStore.onKillApp(item.processIds)
-                    // 更新
-                    trayStore.onUpdateProcessList(item.path || '')
-                    return
-                  }
-
-                  // 使用 openPath 会失去焦点
-                  openPath(item.path || '')
-
-                  // 获取进程ID列表
-                  setTimeout(async () => {
-                    await trayStore.onGetProcessIds(item.name || '', item.path || '')
-                  }, 300)
-                }}
-              >
-                <p className={`${hasStart ? 'red' : ''} select-none`}>{hasStart ? '结束' : '启动'}</p>
-              </Button>
-            </div>
-          )
-        })}
-      </div>
-    )
-  }
-
-  const tabs = [
-    {
-      key: '1',
-      label: '流水线',
-      children: getPipelineHtml()
-    },
-    {
-      key: '2',
-      label: '应用程序',
-      children: getApplicationHtml()
-    }
-  ]
 
   // 设置
   const onSetSetting = async () => {
@@ -263,28 +238,12 @@ const TrayMenu = (): ReactElement => {
       <Page
         className="wh100 flex-direction-column background color relative tray-menu-page"
         contentClassName="!p-0"
-        loading={trayStore.loading || pipelineStore.loading}
+        loading={trayStore.loading}
         title={{
           show: false
         }}
       >
-        <div className="wh100 pb-12">
-          <Tabs
-            className="m-ant-tabs wh100"
-            items={tabs}
-            activeKey={activeTabIndex}
-            onChange={async tabIndex => {
-              if (tabIndex === activeTabIndex) return
-              setActiveTabIndex(tabIndex)
-              if (tabIndex === '1') {
-                await pipelineStore.getList()
-              } else {
-                await trayStore.getApplicationList()
-              }
-            }}
-          />
-        </div>
-
+        {getWatchListHtml()}
         <div className="h-12 w100 flex-align-center fixed bottom-0 background pl-2 pr-2">
           <div
             className="svg-box w-8 h-8 p-2 bg-menu-hover cursor-pointer rounded-md"
