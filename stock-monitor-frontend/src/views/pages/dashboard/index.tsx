@@ -44,9 +44,6 @@ const Dashboard = (): ReactElement => {
                       const market = w.market || '' // 市场: ab | hk | us | sg
                       const exchange = w.exchange || ''
                       homeStore.selectedMenu = `${RouterUrls.MARKET.KEY || ''}-${homeStore.MENU_LIST[2].key || ''}`
-                      console.log(
-                        `${RouterUrls.MARKET.URL}${RouterUrls.MARKET.DETAIL.URL}/${w.fundCode || ''}?code=${w.fundCode || ''}&type=${type || ''}&market=${market || ''}&exchange=${exchange || ''}`
-                      )
                       navigate(
                         `${RouterUrls.MARKET.URL}${RouterUrls.MARKET.DETAIL.URL}/${w.fundCode || ''}?code=${w.fundCode || ''}&type=${type || ''}&market=${market || ''}&exchange=${exchange || ''}`
                       )

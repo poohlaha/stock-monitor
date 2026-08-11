@@ -4,11 +4,7 @@
 use crate::market::Args;
 use crate::prepare::HttpResponse;
 use crate::utils::Utils;
-use crate::{BD_HTTP_URL_PREFIX, LOGGER_PREFIX};
-use colored::Colorize;
-use log::info;
-use serde::{Deserialize, Serialize};
-use serde_json::{to_value, Error, Value};
+use crate::{BD_HTTP_URL_PREFIX};
 
 pub struct Timeline {}
 
@@ -16,7 +12,7 @@ impl Timeline {
     /**
       获取分时图
       例如: https://finance.pae.baidu.com/vapi/v1/getquotation?srcid=5353&pointType=string&group=quotation_minute_ab&query=588710&code=588710&market_type=ab&newFormat=1&name=%E5%8D%8E%E6%B3%B0%E6%9F%8F%E7%91%9E%E4%B8%8A%E8%AF%81%E7%A7%91%E5%88%9B%E6%9D%BF%E5%8D%8A%E5%AF%BC%E4%BD%93%E6%9D%90%E6%96%99%E8%AE%BE%E5%A4%87%E4%B8%BB%E9%A2%98ETF&is_kc=1&finClientType=pc&financeType=etf&finClientType=pc
-    **/
+    */
     pub async fn get_data(args: &Args) -> Result<HttpResponse, String> {
         if args.market.is_empty() {
             return Ok(crate::prepare::get_error_response("`market` is empty !"));

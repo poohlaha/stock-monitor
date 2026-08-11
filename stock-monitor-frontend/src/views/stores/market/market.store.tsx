@@ -522,6 +522,10 @@ class MarketStore extends BaseStore {
    */
   @action
   async getTimelineData(code: string = '', market: string = '', type: string = '') {
+    if (Utils.isBlank(code || '')) {
+      return
+    }
+
     try {
       let result: { [K: string]: any } =
         (await invoke('get_time_data', {
@@ -539,7 +543,10 @@ class MarketStore extends BaseStore {
       this.basicInfo = {
         ...(data.basicinfos || {}),
         ...(data.cur || {}),
-        ...(data.update || {})
+        ...(data.update || {}),
+        financeReport: {
+          ...(data.financeReport || '')
+        }
       }
 
       // 盘口信息
@@ -589,6 +596,10 @@ class MarketStore extends BaseStore {
     queryType: string = '',
     ktype: string = ''
   ) {
+    if (Utils.isBlank(code || '')) {
+      return
+    }
+
     try {
       let result: { [K: string]: any } =
         (await invoke('get_time_data', {

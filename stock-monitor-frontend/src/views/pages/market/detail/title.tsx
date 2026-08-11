@@ -7,6 +7,7 @@ import React, { ReactElement } from 'react'
 import { observer } from 'mobx-react-lite'
 import Utils from '@utils/utils'
 import { getRateClassName } from '@pages/utils'
+import NoticePng from '@assets/images/notice.png'
 
 interface IMarketDetailTitleProps {
   name: string
@@ -20,15 +21,33 @@ interface IMarketDetailTitleProps {
 
 const MarketDetailTitle = (props: IMarketDetailTitleProps): ReactElement => {
   const render = () => {
+    console.log('basicInfo: ', props.basicInfo || {})
+    if (Utils.isObjectNull(props.basicInfo || {})) {
+      return <div></div>
+    }
+
     return (
       <div className="fund-info mt-4">
         <div className="flex-direction-column pl-4 pr-4 rounded-md">
           {/* 标题 */}
           <div className="flex-direction-column">
-            <p className="text-3xl font-bold">{props.name || ''}</p>
+            <div className="flex-align-center">
+              <p className="text-3xl font-bold">{props.name || ''}</p>
+
+              {/* 信息披露 */}
+              {
+                !Utils.isObjectNull(props.basicInfo?.financeReport || {}) && (
+                      <div className="flex-align-center p-2 rounded-md notice-tag-theme ml-2 text-xs select-none">
+                        <img src={NoticePng} className="w-4 h-4 mr-1"/>
+                        <p>{(props.basicInfo?.financeReport || {}).text || ''}</p>
+                      </div>
+                  )
+              }
+
+            </div>
             <div className="flex-align-center mt-1">
               <p className="bg-purple-500 rounded-md text-xs text-white pt-0.5 pb-0.5 pl-1 pr-1">
-                {props.exchange || ''}
+                {Utils.isBlank(props.exchange || '') ? props.basicInfo?.exchange || '' : props.exchange || ''}
               </p>
               <p className="ml-1 color-gray font-bold">{props.code || ''}</p>
               {/* tags */}
