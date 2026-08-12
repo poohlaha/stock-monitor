@@ -61,3 +61,11 @@ export function createSparkline(data: number[] = [], color: string = '') {
     `
   return `url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}")`
 }
+
+export function getColor(value: number | string) {
+  if (typeof value === 'string') {
+    value = (value || '0').replace('%', '').trim()
+    value = Number(value)
+  }
+  return value > 0 ? '#f5222d' : value < 0 ? '#52c41a' : '#999'
+}

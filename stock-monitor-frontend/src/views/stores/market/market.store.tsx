@@ -35,6 +35,7 @@ class MarketStore extends BaseStore {
   @observable performanceGraph: Array<Record<string, any>> = []
   @observable networthGraph: Array<Record<string, any>> = []
   @observable industryFundFlow: Record<string, any> = {}
+  @observable industryOtherFundFlow: Record<string, any> = {}
 
   readonly checkTradeSchedule: Array<string> = ['09:30', '11:30', '13:11', '15:00']
 
@@ -992,7 +993,7 @@ class MarketStore extends BaseStore {
    * 查询行业资金流向
    */
 
-  async onGetIndustryFundFlow(code: string = '', market: string = '') {
+  async onGetIndustryFundFlow(code: string = '', market: string = '', flowType: string = '', type: string = '1') {
     try {
       let result: { [K: string]: any } =
         (await invoke('query_industry_fund_flow', {
@@ -1002,12 +1003,17 @@ class MarketStore extends BaseStore {
             type: 'stock',
             queryType: '',
             ktype: ''
-          }
+          },
+          flowType
         })) || {}
       const data = this.handleResult(result) || {}
-      this.industryFundFlow = data.content || {}
+      if (type !== '1') {
+        this.industryOtherFundFlow = data.content || {}
+      } else {
+        this.industryFundFlow = data.content || {}
+      }
 
-      console.log('industry fund flow: ', this.industryFundFlow)
+      console.log('industry fund flow: ', data.content || {})
       return result || {}
     } catch (e: any) {
       this.loading = false

@@ -3,20 +3,23 @@
  * @date 2023-08-28
  * @author poohlaha
  */
-import React, { ReactElement, useEffect, useRef } from 'react'
+import React, { ReactElement, useEffect, useRef, useState } from 'react'
 import { observer } from 'mobx-react-lite'
 import { Popover, Tabs } from 'antd'
 import { useStore } from '@views/stores'
 import Utils from '@utils/utils'
-import { getRateClassName } from '@pages/utils'
+import { getColor, getRateClassName } from '@pages/utils'
 import * as echarts from 'echarts/core'
 
 interface IMarketDetailStockProps {
   resetSize: Function
+  code: string
+  market: string
 }
 
 const MarketDetailStock = (props: IMarketDetailStockProps): ReactElement => {
   const { marketStore } = useStore()
+  const [zjlxActiveTabIndex, setZjlxActiveTabIndex] = useState('1')
   // const navigate = useNavigate()
 
   const getArrowSvg = () => {
@@ -451,27 +454,39 @@ const MarketDetailStock = (props: IMarketDetailStockProps): ReactElement => {
   }
 
   const zjlxMinuteLineChartRef = useRef(null)
-
   const zjlxMinutChartRef = useRef<echarts.ECharts | null>(null)
 
+  const zjlxOtherLineChartRef = useRef(null)
+  const zjlxOtherChartRef = useRef<echarts.ECharts | null>(null)
+
   useEffect(() => {
-    if (!zjlxMinuteLineChartRef.current) {
+    if (!zjlxMinuteLineChartRef.current && !zjlxOtherLineChartRef.current) {
       return
     }
 
-    const zjlxLineLineChart = onGetZjlxMinuteLineChart()
+    const zjlxMinuteLineLineChart = onGetZjlxMinuteLineChart()
+
+    const zjlxOtherLineLineChart = onGetZjlxOtherLineChart()
 
     // @ts-ignore
-    zjlxMinutChartRef.current = zjlxLineLineChart
+    zjlxMinutChartRef.current = zjlxMinuteLineLineChart
+
+    // @ts-ignore
+    zjlxOtherChartRef.current = zjlxOtherLineLineChart
 
     return () => {
-      zjlxLineLineChart?.dispose()
+      zjlxMinuteLineLineChart?.dispose()
+      zjlxOtherLineLineChart?.dispose()
     }
-  }, [(marketStore.industryFundFlow || {}).fundFlowMinute || {}])
+  }, [
+    (marketStore.industryFundFlow || {}).fundFlowMinute || {},
+    (marketStore.industryOtherFundFlow || {}).fundFlowDay || {}
+  ])
 
   useEffect(() => {
     const handleResize = () => {
       zjlxMinutChartRef.current?.resize()
+      zjlxOtherChartRef.current?.resize()
       props.resetSize?.()
     }
 
@@ -482,6 +497,7 @@ const MarketDetailStock = (props: IMarketDetailStockProps): ReactElement => {
     }
   }, [])
 
+  // 资金流向-实时
   const onGetZjlxMinuteLineChart = () => {
     const result = (marketStore.industryFundFlow || {}).fundFlowMinute || {}
     if (!zjlxMinuteLineChartRef.current || Utils.isObjectNull(result || {})) {
@@ -540,6 +556,13 @@ const MarketDetailStock = (props: IMarketDetailStockProps): ReactElement => {
         data: legendData,
         selected: defaultSelected
       },
+      grid: {
+        left: 30,
+        right: 40,
+        top: 20,
+        bottom: 10,
+        containLabel: true
+      },
       tooltip: {
         trigger: 'axis',
         formatter(params: any[]) {
@@ -548,7 +571,7 @@ const MarketDetailStock = (props: IMarketDetailStockProps): ReactElement => {
           const values: Array<string> = Object.values(row || {})
           const value = (values[values.length - 1] || '0').replace('%', '')
           const ratio = Number(value)
-          const ratioColor = ratio > 0 ? '#f5222d' : ratio < 0 ? '#52c41a' : '#999'
+          const ratioColor = getColor(ratio)
 
           const param = params.find((p: Record<string, any> = {}) => p.seriesName === '股价') || {}
           const hasGJ = !Utils.isObjectNull(param || {})
@@ -559,8 +582,7 @@ const MarketDetailStock = (props: IMarketDetailStockProps): ReactElement => {
              `
           params.forEach(item => {
             const value = Number(item.value)
-
-            const color = value > 0 ? '#f5222d' : value < 0 ? '#52c41a' : '#999'
+            const color = getColor(value)
 
             html += `
                   <div style="
@@ -659,23 +681,208 @@ const MarketDetailStock = (props: IMarketDetailStockProps): ReactElement => {
     return chart
   }
 
+  // 资金流向-日|周|月
+  const onGetZjlxOtherLineChart = () => {
+    let name = 'fundFlowDay'
+    if (zjlxActiveTabIndex === '3') {
+      name = 'fundFlowWeek'
+    } else if (zjlxActiveTabIndex === '4') {
+      name = 'fundFlowMonth'
+    }
+
+    const result = ((marketStore.industryOtherFundFlow || {})[name] || {}).result || {}
+    if (!zjlxOtherLineChartRef.current || Utils.isObjectNull(result || {})) {
+      return
+    }
+
+    const chart = echarts.init(zjlxOtherLineChartRef.current)
+    const main = result.main || [] // 主力
+    const retail = result.retail || [] // 散户
+
+    const xAxisData = main.map((m: Record<string, any> = {}) => m.date || '') || []
+    const series = []
+
+    const mainData = []
+    const retailData = []
+    for (let m of main) {
+      mainData.push(Number(m.netTurnover || '0'))
+    }
+
+    for (let r of retail) {
+      retailData.push(Number(r.netTurnover || '0'))
+    }
+
+    const labels = ['主力', '散户']
+
+    series.push({
+      name: labels[0] || '',
+      type: 'bar',
+      barGap: 0,
+      barWidth: 15,
+      data: mainData,
+      itemStyle: {
+        color(params: any) {
+          return getColor(params.value || '0')
+        }
+      }
+    })
+
+    series.push({
+      name: labels[1] || '',
+      type: 'bar',
+      barGap: 0,
+      barWidth: 15,
+      data: retailData,
+      itemStyle: {
+        color(params: any) {
+          return getColor(params.value || '0')
+        }
+      }
+    })
+
+    let option = {
+      tooltip: {
+        trigger: 'axis',
+        formatter(params: any[]) {
+          let html = `${params[0].axisValue}<br/>`
+
+          params.forEach(item => {
+            const value = Number(item.value || 0)
+            const color = getColor(value)
+
+            html += `
+              <div style="display:flex;justify-content:space-between;min-width:180px;">
+                <span>
+                  ${item.marker}
+                  ${item.seriesName}
+                </span>
+                <span style="color:${color};text-align:right;">
+                  ${value}
+                </span>
+              </div>
+            `
+          })
+
+          return html
+        }
+      },
+      legend: {
+        data: labels
+      },
+      grid: {
+        left: 30,
+        right: 40,
+        top: 20,
+        bottom: 10,
+        containLabel: true
+      },
+      xAxis: {
+        type: 'category',
+        data: xAxisData,
+        boundaryGap: false,
+        axisLine: {
+          show: false
+        },
+        axisTick: {
+          show: false
+        }
+      },
+      yAxis: {
+        type: 'value',
+        axisLine: {
+          show: false
+        },
+        axisTick: {
+          show: false
+        },
+        axisLabel: {
+          show: false
+        },
+        splitLine: {
+          show: false
+        }
+      },
+      series
+    }
+
+    console.log('option: ', option)
+    chart.setOption(option)
+    return chart
+  }
+
   // 资金流向
   const getZJLXNode = () => {
     return (
-      <div
-        className="flex-1 min-w-0 aspect-square h-full border-right performance-line"
-        style={{
-          height: 500
-        }}
-        ref={zjlxMinuteLineChartRef}
-      ></div>
+      <div className="flex-direction-column flex-1">
+        <p className="font-bold text-lg">资金流向</p>
+        <Tabs
+          activeKey={zjlxActiveTabIndex}
+          items={[
+            {
+              label: '实时',
+              key: '1'
+            },
+            {
+              label: '日',
+              key: '2'
+            },
+            {
+              label: '周',
+              key: '3'
+            },
+            {
+              label: '月',
+              key: '4'
+            }
+          ]}
+          onChange={async tabIndex => {
+            if (tabIndex === zjlxActiveTabIndex) return
+            setZjlxActiveTabIndex(tabIndex)
+            let flowType = ''
+            if (tabIndex === '2') {
+              flowType = 'day'
+            } else if (tabIndex === '3') {
+              flowType = 'week'
+            } else if (tabIndex === '4') {
+              flowType = 'month'
+            }
+
+            await marketStore.onGetIndustryFundFlow(
+              props.code || '',
+              props.market || '',
+              flowType || '',
+              tabIndex || '1'
+            )
+          }}
+        />
+
+        {zjlxActiveTabIndex === '1' && (
+          <div
+            className="flex-1 h100 min-w-0 aspect-square border-right performance-line"
+            style={{
+              height: 500
+            }}
+            ref={zjlxMinuteLineChartRef}
+          />
+        )}
+
+        {(zjlxActiveTabIndex === '2' || zjlxActiveTabIndex === '3' || zjlxActiveTabIndex === '4') && (
+          <div
+            className="flex-1 min-w-0 aspect-square h-full border-right performance-line"
+            style={{
+              height: 500
+            }}
+            ref={zjlxOtherLineChartRef}
+          />
+        )}
+      </div>
     )
   }
 
   const render = () => {
     return (
       <div className="mt-4 flex-direction-column">
-        <div className="flex flex-col lg:flex-row gap-5">
+        <div className="flex flex-col lg:flex-row gap-5 mt-4">
           {/* 资金分布 */}
           {getZJFBNode()}
 
@@ -683,12 +890,12 @@ const MarketDetailStock = (props: IMarketDetailStockProps): ReactElement => {
           {getTodayZLLXNode()}
         </div>
 
-        <div className="flex flex-col lg:flex-row gap-5">
+        <div className="flex flex-col lg:flex-row gap-5 mt-8">
           {/* 资金流向 */}
           {getZJLXNode()}
 
           {/* 所属行业资金流向 */}
-          <div className="mt-8">
+          <div className="flex-1">
             <p className="font-bold text-lg">所属行业资金流向</p>
             <div className="mt-1">
               <Tabs className="m-ant-tabs" items={getIndustryFundFlowTabItems()} />

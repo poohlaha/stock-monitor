@@ -254,7 +254,7 @@ const MarketDetail = (): ReactElement => {
 
   useEffect(() => {
     if (marketStore.isTrade && type !== 'fund') {
-      // startTimelineTimer(code, market, type)
+      startTimelineTimer(code, market, type)
     }
 
     return () => {
@@ -399,7 +399,7 @@ const MarketDetail = (): ReactElement => {
             )}
 
             {/* 股票信息 */}
-            {type === 'stock' && <MarketDetailStock />}
+            {type === 'stock' && <MarketDetailStock resetSize={resetSize} code={code} market={market} />}
           </>
         )}
 
