@@ -111,8 +111,8 @@ pub async fn query_company_profile(args: Args) -> Result<HttpResponse, String> {
 
 /// 公司简况
 #[tauri::command]
-pub async fn query_executive_changes(args: Args, company_code: &str, inner_code: &str, group: &str) -> Result<HttpResponse, String> {
-    Market::query_executive_changes(&args, company_code, inner_code, group).await
+pub async fn query_executive_changes(args: Args, company_code: &str, inner_code: &str, group: &str, hold_type: &str) -> Result<HttpResponse, String> {
+    Market::query_executive_changes(&args, company_code, inner_code, group, hold_type).await
 }
 
 /// 公司简况

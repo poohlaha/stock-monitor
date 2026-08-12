@@ -8,7 +8,7 @@ import { observer } from 'mobx-react-lite'
 import { Popover, Tabs } from 'antd'
 import { useStore } from '@views/stores'
 import Utils from '@utils/utils'
-import {formatTimestamp, getColor, getRateClassName, isPositive} from '@pages/utils'
+import { formatTimestamp, getColor, getRateClassName, isPositive } from '@pages/utils'
 import * as echarts from 'echarts/core'
 import { useNavigate } from 'react-router-dom'
 import RouterUrls from '@route/router.url.toml'
@@ -25,6 +25,7 @@ const MarketDetailStock = (props: IMarketDetailStockProps): ReactElement => {
   const navigate = useNavigate()
 
   const [zjlxActiveTabIndex, setZjlxActiveTabIndex] = useState('1')
+  const [ccDetalActiveTabIndex, setCcDetailActiveTabIndex] = useState('1')
   // const navigate = useNavigate()
 
   const getArrowSvg = () => {
@@ -1223,7 +1224,7 @@ const MarketDetailStock = (props: IMarketDetailStockProps): ReactElement => {
 
   const getNews = () => {
     return (
-      <div className="news-list flex-direction-column flex-1 border rounded-lg p-4">
+      <div className="news-list flex-direction-column flex-1 border rounded-lg p-4 mt-8">
         <p className="font-bold text-xl">相关新闻</p>
         <div className="flex-direction-column mt-4">
           {(marketStore.newsList || []).length === 0 && (
@@ -1328,6 +1329,88 @@ const MarketDetailStock = (props: IMarketDetailStockProps): ReactElement => {
     )
   }
 
+  // 持仓明细
+  const getPositionDetails = () => {
+    const holdShareInfo = marketStore.holdShareInfo || {}
+    const tabs = holdShareInfo.tabs || []
+
+    const getItemChildren = (data: Array<Record<string, any>> = []) => {
+      return (
+        <div className="flex-direction-column">
+          <div className="flex-direction-column color-gray mt-2">
+            <div className="flex-align-center">
+              <p className="flex-1 text-l pl-2">股东名称</p>
+              <p className="flex-1 text-r">持股数量</p>
+              <p className="flex-1 text-r pr-2">变动比例</p>
+              <p className="flex-1 text-r pr-2">较上期变动</p>
+            </div>
+          </div>
+
+          <div className="flex-direction-column mt-2 overflow-y-auto no-scrollbar h-[300px]">
+            {(data || []).map((d: Record<string, any> = {}, index: number) => {
+              let className = ''
+              if ((d.holdChange || '').startsWith('增')) {
+                className = 'red'
+              } else if ((d.holdChange || '').startsWith('减')) {
+                className = 'green'
+              }
+              return (
+                <div
+                  className="flex-align-center border-bottom bg-line-hover flex-align-center min-h-12 hover:rounded-md p-2"
+                  key={index}
+                >
+                  <p className="flex-1 text-l pl-2">{d.holder || ''}</p>
+                  <p className="flex-1 text-r pl-2">{d.holdNum || ''}</p>
+                  <p className="flex-1 text-r pl-2">{d.holdPer || ''}</p>
+                  <p className={`flex-1 text-r pl-2 ${className || ''}`}>{d.holdChange || ''}</p>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )
+    }
+    const getItems = () => {
+      let arr = []
+      for (let tab of tabs) {
+        arr.push({
+          label: tab.name || '',
+          key: tab.params?.hold_type || '',
+          children: getItemChildren(holdShareInfo.content?.body || [])
+        })
+      }
+
+      return arr
+    }
+
+    return (
+      <div className="flex-direction-column flex-1 border rounded-lg p-4 mt-8">
+        <p className="font-bold text-xl">{holdShareInfo.title || ''}</p>
+
+        <Tabs
+          items={getItems()}
+          onChange={async tabIndex => {
+            if (tabIndex === ccDetalActiveTabIndex) return
+            setCcDetailActiveTabIndex(tabIndex)
+            const basicInfo = (marketStore.companyProfile.newCompany || {}).basicInfo || {}
+            await marketStore.onGetExecutiveChanges(
+              props.code || '',
+              props.market || '',
+              basicInfo.companyCode || '',
+              basicInfo.innerCode || '',
+              'holder_equity_detail',
+              tabIndex,
+              (d: Record<string, any> = {}) => {
+                marketStore.holdShareInfo = d || {}
+                console.log('holdShare info: ', marketStore.holdShareInfo)
+              }
+            )
+          }}
+        />
+      </div>
+    )
+  }
+
   const render = () => {
     return (
       <div className="mt-4 flex-direction-column">
@@ -1368,6 +1451,9 @@ const MarketDetailStock = (props: IMarketDetailStockProps): ReactElement => {
 
         {/* 股本股东 */}
         {getShareholders()}
+
+        {/* 持仓明细 */}
+        {getPositionDetails()}
 
         {/* 相关新闻 */}
         {getNews()}

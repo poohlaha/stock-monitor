@@ -179,12 +179,18 @@ impl Market {
       例: https://finance.pae.baidu.com/selfselect/openapi?srcid=5539&code=300502&company_code=177279&inner_code=36563&group=leader_info&listedSector=6&finClientType=pc
       高管变动: leader_info
       股本股通: holder_equity
+      持仓明细: holder_equity_detail
     */
-    pub async fn query_executive_changes(args: &Args, company_code: &str, inner_code: &str, group: &str) -> Result<HttpResponse, String> {
-        let url = format!(
+    pub async fn query_executive_changes(args: &Args, company_code: &str, inner_code: &str, group: &str, hold_type: &str) -> Result<HttpResponse, String> {
+        let mut url = format!(
             "{}/selfselect/openapi?srcid=5539&code={}&company_code={}&inner_code={}&group={}&listedSector=6&finClientType=pc",
             BD_HTTP_URL_PREFIX, args.code, company_code, inner_code, group
         );
+
+        if group == "holder_equity_detail" {
+            url = format!("{}&hold_type={}", url, hold_type)
+        }
+
         Utils::get_time_response(&url).await
     }
 

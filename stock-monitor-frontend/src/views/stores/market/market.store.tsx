@@ -40,6 +40,7 @@ class MarketStore extends BaseStore {
   @observable companyProfile: Record<string, any> = {}
   @observable executiveChanges: Record<string, any> = {}
   @observable shareholders: Record<string, any> = {} // 股本股东
+  @observable holdShareInfo: Record<string, any> = {} // 持仓明细
 
   readonly checkTradeSchedule: Array<string> = ['09:30', '11:30', '13:11', '15:00']
 
@@ -1084,6 +1085,7 @@ class MarketStore extends BaseStore {
             basicInfo.companyCode || '',
             basicInfo.innerCode || '',
             'leader_info',
+            '',
             (d: Record<string, any> = {}) => {
               this.executiveChanges = d || {}
               console.log('executive changes: ', this.executiveChanges)
@@ -1101,9 +1103,12 @@ class MarketStore extends BaseStore {
               basicInfo.companyCode || '',
               basicInfo.innerCode || '',
               'holder_equity',
+              '',
               (d: Record<string, any> = {}) => {
                 this.shareholders = d || {}
                 console.log('shareholders: ', this.shareholders)
+                this.holdShareInfo = d.holdShareInfo || {}
+                console.log('holdShare info: ', this.holdShareInfo)
               }
             )
           }, 500)
@@ -1125,6 +1130,7 @@ class MarketStore extends BaseStore {
     companyCode: string = '',
     innerCode: string = '',
     group: string = '',
+    holdType: String = '',
     callback?: Function
   ) {
     try {
@@ -1139,7 +1145,8 @@ class MarketStore extends BaseStore {
           },
           companyCode,
           innerCode,
-          group
+          group,
+          holdType
         })) || {}
       const data = this.handleResult(result) || {}
 
