@@ -48,14 +48,21 @@ class HomeStore extends BaseStore {
           ></path>
         </svg>
       ),
-      component: lazy(() => import(/* webpackChunkName:'dashboard' */ '@views/pages/market')),
+      component: lazy(() => import(/* webpackChunkName:'market' */ '@views/pages/market')),
       children: [
         {
           key: `${RouterUrls.MARKET.KEY}-${RouterUrls.MARKET.DETAIL.KEY}`,
           label: RouterUrls.MARKET.DETAIL.NAME,
           url: RouterUrls.MARKET.DETAIL.URL,
           icon: null,
-          component: lazy(() => import(/* webpackChunkName:'timeline' */ '@pages/market/detail/index'))
+          component: lazy(() => import(/* webpackChunkName:'marketDetail' */ '@pages/market/detail/index'))
+        },
+        {
+          key: `${RouterUrls.MARKET.KEY}-${RouterUrls.MARKET.NEWS.KEY}`,
+          label: RouterUrls.MARKET.NEWS.NAME,
+          url: RouterUrls.MARKET.NEWS.URL,
+          icon: null,
+          component: lazy(() => import(/* webpackChunkName:'marketDetailNews' */ '@pages/market/detail/news'))
         }
       ]
     },

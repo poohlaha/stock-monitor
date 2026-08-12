@@ -92,7 +92,7 @@ const MarketDetail = (): ReactElement => {
     if (Utils.isBlank(t || '')) {
       t = type
     }
-    let chart = document.querySelector('.content-box')
+    let chart = document.querySelector('.chart')
     if (!chart) return
 
     const rect = chart.getBoundingClientRect()
@@ -196,6 +196,12 @@ const MarketDetail = (): ReactElement => {
     }
 
     await marketStore.batchSend(queue)
+
+    if (t === 'stock') {
+      setTimeout(() => {
+        marketStore.onGetStockNews(c, m)
+      }, 1000)
+    }
   }
 
   // 定时查询是否开盘

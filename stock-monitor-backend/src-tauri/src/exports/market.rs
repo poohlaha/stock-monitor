@@ -90,3 +90,9 @@ pub async fn query_hot_indicators(name: &str) -> Result<HttpResponse, String> {
 pub async fn query_industry_fund_flow(args: Args, flow_type: &str) -> Result<HttpResponse, String> {
     Market::query_industry_fund_flow(&args, flow_type).await
 }
+
+/// 股票相关新闻
+#[tauri::command]
+pub async fn query_news(args: Args) -> Result<HttpResponse, String> {
+    Market::query_news(&args).await
+}

@@ -55,6 +55,11 @@ NAME = '市场详情'
 URL = '/marketDetail'
 DESCRIPTION = '市场详情'
 
+[MARKET.NEWS]
+KEY = 'marketNews'
+NAME = '市场新闻'
+URL = '/marketNews'
+DESCRIPTION = '市场新闻'
 
 
 

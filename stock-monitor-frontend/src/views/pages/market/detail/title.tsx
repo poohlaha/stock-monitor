@@ -21,7 +21,6 @@ interface IMarketDetailTitleProps {
 
 const MarketDetailTitle = (props: IMarketDetailTitleProps): ReactElement => {
   const render = () => {
-    console.log('basicInfo: ', props.basicInfo || {})
     if (Utils.isObjectNull(props.basicInfo || {})) {
       return <div></div>
     }

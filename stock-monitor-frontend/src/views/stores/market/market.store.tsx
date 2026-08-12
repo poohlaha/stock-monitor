@@ -36,6 +36,7 @@ class MarketStore extends BaseStore {
   @observable networthGraph: Array<Record<string, any>> = []
   @observable industryFundFlow: Record<string, any> = {}
   @observable industryOtherFundFlow: Record<string, any> = {}
+  @observable newsList: Array<Record<string, any>> = []
 
   readonly checkTradeSchedule: Array<string> = ['09:30', '11:30', '13:11', '15:00']
 
@@ -1014,6 +1015,34 @@ class MarketStore extends BaseStore {
       }
 
       console.log('industry fund flow: ', data.content || {})
+      return result || {}
+    } catch (e: any) {
+      this.loading = false
+      throw new Error(e)
+    }
+  }
+
+  // 查询股票新闻
+  @action
+  async onGetStockNews(code: string = '', market: string = '') {
+    try {
+      let result: { [K: string]: any } =
+        (await invoke('query_news', {
+          args: {
+            code,
+            market,
+            type: 'stock',
+            queryType: '',
+            ktype: ''
+          }
+        })) || {}
+      const data = this.handleResult(result) || []
+      if (data.length === 0) {
+        return
+      }
+
+      this.newsList = (((data[0] || {}).TplData || {}).aiSentimentXcxListInfo || {}).sentimentListInfo || []
+      console.log('stock news : ', this.newsList)
       return result || {}
     } catch (e: any) {
       this.loading = false

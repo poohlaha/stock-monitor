@@ -24,7 +24,7 @@ use crate::system::tray::Tray;
 use crate::utils::baidu::{BaiduToken, BAIDU_REFRESHING, BAIDU_TOKEN, BAIDU_TOKEN_NOTIFY};
 use exports::market::{
     get_time_data, query_brief, query_economic_indicators, query_fund_graph, query_hot_indicators, query_income, query_industrial_chain, query_industry_fund_flow, query_market_status, query_open_data, query_other_market_center,
-    query_position_distribution, query_worldwide, query_worldwide_market_center,
+    query_position_distribution, query_worldwide, query_worldwide_market_center, query_news
 };
 use exports::my::{add_to_my_fund_watchlist, find_by_fund_code, find_by_fund_codes, query_watchlist};
 use exports::search::search;
@@ -190,7 +190,8 @@ async fn main() {
             query_hot_indicators,
             query_watchlist,
             query_fund_graph,
-            query_industry_fund_flow
+            query_industry_fund_flow,
+            query_news
         ])
         .build(tauri::generate_context!())
         .expect("error while running tauri application");

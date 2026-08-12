@@ -8,8 +8,10 @@ import { observer } from 'mobx-react-lite'
 import { Popover, Tabs } from 'antd'
 import { useStore } from '@views/stores'
 import Utils from '@utils/utils'
-import { getColor, getRateClassName } from '@pages/utils'
+import { formatTimestamp, getColor, getRateClassName } from '@pages/utils'
 import * as echarts from 'echarts/core'
+import { useNavigate } from 'react-router-dom'
+import RouterUrls from '@route/router.url.toml'
 
 interface IMarketDetailStockProps {
   resetSize: Function
@@ -19,6 +21,9 @@ interface IMarketDetailStockProps {
 
 const MarketDetailStock = (props: IMarketDetailStockProps): ReactElement => {
   const { marketStore } = useStore()
+
+  const navigate = useNavigate()
+
   const [zjlxActiveTabIndex, setZjlxActiveTabIndex] = useState('1')
   // const navigate = useNavigate()
 
@@ -265,7 +270,7 @@ const MarketDetailStock = (props: IMarketDetailStockProps): ReactElement => {
     ]
 
     return (
-      <div className="flex-direction-column flex-1">
+      <div className="flex-direction-column flex-1 border rounded-lg p-4">
         <div className="flex-align-center flex-jsc-between">
           <div className="flex-align-center pr-2">
             <p className="font-bold text-lg mr-1">资金分布</p>
@@ -424,7 +429,7 @@ const MarketDetailStock = (props: IMarketDetailStockProps): ReactElement => {
     const result = ((marketStore.industryFundFlow || {}).fundFlowSpread || {}).result || {}
     const todayMainFlow = result.todayMainFlow || {}
     return (
-      <div className="flex-direction-column flex-1">
+      <div className="flex-direction-column flex-1  border rounded-lg p-4">
         <div className="flex-align-center pr-2 flex-jsc-between">
           <p className="font-bold text-lg mr-1">今日主力流向</p>
           {!Utils.isObjectNull(todayMainFlow || {}) && <p className="color-gray">单位：亿</p>}
@@ -813,7 +818,7 @@ const MarketDetailStock = (props: IMarketDetailStockProps): ReactElement => {
   // 资金流向
   const getZJLXNode = () => {
     return (
-      <div className="flex-direction-column flex-1">
+      <div className="flex-direction-column flex-1 border rounded-lg p-4">
         <p className="font-bold text-lg">资金流向</p>
         <Tabs
           activeKey={zjlxActiveTabIndex}
@@ -895,11 +900,52 @@ const MarketDetailStock = (props: IMarketDetailStockProps): ReactElement => {
           {getZJLXNode()}
 
           {/* 所属行业资金流向 */}
-          <div className="flex-1">
+          <div className="flex-1 border rounded-lg p-4">
             <p className="font-bold text-lg">所属行业资金流向</p>
             <div className="mt-1">
               <Tabs className="m-ant-tabs" items={getIndustryFundFlowTabItems()} />
             </div>
+          </div>
+        </div>
+
+        <div className="flex flex-col lg:flex-row gap-5 mt-8"></div>
+        {/* 相关新闻 */}
+        <div className="news-list flex-direction-column flex-1 border rounded-lg p-4">
+          <p className="font-bold text-lg">相关新闻</p>
+          <div className="flex-direction-column mt-4">
+            {(marketStore.newsList || []).length === 0 && (
+              <div className="wh100 flex-center min-h-[300px] h-[300px]">
+                <p className="color-gray">暂无数据</p>
+              </div>
+            )}
+
+            {(marketStore.newsList || []).length > 0 &&
+              marketStore.newsList.map((l: Record<string, any> = {}, index) => {
+                return (
+                  <div
+                    className={`flex-direction-column bg-line-hover cursor-pointer p-2 ${index !== marketStore.newsList.length - 1 ? 'mb-4' : ''}`}
+                    key={index}
+                  >
+                    <div className="color-gray flex-align-center">
+                      <p>{l.provider || ''}</p>
+                      <p className="ml-2">{formatTimestamp(Number(l.publishTime || '0'))}</p>
+                    </div>
+                    <div className="mt-1">
+                      <p
+                        className="font-bold text-base"
+                        onClick={() => {
+                          navigate(
+                            `${RouterUrls.MARKET.URL}${RouterUrls.MARKET.NEWS.URL}?url=${encodeURIComponent(l.originUrl || '')}`
+                          )
+                        }}
+                      >
+                        {l.title || ''}
+                      </p>
+                      <p className="mt-1 over-two-ellipsis overflow-hidden">{l.abstract || ''}</p>
+                    </div>
+                  </div>
+                )
+              })}
           </div>
         </div>
       </div>

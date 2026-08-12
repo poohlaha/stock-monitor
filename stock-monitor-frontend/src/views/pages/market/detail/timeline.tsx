@@ -121,8 +121,8 @@ const MarketDetailTimeline = (props: IMarketDetailTimelineProps): ReactElement =
 
   const render = () => {
     return (
-      <div className="timeline-box border rounded-md">
-        <div className="pankou-info flex-align-center flex-wrap p-4">{getPankouInfo()}</div>
+      <div className="timeline-box border rounded-md p-4 w100">
+        <div className="pankou-info flex-align-center flex-wrap">{getPankouInfo()}</div>
 
         <div className="chart w100 flex-center">
           <div

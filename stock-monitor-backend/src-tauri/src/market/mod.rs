@@ -137,4 +137,13 @@ impl Market {
         let url = format!("{}/vapi/v1/fundflow?finance_type=stock&fund_flow_type={}&market={}&code={}&type=stock&finClientType=pc", BD_HTTP_URL_PREFIX, flow_type, args.market, args.code);
         Utils::get_time_response(&url).await
     }
+
+    /**
+      股票相关新闻
+      例: https://finance.pae.baidu.com/vapi/sentimentlist?market=ab&code=300502&query=300502&financeType=stock&benefitType=&pn=0&rn=30&finClientType=pc
+    */
+    pub async fn query_news(args: &Args) -> Result<HttpResponse, String> {
+        let url = format!("{}/vapi/sentimentlist?market={}&code={}&query={}&financeType=stock&benefitType=&pn=0&rn=30&finClientType=pc", BD_HTTP_URL_PREFIX, args.market, args.code, args.code);
+        Utils::get_time_response(&url).await
+    }
 }
