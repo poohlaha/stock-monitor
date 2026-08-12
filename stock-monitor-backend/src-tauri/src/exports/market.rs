@@ -87,6 +87,6 @@ pub async fn query_hot_indicators(name: &str) -> Result<HttpResponse, String> {
 
 /// 行业资金流向
 #[tauri::command]
-pub async fn query_industry_fund_flow(args: Args) -> Result<HttpResponse, String> {
-    Market::query_industry_fund_flow(&args).await
+pub async fn query_industry_fund_flow(args: Args, flow_type: &str) -> Result<HttpResponse, String> {
+    Market::query_industry_fund_flow(&args, flow_type).await
 }
