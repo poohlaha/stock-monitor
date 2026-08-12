@@ -1,11 +1,13 @@
 use crate::prepare::{get_success_response, HttpResponse};
+use crate::utils::baidu::BaiduToken;
 use crate::LOGGER_PREFIX;
 use base64::Engine;
 use colored::Colorize;
 use http::options::Options;
-use log::{error, info};
+use log::{error, info, warn};
 use std::sync::OnceLock;
 
+pub mod baidu;
 pub(crate) mod cache;
 pub mod file;
 
@@ -32,6 +34,15 @@ impl Utils {
             return Ok(crate::prepare::get_error_response("url is empty!"));
         }
 
+        // 获取token
+        let token = BaiduToken::get_token_async().await;
+        if (token.is_none()) {
+            warn!("{} get baidu token error!", LOGGER_PREFIX);
+        }
+
+        // let token = { BAIDU_TOKEN.read().unwrap().clone() };
+        info!("{} baidu token: {:#?}", LOGGER_PREFIX, token);
+
         let response = http::client::HttpClient::send(
             Options {
                 url: url.to_string(),
@@ -52,6 +63,7 @@ impl Utils {
                     "Sec-Ch-Ua-Platform": "macos",
                     "Sec-Fetch-Dest": "empty",
                     "Sec-Fetch-Mode": "cors",
+                    "Acs-Token": token
                     // "Cookie": Utils::get_cookie()
                 })),
                 timeout: Some(10),

@@ -34,6 +34,7 @@ import MarketDetailFundInfo from '@pages/market/detail/manager'
 import MarketDetailCurveGraph from '@pages/market/detail/curveGraph'
 import MarketDetailFnCurveGraph from '@pages/market/detail/fnCurveGraph'
 import MarketDetailStock from '@pages/market/detail/stock'
+import Loading from '@views/components/loading/loading'
 
 echarts.use([
   LegendComponent,
@@ -96,7 +97,7 @@ const MarketDetail = (): ReactElement => {
 
     const rect = chart.getBoundingClientRect()
     let width = rect.width - (t !== 'stock' ? 400 : 0)
-    console.log('content-box rect: ', rect, width, t)
+    // console.log('content-box rect: ', rect, width, t)
     if (width < 500) {
       width = 500
     }
@@ -253,13 +254,25 @@ const MarketDetail = (): ReactElement => {
 
   useEffect(() => {
     if (marketStore.isTrade && type !== 'fund') {
-      startTimelineTimer(code, market, type)
+      // startTimelineTimer(code, market, type)
     }
 
     return () => {
       clearTimeout(timerRef.current)
     }
   }, [code, market, type, marketStore.isTrade])
+
+  useEffect(() => {
+    const handleResize = () => {
+      resetSize()
+    }
+
+    window.addEventListener('resize', handleResize)
+
+    return () => {
+      window.removeEventListener('resize', handleResize)
+    }
+  }, [])
 
   // 获取净值等信息
   const getBasicIInfo = () => {
@@ -290,101 +303,107 @@ const MarketDetail = (): ReactElement => {
           show: false
         }}
       >
-        {/* 基金信息 */}
-        <MarketDetailTitle
-          name={marketStore.basicInfo?.name || openDataInfo.name || ''}
-          code={marketStore.basicInfo?.code || openDataInfo.brief?.code || ''}
-          exchange={exchange}
-          tags={openDataInfo.tags || []}
-          tagList={marketStore.tagList || []}
-          type={type}
-          basicInfo={getBasicIInfo()}
-        />
-
-        {/* 分时图 | 持仓 */}
-        <div className="content-box mt-4 h-[550px] flex">
-          {/* 分时图 */}
-          {type === 'fund' ? (
-            <MarketDetailFnCurveGraph
-              resetSize={resetSize}
-              size={size}
-              performanceGraph={marketStore.performanceGraph || []}
-              networthGraph={marketStore.networthGraph || []}
-              tabs={fundTabs}
-              onTabChange={async (_: string = '', tab: string, index: number, month: string = '') => {
-                await marketStore.onGetPNGraph(tab, code, index, month)
-              }}
+        {!marketStore.loading && (
+          <>
+            {/* 基金信息 */}
+            <MarketDetailTitle
+              name={marketStore.basicInfo?.name || openDataInfo.name || ''}
+              code={marketStore.basicInfo?.code || openDataInfo.brief?.code || ''}
+              exchange={exchange}
+              tags={openDataInfo.tags || []}
+              tagList={marketStore.tagList || []}
+              type={type}
+              basicInfo={getBasicIInfo()}
             />
-          ) : (
-            <MarketDetailTimeline
-              pankouInfo={marketStore.pankouInfo || {}}
-              size={size}
-              timelineList={marketStore.timelineList || []}
-              klineList={marketStore.klineList || []}
-              weekList={marketStore.weekList || []}
-              monthList={marketStore.monthList || []}
-              xLabels={marketStore.xLabels || []}
-              preClosePrice={marketStore.preClosePrice || 0}
-              onTabChange={async value => {
-                console.log('timelineList: ', marketStore.timelineList)
-                if (value === 'five') {
-                  await marketStore.onGetOtherTimelineData(code, market, type, 'fiveday')
-                }
-              }}
-            />
-          )}
 
-          {/* 股票持仓 */}
-          {type !== 'stock' && (
-            <MarketDetailPosition
-              position={openDataInfo.position || {}}
-              onStockClick={(item: Record<string, any> = {}) => {
-                const type = 'stock' // 类型: etf | fund | stock
-                const market = item.market || '' // 市场: ab | hk | us | sg
-                const exchange = item.exchange || ''
-                homeStore.selectedMenu = `${RouterUrls.MARKET.KEY || ''}-${homeStore.MENU_LIST[2].key || ''}`
-                console.log(
-                  `${RouterUrls.MARKET.URL}${RouterUrls.MARKET.DETAIL.URL}/${item.code || ''}?code=${item.code || ''}&type=${type || ''}&market=${market || ''}&exchange=${exchange}`
-                )
-                navigate(
-                  `${RouterUrls.MARKET.URL}${RouterUrls.MARKET.DETAIL.URL}/${item.code || ''}?code=${item.code || ''}&type=${type || ''}&market=${market || ''}&exchange=${exchange}`
-                )
-              }}
-            />
-          )}
-        </div>
+            {/* 分时图 | 持仓 */}
+            <div className="content-box mt-4 h-[550px] flex">
+              {/* 分时图 */}
+              {type === 'fund' ? (
+                <MarketDetailFnCurveGraph
+                  resetSize={resetSize}
+                  size={size}
+                  performanceGraph={marketStore.performanceGraph || []}
+                  networthGraph={marketStore.networthGraph || []}
+                  tabs={fundTabs}
+                  onTabChange={async (_: string = '', tab: string, index: number, month: string = '') => {
+                    await marketStore.onGetPNGraph(tab, code, index, month)
+                  }}
+                />
+              ) : (
+                <MarketDetailTimeline
+                  pankouInfo={marketStore.pankouInfo || {}}
+                  size={size}
+                  timelineList={marketStore.timelineList || []}
+                  klineList={marketStore.klineList || []}
+                  weekList={marketStore.weekList || []}
+                  monthList={marketStore.monthList || []}
+                  xLabels={marketStore.xLabels || []}
+                  preClosePrice={marketStore.preClosePrice || 0}
+                  onTabChange={async value => {
+                    console.log('timelineList: ', marketStore.timelineList)
+                    if (value === 'five') {
+                      await marketStore.onGetOtherTimelineData(code, market, type, 'fiveday')
+                    }
+                  }}
+                />
+              )}
 
-        {/* 涨跌幅 */}
-        {type !== 'stock' && (
-          <div className="mt-4 bg-[#f7f7f7] flex-align-center h-20 p-4 round-md">
-            {(openDataInfo.recent || []).map((item: Record<string, any> = {}, index: number) => {
-              return (
-                <div className="flex-1 flex-direction-column" key={index}>
-                  <p>{item.text || ''}</p>
-                  <p className={`${getRateClassName(item.value)} text-xl font-bold`}>{item.value || '-'}</p>
-                </div>
-              )
-            })}
-          </div>
+              {/* 股票持仓 */}
+              {type !== 'stock' && (
+                <MarketDetailPosition
+                  position={openDataInfo.position || {}}
+                  onStockClick={(item: Record<string, any> = {}) => {
+                    const type = 'stock' // 类型: etf | fund | stock
+                    const market = item.market || '' // 市场: ab | hk | us | sg
+                    const exchange = item.exchange || ''
+                    homeStore.selectedMenu = `${RouterUrls.MARKET.KEY || ''}-${homeStore.MENU_LIST[2].key || ''}`
+                    console.log(
+                      `${RouterUrls.MARKET.URL}${RouterUrls.MARKET.DETAIL.URL}/${item.code || ''}?code=${item.code || ''}&type=${type || ''}&market=${market || ''}&exchange=${exchange}`
+                    )
+                    navigate(
+                      `${RouterUrls.MARKET.URL}${RouterUrls.MARKET.DETAIL.URL}/${item.code || ''}?code=${item.code || ''}&type=${type || ''}&market=${market || ''}&exchange=${exchange}`
+                    )
+                  }}
+                />
+              )}
+            </div>
+
+            {/* 涨跌幅 */}
+            {type !== 'stock' && (
+              <div className="mt-4 bg-[#f7f7f7] flex-align-center h-20 p-4 round-md">
+                {(openDataInfo.recent || []).map((item: Record<string, any> = {}, index: number) => {
+                  return (
+                    <div className="flex-1 flex-direction-column" key={index}>
+                      <p>{item.text || ''}</p>
+                      <p className={`${getRateClassName(item.value)} text-xl font-bold`}>{item.value || '-'}</p>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+
+            {/* 基金信息 */}
+            {type === 'fund' && (
+              <MarketDetailFundInfo fundManager={openDataInfo.fundManager || {}} brief={openDataInfo.brief || {}} />
+            )}
+
+            {/* 持仓分布 | 收益 */}
+            {type !== 'stock' && (
+              <MarketDetailCurveGraph
+                position={openDataInfo.position || {}}
+                incomeList={marketStore.incomeList || []}
+                resetSize={resetSize}
+                needIncomeGraph={type !== 'fund'}
+              />
+            )}
+
+            {/* 股票信息 */}
+            {type === 'stock' && <MarketDetailStock />}
+          </>
         )}
 
-        {/* 基金信息 */}
-        {type === 'fund' && (
-          <MarketDetailFundInfo fundManager={openDataInfo.fundManager || {}} brief={openDataInfo.brief || {}} />
-        )}
-
-        {/* 持仓分布 | 收益 */}
-        {type !== 'stock' && (
-          <MarketDetailCurveGraph
-            position={openDataInfo.position || {}}
-            incomeList={marketStore.incomeList || []}
-            resetSize={resetSize}
-            needIncomeGraph={type !== 'fund'}
-          />
-        )}
-
-        {/* 股票信息 */}
-        <MarketDetailStock />
+        {marketStore.loading && <Loading show={marketStore.loading} />}
       </Page>
     )
   }

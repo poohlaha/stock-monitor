@@ -139,6 +139,13 @@ const Left = (props: ILeftProps): ReactElement => {
             </Tooltip>
           </div>
         </div>
+
+        <iframe
+          style={{
+            display: 'none'
+          }}
+          src="https://finance.baidu.com"
+        />
       </div>
     )
   }

@@ -4,7 +4,7 @@
 use crate::market::Args;
 use crate::prepare::HttpResponse;
 use crate::utils::Utils;
-use crate::{BD_HTTP_URL_PREFIX};
+use crate::BD_HTTP_URL_PREFIX;
 
 pub struct Timeline {}
 
@@ -44,5 +44,4 @@ impl Timeline {
         // info!("{} get time url {}", LOGGER_PREFIX.cyan().bold(), url);
         Utils::get_time_response(&url).await
     }
-
 }

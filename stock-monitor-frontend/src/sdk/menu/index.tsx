@@ -131,6 +131,7 @@ const TrayMenu = (): ReactElement => {
   }
 
   // 开启定时
+  // @ts-ignore
   const startTimelineTimer = () => {
     const loop = async () => {
       await marketStore.onGetWatchListTimer((hasAllInTrade: boolean = false) => setHasAllInTrade(hasAllInTrade))
@@ -153,7 +154,7 @@ const TrayMenu = (): ReactElement => {
 
   useEffect(() => {
     if (hasAllInTrade) {
-      startTimelineTimer()
+      // startTimelineTimer()
     }
 
     return () => {

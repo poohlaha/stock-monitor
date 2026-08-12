@@ -21,7 +21,7 @@ const MarketDetailPosition = (props: IMarketDetailPositionProps): ReactElement =
             ? ((props.position || {}).heavyStock || {}).titleHeader[0] || ''
             : '股票持仓'}
         </p>
-        <div className="stock-position-header flex-align-center h-6 text-xs bg-[#fff4e4] pl-4 pr-4 rounded-md">
+        <div className="stock-position-header flex-align-center h-6 min-h-6 text-xs bg-[#fff4e4] pl-4 pr-4 rounded-md">
           <p className="flex-1 text-center">股票名称</p>
           <p className="flex-1 text-center">涨跌幅</p>
           <p className="flex-1 text-center">持仓占比</p>
@@ -52,7 +52,7 @@ const MarketDetailPosition = (props: IMarketDetailPositionProps): ReactElement =
                 ? ((props.position || {}).heavyBond || {}).titleHeader[0] || ''
                 : '债券持仓'}
             </p>
-            <div className="flex-align-center h-6 text-xs bg-[#fff4e4] pl-4 pr-4">
+            <div className="flex-align-center h-6 min-h-6 text-xs bg-[#fff4e4] pl-4 pr-4">
               <p className="flex-1 text-center">债券名称</p>
               <p className="flex-1 text-center">持仓占比</p>
             </div>

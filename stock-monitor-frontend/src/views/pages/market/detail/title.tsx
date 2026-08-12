@@ -30,47 +30,58 @@ const MarketDetailTitle = (props: IMarketDetailTitleProps): ReactElement => {
       <div className="fund-info mt-4">
         <div className="flex-direction-column pl-4 pr-4 rounded-md">
           {/* 标题 */}
-          <div className="flex-direction-column">
+          <div className="flex-align-center">
             <div className="flex-align-center">
-              <p className="text-3xl font-bold">{props.name || ''}</p>
-
-              {/* 信息披露 */}
-              {!Utils.isObjectNull(props.basicInfo?.financeReport || {}) && (
-                <div className="flex-align-center p-2 rounded-md notice-tag-theme ml-2 text-xs select-none">
-                  <img src={NoticePng} className="w-4 h-4 mr-1" />
-                  <p>{(props.basicInfo?.financeReport || {}).text || ''}</p>
+              {/* logo */}
+              {!Utils.isBlank(props.basicInfo?.logo || '') && (
+                <div className="logo mr-2">
+                  <img src={props.basicInfo?.logo || ''} className="rounded-full w-14 h-14" />
                 </div>
               )}
             </div>
-            <div className="flex-align-center mt-1">
-              <p className="bg-purple-500 rounded-md text-xs text-white pt-0.5 pb-0.5 pl-1 pr-1">
-                {Utils.isBlank(props.exchange || '') ? props.basicInfo?.exchange || '' : props.exchange || ''}
-              </p>
-              <p className="ml-1 color-gray font-bold">{props.code || ''}</p>
-              {/* tags */}
-              <div className="tags ml-1 flex-align-center">
-                {(props.tags || []).map((tag: Record<string, any> = {}, index: number) => {
-                  return (
-                    <p className="bg-red-500 rounded-md text-xs text-white pt-0.5 pb-0.5 pl-1 pr-1 mr-1" key={index}>
-                      {tag.text || ''}
-                    </p>
-                  )
-                })}
-              </div>
 
-              {/* 行业等标签 */}
-              {(props.tagList || []).length > 0 && (
-                <div className="flex-align-center">
-                  {(props.tagList || []).map((t: Record<string, any> = {}, index: number) => {
+            <div className="flex-direction-column">
+              <div className="flex-align-center">
+                <p className="text-3xl font-bold">{props.name || ''}</p>
+
+                {/* 信息披露 */}
+                {!Utils.isObjectNull(props.basicInfo?.financeReport || {}) && (
+                  <div className="flex-align-center p-2 rounded-md notice-tag-theme ml-2 text-xs select-none">
+                    <img src={NoticePng} className="w-4 h-4 mr-1" />
+                    <p>{(props.basicInfo?.financeReport || {}).text || ''}</p>
+                  </div>
+                )}
+              </div>
+              <div className="flex-align-center mt-1">
+                <p className="bg-purple-500 rounded-md text-xs text-white pt-0.5 pb-0.5 pl-1 pr-1">
+                  {Utils.isBlank(props.exchange || '') ? props.basicInfo?.exchange || '' : props.exchange || ''}
+                </p>
+                <p className="ml-1 color-gray font-bold">{props.code || ''}</p>
+                {/* tags */}
+                <div className="tags ml-1 flex-align-center">
+                  {(props.tags || []).map((tag: Record<string, any> = {}, index: number) => {
                     return (
-                      <div className="flex-align-center ml-1 cursor-pointer" key={index}>
-                        {!Utils.isBlank(t.imageUrl || '') && <img src={t.imageUrl || ''} className="w-3 h-3 mr-1" />}
-                        <p>{t.desc || ''}</p>
-                      </div>
+                      <p className="bg-red-500 rounded-md text-xs text-white pt-0.5 pb-0.5 pl-1 pr-1 mr-1" key={index}>
+                        {tag.text || ''}
+                      </p>
                     )
                   })}
                 </div>
-              )}
+
+                {/* 行业等标签 */}
+                {(props.tagList || []).length > 0 && (
+                  <div className="flex-align-center">
+                    {(props.tagList || []).map((t: Record<string, any> = {}, index: number) => {
+                      return (
+                        <div className="flex-align-center ml-1 cursor-pointer" key={index}>
+                          {!Utils.isBlank(t.imageUrl || '') && <img src={t.imageUrl || ''} className="w-3 h-3 mr-1" />}
+                          <p>{t.desc || ''}</p>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 

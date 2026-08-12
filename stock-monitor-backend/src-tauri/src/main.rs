@@ -21,17 +21,20 @@ use rayon::ThreadPoolBuilder;
 
 use crate::database::Database;
 use crate::system::tray::Tray;
+use crate::utils::baidu::{BaiduToken, BAIDU_REFRESHING, BAIDU_TOKEN, BAIDU_TOKEN_NOTIFY};
 use exports::market::{
-    get_time_data, query_brief, query_economic_indicators, query_hot_indicators, query_income, query_industrial_chain, query_market_status, query_open_data, query_other_market_center, query_position_distribution, query_worldwide,
-    query_worldwide_market_center, query_fund_graph, query_industry_fund_flow
+    get_time_data, query_brief, query_economic_indicators, query_fund_graph, query_hot_indicators, query_income, query_industrial_chain, query_industry_fund_flow, query_market_status, query_open_data, query_other_market_center,
+    query_position_distribution, query_worldwide, query_worldwide_market_center,
 };
 use exports::my::{add_to_my_fund_watchlist, find_by_fund_code, find_by_fund_codes, query_watchlist};
 use exports::search::search;
 use exports::settings::{get_setting, hide_dock, save_setting, show_dock};
 use log::info;
 use sqlx::MySql;
+use std::sync::atomic::Ordering;
 use std::sync::{Arc, Mutex};
-use tauri::Manager;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use tauri::{Listener, Manager, WebviewWindow, WebviewWindowBuilder};
 
 const PROJECT_NAME: &str = "stock-monitor";
 
@@ -94,6 +97,25 @@ async fn main() {
 
             // 创建系统托盘
             Tray::builder(&app_handle);
+
+            app.listen("baidu-token", move |event| {
+                let token = event.payload().trim_matches('"').to_string();
+
+                info!("{} 收到百度token: {}", LOGGER_PREFIX, token);
+                let mut store = BAIDU_TOKEN.write().unwrap();
+                store.token = token;
+
+                let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs();
+
+                // 一分钟过期
+                store.expire_at = now + 1;
+
+                BAIDU_REFRESHING.store(false, Ordering::SeqCst);
+
+                BAIDU_TOKEN_NOTIFY.notify_waiters();
+            });
+
+            BaiduToken::create_baidu_window(&app_handle);
 
             /*
             // 开机启动

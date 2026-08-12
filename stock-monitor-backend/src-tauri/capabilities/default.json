@@ -87,8 +87,7 @@
   "local": true,
   "remote": {
     "urls": [
-      "https://*.kiwi2333.top",
-      "https://*.kiwi233.top"
+      "https://finance.baidu.com/*"
     ]
   },
   "webviews": []
