@@ -96,3 +96,27 @@ pub async fn query_industry_fund_flow(args: Args, flow_type: &str) -> Result<Htt
 pub async fn query_news(args: Args) -> Result<HttpResponse, String> {
     Market::query_news(&args).await
 }
+
+/// 公司介绍
+#[tauri::command]
+pub async fn query_company_info(args: Args) -> Result<HttpResponse, String> {
+    Market::query_company_info(&args).await
+}
+
+/// 公司简况
+#[tauri::command]
+pub async fn query_company_profile(args: Args) -> Result<HttpResponse, String> {
+    Market::query_company_profile(&args).await
+}
+
+/// 公司简况
+#[tauri::command]
+pub async fn query_executive_changes(args: Args, company_code: &str, inner_code: &str, group: &str) -> Result<HttpResponse, String> {
+    Market::query_executive_changes(&args, company_code, inner_code, group).await
+}
+
+/// 公司简况
+#[tauri::command]
+pub async fn query_by_url(url: &str) -> Result<HttpResponse, String> {
+    Market::query_by_url(url).await
+}

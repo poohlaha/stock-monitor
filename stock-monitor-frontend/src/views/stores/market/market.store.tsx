@@ -37,6 +37,9 @@ class MarketStore extends BaseStore {
   @observable industryFundFlow: Record<string, any> = {}
   @observable industryOtherFundFlow: Record<string, any> = {}
   @observable newsList: Array<Record<string, any>> = []
+  @observable companyProfile: Record<string, any> = {}
+  @observable executiveChanges: Record<string, any> = {}
+  @observable shareholders: Record<string, any> = {} // 股本股东
 
   readonly checkTradeSchedule: Array<string> = ['09:30', '11:30', '13:11', '15:00']
 
@@ -1042,7 +1045,123 @@ class MarketStore extends BaseStore {
       }
 
       this.newsList = (((data[0] || {}).TplData || {}).aiSentimentXcxListInfo || {}).sentimentListInfo || []
-      console.log('stock news : ', this.newsList)
+      console.log('stock news: ', this.newsList)
+      return result || {}
+    } catch (e: any) {
+      this.loading = false
+      throw new Error(e)
+    }
+  }
+
+  // 查询公司简况
+  @action
+  async onGetCompanyProfile(code: string = '', market: string = '') {
+    try {
+      let result: { [K: string]: any } =
+        (await invoke('query_company_profile', {
+          args: {
+            code,
+            market,
+            type: 'stock',
+            queryType: '',
+            ktype: ''
+          }
+        })) || {}
+      const data = this.handleResult(result) || {}
+      if (data.length === 0) {
+        return
+      }
+
+      this.companyProfile = (data || {}).content || {}
+      if (!Utils.isObjectNull(this.companyProfile || {})) {
+        const basicInfo = (this.companyProfile.newCompany || {}).basicInfo || {}
+        const shareholderEquity = (this.companyProfile.newCompany || {}).shareholderEquity || {}
+        if (!Utils.isObjectNull(basicInfo || {})) {
+          // 查询高管等信息
+          await this.onGetExecutiveChanges(
+            code,
+            market,
+            basicInfo.companyCode || '',
+            basicInfo.innerCode || '',
+            'leader_info',
+            (d: Record<string, any> = {}) => {
+              this.executiveChanges = d || {}
+              console.log('executive changes: ', this.executiveChanges)
+            }
+          )
+        }
+
+        // 查询股本股东
+        if (!Utils.isObjectNull(shareholderEquity || {})) {
+          // 查询高管等信息
+          setTimeout(async () => {
+            await this.onGetExecutiveChanges(
+              code,
+              market,
+              basicInfo.companyCode || '',
+              basicInfo.innerCode || '',
+              'holder_equity',
+              (d: Record<string, any> = {}) => {
+                this.shareholders = d || {}
+                console.log('shareholders: ', this.shareholders)
+              }
+            )
+          }, 500)
+        }
+      }
+      console.log('company profile: ', this.companyProfile)
+      return result || {}
+    } catch (e: any) {
+      this.loading = false
+      throw new Error(e)
+    }
+  }
+
+  // 查询高管等信息
+  @action
+  async onGetExecutiveChanges(
+    code: string = '',
+    market: string = '',
+    companyCode: string = '',
+    innerCode: string = '',
+    group: string = '',
+    callback?: Function
+  ) {
+    try {
+      let result: { [K: string]: any } =
+        (await invoke('query_executive_changes', {
+          args: {
+            code,
+            market,
+            type: 'stock',
+            queryType: '',
+            ktype: ''
+          },
+          companyCode,
+          innerCode,
+          group
+        })) || {}
+      const data = this.handleResult(result) || {}
+
+      callback?.(data || {})
+      return result || {}
+    } catch (e: any) {
+      this.loading = false
+      throw new Error(e)
+    }
+  }
+
+  // 通过 URL 查询
+  @action
+  async onGetByUrl(url: string = '', callback?: Function) {
+    if (Utils.isBlank(url || '')) {
+      return
+    }
+
+    try {
+      let result: { [K: string]: any } = (await invoke('query_by_url', { url })) || {}
+      const data = this.handleResult(result) || {}
+      callback?.(data)
       return result || {}
     } catch (e: any) {
       this.loading = false

@@ -198,9 +198,13 @@ const MarketDetail = (): ReactElement => {
     await marketStore.batchSend(queue)
 
     if (t === 'stock') {
-      setTimeout(() => {
-        marketStore.onGetStockNews(c, m)
+      setTimeout(async () => {
+        await marketStore.onGetStockNews(c, m)
       }, 1000)
+
+      setTimeout(async () => {
+        await marketStore.onGetCompanyProfile(c, m)
+      })
     }
   }
 

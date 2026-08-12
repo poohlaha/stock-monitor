@@ -15,7 +15,7 @@ interface IMarketDetailPositionProps {
 const MarketDetailPosition = (props: IMarketDetailPositionProps): ReactElement => {
   const render = () => {
     return (
-      <div className="stock-position-box min-w-[400px] pl-4 pr-4 pb-4 flex-direction-column">
+      <div className="stock-position-box min-w-[400px] w-[400px] pl-4 pr-4 pb-4 flex-direction-column">
         <p className="font-bold text-base mb-2">
           {(((props.position || {}).heavyStock || {}).titleHeader || []).length > 0
             ? ((props.position || {}).heavyStock || {}).titleHeader[0] || ''

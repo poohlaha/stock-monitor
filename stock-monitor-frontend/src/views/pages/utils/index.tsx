@@ -82,3 +82,8 @@ export function formatTimestamp(timestamp: number, needSecond: boolean = true) {
 
   return `${year}-${month}-${day} ${hour}:${minute}${needSecond ? `:${second}` : ''}`
 }
+
+export function isPositive(value: string = '') {
+  const num = Number(value.match(/[+-]?\d+(\.\d+)?/)?.[0] || 0)
+  return num > 0
+}

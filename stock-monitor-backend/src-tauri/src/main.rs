@@ -23,8 +23,8 @@ use crate::database::Database;
 use crate::system::tray::Tray;
 use crate::utils::baidu::{BaiduToken, BAIDU_REFRESHING, BAIDU_TOKEN, BAIDU_TOKEN_NOTIFY};
 use exports::market::{
-    get_time_data, query_brief, query_economic_indicators, query_fund_graph, query_hot_indicators, query_income, query_industrial_chain, query_industry_fund_flow, query_market_status, query_open_data, query_other_market_center,
-    query_position_distribution, query_worldwide, query_worldwide_market_center, query_news
+    get_time_data, query_brief, query_by_url, query_company_info, query_company_profile, query_economic_indicators, query_executive_changes, query_fund_graph, query_hot_indicators, query_income, query_industrial_chain, query_industry_fund_flow,
+    query_market_status, query_news, query_open_data, query_other_market_center, query_position_distribution, query_worldwide, query_worldwide_market_center,
 };
 use exports::my::{add_to_my_fund_watchlist, find_by_fund_code, find_by_fund_codes, query_watchlist};
 use exports::search::search;
@@ -191,7 +191,11 @@ async fn main() {
             query_watchlist,
             query_fund_graph,
             query_industry_fund_flow,
-            query_news
+            query_news,
+            query_company_info,
+            query_company_profile,
+            query_executive_changes,
+            query_by_url
         ])
         .build(tauri::generate_context!())
         .expect("error while running tauri application");

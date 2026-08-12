@@ -134,7 +134,10 @@ impl Market {
             return Ok(crate::prepare::get_error_response("`code` is empty !"));
         }
 
-        let url = format!("{}/vapi/v1/fundflow?finance_type=stock&fund_flow_type={}&market={}&code={}&type=stock&finClientType=pc", BD_HTTP_URL_PREFIX, flow_type, args.market, args.code);
+        let url = format!(
+            "{}/vapi/v1/fundflow?finance_type=stock&fund_flow_type={}&market={}&code={}&type=stock&finClientType=pc",
+            BD_HTTP_URL_PREFIX, flow_type, args.market, args.code
+        );
         Utils::get_time_response(&url).await
     }
 
@@ -143,7 +146,52 @@ impl Market {
       例: https://finance.pae.baidu.com/vapi/sentimentlist?market=ab&code=300502&query=300502&financeType=stock&benefitType=&pn=0&rn=30&finClientType=pc
     */
     pub async fn query_news(args: &Args) -> Result<HttpResponse, String> {
-        let url = format!("{}/vapi/sentimentlist?market={}&code={}&query={}&financeType=stock&benefitType=&pn=0&rn=30&finClientType=pc", BD_HTTP_URL_PREFIX, args.market, args.code, args.code);
+        let url = format!(
+            "{}/vapi/sentimentlist?market={}&code={}&query={}&financeType=stock&benefitType=&pn=0&rn=30&finClientType=pc",
+            BD_HTTP_URL_PREFIX, args.market, args.code, args.code
+        );
+        Utils::get_time_response(&url).await
+    }
+
+    /**
+      公司介绍
+      例: https://finance.pae.baidu.com/vapi/v1/overviewwidget?market=ab&code=300502&financeType=stock&modules=basicinfo&finClientType=pc
+    */
+    pub async fn query_company_info(args: &Args) -> Result<HttpResponse, String> {
+        let url = format!(
+            "{}/vapi/v1/overviewwidget?market={}&code={}&financeType={}&modules=basicinfo&finClientType=pc",
+            BD_HTTP_URL_PREFIX, args.market, args.code, args._type
+        );
+        Utils::get_time_response(&url).await
+    }
+
+    /**
+      公司简况
+      例: https://finance.pae.baidu.com/api/stockwidget?code=300502&market=ab&type=stock&widgetType=company&finClientType=pc
+    */
+    pub async fn query_company_profile(args: &Args) -> Result<HttpResponse, String> {
+        let url = format!("{}/api/stockwidget?market={}&code={}&type={}&widgetType=company&finClientType=pc", BD_HTTP_URL_PREFIX, args.market, args.code, args._type);
+        Utils::get_time_response(&url).await
+    }
+
+    /**
+      高管变动
+      例: https://finance.pae.baidu.com/selfselect/openapi?srcid=5539&code=300502&company_code=177279&inner_code=36563&group=leader_info&listedSector=6&finClientType=pc
+      高管变动: leader_info
+      股本股通: holder_equity
+    */
+    pub async fn query_executive_changes(args: &Args, company_code: &str, inner_code: &str, group: &str) -> Result<HttpResponse, String> {
+        let url = format!(
+            "{}/selfselect/openapi?srcid=5539&code={}&company_code={}&inner_code={}&group={}&listedSector=6&finClientType=pc",
+            BD_HTTP_URL_PREFIX, args.code, company_code, inner_code, group
+        );
+        Utils::get_time_response(&url).await
+    }
+
+    /**
+      通过url查询数据
+    */
+    pub async fn query_by_url(url: &str) -> Result<HttpResponse, String> {
         Utils::get_time_response(&url).await
     }
 }
