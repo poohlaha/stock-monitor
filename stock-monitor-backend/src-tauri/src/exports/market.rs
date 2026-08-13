@@ -4,7 +4,7 @@
 
 use crate::market::detail::MarketDetailInfo;
 use crate::market::timeline::Timeline;
-use crate::market::{Args, Market};
+use crate::market::{Args, HotStockType, Market};
 use crate::prepare::HttpResponse;
 
 /// 获取分时图数据
@@ -61,10 +61,10 @@ pub async fn query_worldwide_market_center() -> Result<HttpResponse, String> {
     Market::query_worldwide_market_center().await
 }
 
-/// 获取A股、港股等行情
+/// 获取热门板块
 #[tauri::command]
-pub async fn query_other_market_center(market: &str) -> Result<HttpResponse, String> {
-    Market::query_other_market_center(market).await
+pub async fn query_popular_section(market: &str) -> Result<HttpResponse, String> {
+    Market::query_popular_section(market).await
 }
 
 /// 获取A股、港股等行情
@@ -119,4 +119,34 @@ pub async fn query_executive_changes(args: Args, company_code: &str, inner_code:
 #[tauri::command]
 pub async fn query_by_url(url: &str) -> Result<HttpResponse, String> {
     Market::query_by_url(url).await
+}
+
+/// 热股榜
+#[tauri::command]
+pub async fn query_hot_stock_list(day: &str, hot_type: HotStockType, market: &str) -> Result<HttpResponse, String> {
+    Market::query_hot_stock_list(day, hot_type, market).await
+}
+
+/// 财经日历
+#[tauri::command]
+pub async fn query_financial_calendar() -> Result<HttpResponse, String> {
+    Market::query_financial_calendar().await
+}
+
+/// 查询涨跌分布
+#[tauri::command]
+pub async fn query_stock_rf_distribution(market: &str) -> Result<HttpResponse, String> {
+    Market::query_stock_rf_distribution(market).await
+}
+
+/// 查询热力图
+#[tauri::command]
+pub async fn query_industry_hot(market: &str, sort_key: &str) -> Result<HttpResponse, String> {
+    Market::query_industry_hot(market, sort_key).await
+}
+
+/// 查询排行
+#[tauri::command]
+pub async fn query_stock_rank(market: &str) -> Result<HttpResponse, String> {
+    Market::query_stock_rank(market).await
 }

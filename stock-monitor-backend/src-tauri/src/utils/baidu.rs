@@ -96,7 +96,6 @@ impl BaiduToken {
                                         }
 
                                         if (sign) {
-                                           console.log(window.__TAURI__.event);
                                            window.__TAURI__.event.emit("baidu-token", sign).then(() => {
                                                 console.log("emit success");
                                            }).catch(e => {

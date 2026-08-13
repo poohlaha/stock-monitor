@@ -8,7 +8,7 @@ import { observer } from 'mobx-react-lite'
 import { Popover, Tabs } from 'antd'
 import { useStore } from '@views/stores'
 import Utils from '@utils/utils'
-import { formatTimestamp, getColor, getRateClassName, isPositive } from '@pages/utils'
+import { formatTimestamp, getColor, getRateClassName, getWidth, isPositive } from '@pages/utils'
 import * as echarts from 'echarts/core'
 import { useNavigate } from 'react-router-dom'
 import RouterUrls from '@route/router.url.toml'
@@ -53,14 +53,6 @@ const MarketDetailStock = (props: IMarketDetailStockProps): ReactElement => {
         ></path>
       </svg>
     )
-  }
-
-  const getWidth = (value: number = 0, largest: number = 0) => {
-    if (largest === 0) {
-      return 0
-    }
-
-    return (Math.abs(value) / largest) * 100
   }
 
   const getTypeItemNode = (type: number = 1, data: Record<string, any> = {}) => {

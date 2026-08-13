@@ -2,7 +2,6 @@
 
 use crate::database::helper::DBHelper;
 use crate::prepare::{get_error_response, HttpResponse};
-use chrono::Utc;
 use handlers::utils::Utils;
 use log::info;
 use serde::{Deserialize, Serialize};

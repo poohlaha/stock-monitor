@@ -23,8 +23,9 @@ use crate::database::Database;
 use crate::system::tray::Tray;
 use crate::utils::baidu::{BaiduToken, BAIDU_REFRESHING, BAIDU_TOKEN, BAIDU_TOKEN_NOTIFY};
 use exports::market::{
-    get_time_data, query_brief, query_by_url, query_company_info, query_company_profile, query_economic_indicators, query_executive_changes, query_fund_graph, query_hot_indicators, query_income, query_industrial_chain, query_industry_fund_flow,
-    query_market_status, query_news, query_open_data, query_other_market_center, query_position_distribution, query_worldwide, query_worldwide_market_center,
+    get_time_data, query_brief, query_by_url, query_company_info, query_company_profile, query_economic_indicators, query_executive_changes, query_financial_calendar, query_fund_graph, query_hot_indicators, query_hot_stock_list, query_income,
+    query_industrial_chain, query_industry_fund_flow, query_industry_hot, query_market_status, query_news, query_open_data, query_popular_section, query_position_distribution, query_stock_rank, query_stock_rf_distribution, query_worldwide,
+    query_worldwide_market_center,
 };
 use exports::my::{add_to_my_fund_watchlist, find_by_fund_code, find_by_fund_codes, query_watchlist};
 use exports::search::search;
@@ -33,8 +34,8 @@ use log::info;
 use sqlx::MySql;
 use std::sync::atomic::Ordering;
 use std::sync::{Arc, Mutex};
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
-use tauri::{Listener, Manager, WebviewWindow, WebviewWindowBuilder};
+use std::time::{SystemTime, UNIX_EPOCH};
+use tauri::{Listener, Manager, WebviewWindowBuilder};
 
 const PROJECT_NAME: &str = "stock-monitor";
 
@@ -184,7 +185,7 @@ async fn main() {
             query_open_data,
             query_worldwide,
             query_worldwide_market_center,
-            query_other_market_center,
+            query_popular_section,
             query_industrial_chain,
             query_economic_indicators,
             query_hot_indicators,
@@ -195,7 +196,12 @@ async fn main() {
             query_company_info,
             query_company_profile,
             query_executive_changes,
-            query_by_url
+            query_by_url,
+            query_hot_stock_list,
+            query_financial_calendar,
+            query_stock_rf_distribution,
+            query_industry_hot,
+            query_stock_rank
         ])
         .build(tauri::generate_context!())
         .expect("error while running tauri application");

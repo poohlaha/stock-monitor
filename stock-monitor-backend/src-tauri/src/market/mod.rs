@@ -35,6 +35,22 @@ pub enum MarketType {
     Unknown,
 }
 
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub enum HotStockType {
+    /// 热股
+    Stock,
+    /// 热搜
+    Search,
+    /// 版块
+    Plate,
+    /// 舆情
+    Sentiment,
+    /// 诊股
+    Analysis,
+    /// 机构
+    Institution,
+}
+
 impl Display for MarketType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let str = match self {
@@ -82,10 +98,10 @@ impl Market {
     }
 
     /**
-      获取A股、港股等行情
+      获取热门板块
       例: https://finance.pae.baidu.com/vapi/v1/blocks/overview?hasTrend=1&market=ab&finClientType=pc
     */
-    pub async fn query_other_market_center(market: &str) -> Result<HttpResponse, String> {
+    pub async fn query_popular_section(market: &str) -> Result<HttpResponse, String> {
         let url = format!("{}vapi/v1/blocks/overview?hasTrend=1&market={}&finClientType=pc", BD_HTTP_URL_PREFIX, market);
         info!("{} query market status url {}", LOGGER_PREFIX.cyan().bold(), url);
         Utils::get_time_response(&url).await
@@ -198,6 +214,85 @@ impl Market {
       通过url查询数据
     */
     pub async fn query_by_url(url: &str) -> Result<HttpResponse, String> {
+        Utils::get_time_response(&url).await
+    }
+
+    /**
+      热股榜
+      例:
+       - 热股: https://finance.pae.baidu.com/vapi/v1/hotrank?tn=wisexmlnew&dsp=iphone&product=stock&style=tablelist&market=all&type=hour&day=20260813&hour=10&pn=0&rn=12&finClientType=pc
+       - 热搜: https://finance.pae.baidu.com/selfselect/listsugrecomm?tn=wisexmlnew&dsp=iphone&product=search&style=tablelist&market=all&type=hour&day=20260813&hour=10&pn=0&rn=12&finClientType=pc
+       - 版块: https://finance.pae.baidu.com/selfselect/listsugrecomm?tn=wisexmlnew&dsp=iphone&product=plate&style=tablelist&pn=0&rn=12&finClientType=pc
+       - 舆情: https://finance.pae.baidu.com/vapi/sentimentrank?market=&financeType=&pn=0&rn=12&finClientType=pc
+       - 诊股: https://finance.pae.baidu.com/vapi/v1/analysisrank?product=analysis&isNew=1&style=tablelist&market=ab&pn=0&rn=12&finClientType=pc
+       - 机构: https://finance.pae.baidu.com/sapi/v1/getinsthotstock?holdingType=all&market=all&scene=default&pn=0&rn=12&finClientType=pc
+    */
+    pub async fn query_hot_stock_list(day: &str, hot_type: HotStockType, market: &str) -> Result<HttpResponse, String> {
+        let mut url = String::new();
+
+        url = match hot_type {
+            HotStockType::Stock => {
+                format!(
+                    "{}vapi/v1/hotrank?tn=wisexmlnew&dsp=iphone&product=stock&style=tablelist&market=all&type=hour&day={}&hour=10&pn=0&rn=12&finClientType=pc",
+                    BD_HTTP_URL_PREFIX, day
+                )
+            }
+            HotStockType::Search => {
+                format!(
+                    "{}selfselect/listsugrecomm?tn=wisexmlnew&dsp=iphone&product=search&style=tablelist&market=all&type=hour&day={}&hour=10&pn=0&rn=12&finClientType=pc",
+                    BD_HTTP_URL_PREFIX, day
+                )
+            }
+            HotStockType::Plate => {
+                format!("{}selfselect/listsugrecomm?tn=wisexmlnew&dsp=iphone&product=plate&style=tablelist&pn=0&rn=12&finClientType=pc", BD_HTTP_URL_PREFIX)
+            }
+            HotStockType::Sentiment => {
+                format!("{}vapi/sentimentrank?market=&financeType=&pn=0&rn=12&finClientType=pc", BD_HTTP_URL_PREFIX)
+            }
+            HotStockType::Analysis => {
+                format!("{}vapi/v1/analysisrank?product=analysis&isNew=1&style=tablelist&market={}&pn=0&rn=12&finClientType=pc", BD_HTTP_URL_PREFIX, market)
+            }
+            HotStockType::Institution => {
+                format!("{}sapi/v1/getinsthotstock?holdingType=all&market={}&scene=default&pn=0&rn=12&finClientType=pc", BD_HTTP_URL_PREFIX, market)
+            }
+        };
+
+        Utils::get_time_response(&url).await
+    }
+
+    /**
+      获取财经日历
+      例: https://finance.pae.baidu.com/sapi/v1/financecalendar?cate=economic_data&from=home_page&pn=0&rn=6&finClientType=pc
+    */
+    pub async fn query_financial_calendar() -> Result<HttpResponse, String> {
+        let url = format!("{}sapi/v1/financecalendar?cate=economic_data&from=home_page&pn=0&rn=6&finClientType=pc", BD_HTTP_URL_PREFIX);
+        Utils::get_time_response(&url).await
+    }
+
+    /**
+      查询涨跌分布
+      例: https://finance.pae.baidu.com/sapi/v1/marketquote?bizType=chgdiagram&market=ab&finClientType=pc
+    */
+    pub async fn query_stock_rf_distribution(market: &str) -> Result<HttpResponse, String> {
+        let url = format!("{}sapi/v1/marketquote?bizType=chgdiagram&market={}&finClientType=pc", BD_HTTP_URL_PREFIX, market);
+        Utils::get_time_response(&url).await
+    }
+
+    /**
+      查询热力图
+      例: https://finance.pae.baidu.com/vapi/v2/blocks?style=heatmap&market=ab&typeCode=HY&sortKey=amount&sortType=desc&pn=0&rn=20&finClientType=pc
+    */
+    pub async fn query_industry_hot(market: &str, sort_key: &str) -> Result<HttpResponse, String> {
+        let url = format!("{}vapi/v2/blocks?style=heatmap&market={}&typeCode=HY&sortKey={}&sortType=desc&pn=0&rn=20&finClientType=pc", BD_HTTP_URL_PREFIX, market, sort_key);
+        Utils::get_time_response(&url).await
+    }
+
+    /**
+      查询排行
+      例: https://finance.pae.baidu.com/sapi/v1/ranks?bizType=stock_rank&category=&market=ab&pn=0&rn=12&fieldsType=base&finClientType=pc
+    */
+    pub async fn query_stock_rank(market: &str) -> Result<HttpResponse, String> {
+        let url = format!("{}sapi/v1/ranks?bizType=stock_rank&category=&market={}&pn=0&rn=12&fieldsType=base&finClientType=pc", BD_HTTP_URL_PREFIX, market);
         Utils::get_time_response(&url).await
     }
 }

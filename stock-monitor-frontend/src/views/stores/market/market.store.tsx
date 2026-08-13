@@ -8,6 +8,7 @@ import { action, makeObservable, observable } from 'mobx'
 import { invoke } from '@tauri-apps/api/core'
 import Utils from '@utils/utils'
 import { TOAST } from '@utils/base'
+import { getToday } from '@pages/utils'
 
 class MarketStore extends BaseStore {
   @observable timelineList: Array<any> = [] // 分时图数据
@@ -41,6 +42,25 @@ class MarketStore extends BaseStore {
   @observable executiveChanges: Record<string, any> = {}
   @observable shareholders: Record<string, any> = {} // 股本股东
   @observable holdShareInfo: Record<string, any> = {} // 持仓明细
+  @observable hotStock: any = {} // 热股榜
+  @observable financialCalendarList: Array<Record<string, any>> = [] // 财经日历
+  @observable stockRfDistribution: Record<string, any> = {} // 涨跌分布
+  @observable stockIndustryHot: Array<Record<string, any>> = [] // 热力图
+  @observable popularSectionList: Array<Record<string, any>> = [] // 热门板块
+  @observable stockRankList: Array<Record<string, any>> = [] // 排行
+
+  readonly HOT_TYPE_LIST: Array<string> = ['Stock', 'Search', 'Plate', 'Sentiment', 'Analysis', 'Institution']
+
+  @observable market: Record<string, any> = {
+    // 市场
+    tabs: {
+      globalActiveTabIndex: '', // 全球市场 tab 选中,
+      center: {
+        globalHotActiveTabIndex: '' // 全球热门指数
+      },
+      industrialActiveTabIndex: '' // 产业链
+    }
+  }
 
   readonly checkTradeSchedule: Array<string> = ['09:30', '11:30', '13:11', '15:00']
 
@@ -799,13 +819,16 @@ class MarketStore extends BaseStore {
       let data = this.handleResult(result) || {}
       this.worldwide = data || {}
       if (!Utils.isObjectNull(this.worldwide || {})) {
-        this.worldwide.tabs = (this.worldwide.tabs || []).map((w: Record<string, any> = {}) => {
-          return {
-            ...w,
-            label: w.text || '',
-            key: w.market || ''
-          }
-        })
+        this.worldwide.tabs =
+          (this.worldwide.tabs || []).map((w: Record<string, any> = {}) => {
+            return {
+              ...w,
+              label: w.text || '',
+              key: w.market || ''
+            }
+          }) || []
+
+        this.market.tabs.globalActiveTabIndex = this.worldwide.curtab || ''
       }
 
       console.log('worldwide: ', this.worldwide)
@@ -828,6 +851,11 @@ class MarketStore extends BaseStore {
         this.worldwideMarket = (data[0] || {}).TplData?.result || {}
       } else {
         this.worldwideMarket = {}
+      }
+
+      const hotIndexList = this.worldwideMarket.hot_index || []
+      if (hotIndexList.length > 0) {
+        this.market.tabs.center.globalHotActiveTabIndex = hotIndexList[0].area || ''
       }
 
       console.log('worldwide market: ', this.worldwideMarket)
@@ -874,12 +902,11 @@ class MarketStore extends BaseStore {
         this.industrialChainMarket = []
       }
 
-      let tabIndex = ''
       if (this.industrialChainMarket.length > 0) {
-        tabIndex = this.industrialChainMarket[0].id || ''
+        this.market.tabs.industrialActiveTabIndex = this.industrialChainMarket[0].id || ''
       }
 
-      callback?.(tabIndex)
+      callback?.()
       console.log('industrial chain: ', this.industrialChainMarket)
       return result || {}
     } catch (e: any) {
@@ -1169,6 +1196,113 @@ class MarketStore extends BaseStore {
       let result: { [K: string]: any } = (await invoke('query_by_url', { url })) || {}
       const data = this.handleResult(result) || {}
       callback?.(data)
+      return result || {}
+    } catch (e: any) {
+      this.loading = false
+      throw new Error(e)
+    }
+  }
+
+  // 热股榜
+  @action
+  async onGetHotStock(hotType: string = '', market: string = '') {
+    const day = getToday()
+
+    if (Utils.isBlank(hotType || '')) {
+      hotType = this.HOT_TYPE_LIST[0]
+    }
+
+    try {
+      let result: { [K: string]: any } = (await invoke('query_hot_stock_list', { day, hotType, market })) || {}
+      const data = this.handleResult(result) || {}
+      this.hotStock = data || {}
+      console.log('hot stock: ', this.hotStock)
+      return result || {}
+    } catch (e: any) {
+      this.loading = false
+      throw new Error(e)
+    }
+  }
+
+  // 财经日历
+  @action
+  async onGetFinancialCalendar() {
+    try {
+      let result: { [K: string]: any } = (await invoke('query_financial_calendar', {})) || {}
+      const data = this.handleResult(result) || {}
+      this.financialCalendarList = (data || {}).calendarInfo || []
+      console.log('financial calendar list: ', this.financialCalendarList)
+      return result || {}
+    } catch (e: any) {
+      this.loading = false
+      throw new Error(e)
+    }
+  }
+
+  // 查询涨跌分布
+  @action
+  async onGetStockRfDistribution(market: string = '') {
+    try {
+      let result: { [K: string]: any } = (await invoke('query_stock_rf_distribution', { market })) || {}
+      const data = this.handleResult(result) || {}
+      this.stockRfDistribution = (data || {}).chgdiagram || {}
+      console.log('stock rf distribution: ', this.stockRfDistribution)
+      return result || {}
+    } catch (e: any) {
+      this.loading = false
+      throw new Error(e)
+    }
+  }
+
+  // 查询热力图
+  async onGetStockIndustryHot(market: string = '', sortKey: string = '') {
+    try {
+      let result: { [K: string]: any } = (await invoke('query_industry_hot', { market, sortKey })) || {}
+      const data = this.handleResult(result) || {}
+      const list = data.list || []
+      this.stockIndustryHot = []
+
+      if (list.length > 0) {
+        this.stockIndustryHot = list[0].body || []
+      }
+
+      console.log('stock industry hot: ', this.stockIndustryHot)
+      return result || {}
+    } catch (e: any) {
+      this.loading = false
+      throw new Error(e)
+    }
+  }
+
+  // 热门板块
+  async onGetPopularSection(market: string = '', sortKey: string = '') {
+    try {
+      let result: { [K: string]: any } = (await invoke('query_popular_section', { market, sortKey })) || {}
+      const data = this.handleResult(result) || []
+      this.popularSectionList = []
+      if (data.length > 0) {
+        this.popularSectionList = data[0].blocks || []
+      }
+
+      console.log('popular section list: ', this.popularSectionList)
+      return result || {}
+    } catch (e: any) {
+      this.loading = false
+      throw new Error(e)
+    }
+  }
+
+  // 查询排行
+  async onGetStockRank(market: string = '') {
+    try {
+      let result: { [K: string]: any } = (await invoke('query_stock_rank', { market })) || {}
+      const data = this.handleResult(result) || []
+      this.popularSectionList = []
+      if (data.length > 0) {
+        this.stockRankList = data[0].blocks || []
+      }
+
+      console.log('stock rank list: ', this.stockRankList)
       return result || {}
     } catch (e: any) {
       this.loading = false

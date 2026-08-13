@@ -36,7 +36,7 @@ impl Utils {
 
         // 获取token
         let token = BaiduToken::get_token_async().await;
-        if (token.is_none()) {
+        if token.is_none() {
             warn!("{} get baidu token error!", LOGGER_PREFIX);
         }
 

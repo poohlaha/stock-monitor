@@ -64,10 +64,14 @@ export function createSparkline(data: number[] = [], color: string = '') {
 
 export function getColor(value: number | string) {
   if (typeof value === 'string') {
+    if (value === '-') {
+      return '#999999'
+    }
+
     value = (value || '0').replace('%', '').trim()
     value = Number(value)
   }
-  return value > 0 ? '#f5222d' : value < 0 ? '#52c41a' : '#999'
+  return value > 0 ? '#f5222d' : value < 0 ? '#037b66' : '#999999'
 }
 
 export function formatTimestamp(timestamp: number, needSecond: boolean = true) {
@@ -86,4 +90,26 @@ export function formatTimestamp(timestamp: number, needSecond: boolean = true) {
 export function isPositive(value: string = '') {
   const num = Number(value.match(/[+-]?\d+(\.\d+)?/)?.[0] || 0)
   return num > 0
+}
+
+export function getToday() {
+  const date = new Date()
+
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+
+  return `${year}${month}${day}`
+}
+
+export function getWidth(value: number = 0, largest: number = 0, needSqrt: boolean = false) {
+  if (largest === 0) {
+    return 0
+  }
+
+  if (needSqrt) {
+    return Math.sqrt(Math.abs(value) / largest) * 100
+  }
+
+  return (Math.abs(value) / largest) * 100
 }
