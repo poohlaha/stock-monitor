@@ -8,12 +8,12 @@ import { observer } from 'mobx-react-lite'
 import { Popover, Tabs } from 'antd'
 import { useStore } from '@views/stores'
 import Utils from '@utils/utils'
-import {formatTimestamp, getColor, getRateClassName, getWidth, isPositive, parseCNNumber} from '@pages/utils'
+import { formatTimestamp, getColor, getRateClassName, getWidth, isPositive, parseCNNumber } from '@pages/utils'
 import * as echarts from 'echarts/core'
 import { useNavigate } from 'react-router-dom'
 import RouterUrls from '@route/router.url.toml'
-import GroupTemplate from "@views/components/group/one";
-import GroupTwoTemplate from "@views/components/group/two";
+import GroupTemplate from '@views/components/group/one'
+import GroupTwoTemplate from '@views/components/group/two'
 
 interface IMarketDetailStockProps {
   resetSize: Function
@@ -34,7 +34,7 @@ const MarketDetailStock = (props: IMarketDetailStockProps): ReactElement => {
   const gdChartRef = useRef<echarts.ECharts | null>(null)
 
   useEffect(() => {
-    if (!gdBarChartRef.current ) {
+    if (!gdBarChartRef.current) {
       return
     }
 
@@ -1407,20 +1407,20 @@ const MarketDetailStock = (props: IMarketDetailStockProps): ReactElement => {
                 }
 
                 return (
-                    <div
-                        className="flex-align-center border-bottom bg-line-hover flex-align-center min-h-12 hover:rounded-md p-2"
-                        key={index}
-                    >
-                      <p className="flex-1 text-l pl-2">{b.reportDate || ''}</p>
-                      <div className="flex-1 text-c flex-center">
-                        <p>{bb1.length >= 1 ? bb1[1] : ''}</p>
-                        <p className={`font-bold ${value1ClassName}`}>({value1})</p>
-                      </div>
-                      <div className="flex-1 text-r pr-2 flex items-end justify-end">
-                        <p>{bb2.length >= 1 ? bb1[1] : ''}</p>
-                        <p className={`font-bold ${value2ClassName}`}>({value2})</p>
-                      </div>
+                  <div
+                    className="flex-align-center border-bottom bg-line-hover flex-align-center min-h-12 hover:rounded-md p-2"
+                    key={index}
+                  >
+                    <p className="flex-1 text-l pl-2">{b.reportDate || ''}</p>
+                    <div className="flex-1 text-c flex-center">
+                      <p>{bb1.length >= 1 ? bb1[1] : ''}</p>
+                      <p className={`font-bold ${value1ClassName}`}>({value1})</p>
                     </div>
+                    <div className="flex-1 text-r pr-2 flex items-end justify-end">
+                      <p>{bb2.length >= 1 ? bb1[1] : ''}</p>
+                      <p className={`font-bold ${value2ClassName}`}>({value2})</p>
+                    </div>
+                  </div>
                 )
               })}
             </div>
@@ -1444,9 +1444,7 @@ const MarketDetailStock = (props: IMarketDetailStockProps): ReactElement => {
                   </div>
                 </div>
 
-                <div className="flex-direction-column mt-2 overflow-y-auto no-scrollbar h-[300px]">
-
-                </div>
+                <div className="flex-direction-column mt-2 overflow-y-auto no-scrollbar h-[300px]"></div>
               </div>
             </GroupTemplate>
           </GroupTwoTemplate>

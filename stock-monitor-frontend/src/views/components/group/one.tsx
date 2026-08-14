@@ -19,7 +19,6 @@ interface IGroupTemplateProps {
 }
 
 const GroupTemplate = (props: PropsWithChildren<IGroupTemplateProps>): ReactElement => {
-
   const getTitle = () => {
     let titleSizeClassName = props.titleSizeClassName || ''
     if (Utils.isBlank(titleSizeClassName || '')) {
@@ -28,10 +27,10 @@ const GroupTemplate = (props: PropsWithChildren<IGroupTemplateProps>): ReactElem
 
     if (props.titleRight) {
       return (
-          <div className="flex-align-center flex-jsc-between">
-            <p className={`${titleSizeClassName || ''} font-bold mr-2`}>{props.title || ''}</p>
-            {props.titleRight}
-          </div>
+        <div className="flex-align-center flex-jsc-between">
+          <p className={`${titleSizeClassName || ''} font-bold mr-2`}>{props.title || ''}</p>
+          {props.titleRight}
+        </div>
       )
     }
 
@@ -39,7 +38,7 @@ const GroupTemplate = (props: PropsWithChildren<IGroupTemplateProps>): ReactElem
       return null
     }
 
-    return  <p className={`${titleSizeClassName || ''} font-bold`}>{props.title || ''}</p>
+    return <p className={`${titleSizeClassName || ''} font-bold`}>{props.title || ''}</p>
   }
 
   const render = () => {
