@@ -345,6 +345,7 @@ const MarketDetail = (): ReactElement => {
                   pankouInfo={marketStore.pankouInfo || {}}
                   size={size}
                   timelineList={marketStore.timelineList || []}
+                  fiveDayList={marketStore.fiveDayList || []}
                   klineList={marketStore.klineList || []}
                   weekList={marketStore.weekList || []}
                   monthList={marketStore.monthList || []}

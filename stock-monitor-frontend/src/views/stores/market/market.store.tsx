@@ -12,6 +12,7 @@ import { getToday } from '@pages/utils'
 
 class MarketStore extends BaseStore {
   @observable timelineList: Array<any> = [] // 分时图数据
+  @observable fiveDayList: Array<any> = [] // 五日图数据
   @observable klineList: Array<any> = [] // 日K图数据
   @observable weekList: Array<any> = [] // 周K图数据
   @observable monthList: Array<any> = [] // 月K图数据
@@ -723,7 +724,7 @@ class MarketStore extends BaseStore {
       list = list.concat(this.onGetTimeResult(m.p || '') || [])
     }
 
-    this.timelineList = list || []
+    this.fiveDayList = list || []
     if (list.length > 0) {
       this.preClosePrice = list[list.length - 1].price || 0
     }
@@ -734,7 +735,7 @@ class MarketStore extends BaseStore {
    */
   onGetKlineData(data: Record<string, any> = {}) {
     if (Utils.isObjectNull(data || {})) {
-      return
+      return []
     }
 
     this.xLabels = []

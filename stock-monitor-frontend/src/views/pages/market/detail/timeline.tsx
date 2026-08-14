@@ -12,6 +12,7 @@ interface IMarketDetailTimelineProps {
   pankouInfo: Record<string, any>
   size: Record<string, any>
   timelineList: Array<any>
+  fiveDayList: Array<any>
   klineList: Array<any>
   weekList: Array<any>
   monthList: Array<any>
@@ -69,7 +70,7 @@ const MarketDetailTimeline = (props: IMarketDetailTimelineProps): ReactElement =
    * 获取日 K 数据
    */
   const getDailyKData = (start: number, end: number) => {
-    return (props.klineList || []).slice(start, end)
+    return (props.klineList || []).slice(start, end).sort((a: any, b: any) => a.timestamp - b.timestamp)
   }
 
   /**
@@ -87,7 +88,7 @@ const MarketDetailTimeline = (props: IMarketDetailTimelineProps): ReactElement =
    * 获取周 K 数据
    */
   const getWeekKData = (start: number, end: number) => {
-    return (props.weekList || []).slice(start, end)
+    return (props.weekList || []).slice(start, end).sort((a: any, b: any) => a.timestamp - b.timestamp)
   }
 
   /**
@@ -105,7 +106,7 @@ const MarketDetailTimeline = (props: IMarketDetailTimelineProps): ReactElement =
    * 获取月 K 数据
    */
   const getMonthKData = (start: number, end: number) => {
-    return (props.monthList || []).slice(start, end)
+    return (props.monthList || []).slice(start, end).sort((a: any, b: any) => a.timestamp - b.timestamp)
   }
 
   /**
@@ -150,7 +151,7 @@ const MarketDetailTimeline = (props: IMarketDetailTimelineProps): ReactElement =
                   closingPrice: props.preClosePrice
                 }}
                 fiveTime={{
-                  data: props.timelineList || [],
+                  data: props.fiveDayList || [],
                   closingPrice: props.preClosePrice,
                   basic: {
                     show: true,

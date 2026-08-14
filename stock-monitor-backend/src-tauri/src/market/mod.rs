@@ -11,7 +11,6 @@ use serde::{Deserialize, Serialize};
 use std::fmt::Display;
 
 pub mod detail;
-pub mod timeline;
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub struct Args {

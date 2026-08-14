@@ -94,16 +94,19 @@ const MarketDetail = (): ReactElement => {
     const e = ADDRESS.getAddressQueryString('exchange') || ''
     setExchange(e)
 
-    resetSize()
+    resetSize(t)
     onInit(c, m, t)
   }, [c])
 
-  const resetSize = () => {
+  const resetSize = (t: string = '') => {
+    if (Utils.isBlank(t || '')) {
+      t = type
+    }
     let chart = document.querySelector('.content-box')
     if (!chart) return
 
     const rect = chart.getBoundingClientRect()
-    let width = rect.width - 400
+    let width = rect.width - (t === 'fund' ? 400 : 0)
     if (width < 500) {
       width = 500
     }
