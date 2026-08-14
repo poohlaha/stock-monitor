@@ -158,7 +158,6 @@ const MarketDetailFnCurveGraph = (props: IMarketDetailFnCurveGraphProps): ReactE
       series
     }
 
-    console.log('option: ', option)
     chart.setOption(option)
     return chart
   }
@@ -250,7 +249,6 @@ const MarketDetailFnCurveGraph = (props: IMarketDetailFnCurveGraphProps): ReactE
       series
     }
 
-    console.log('option: ', option)
     chart.setOption(option)
     return chart
   }

@@ -8,10 +8,12 @@ import { observer } from 'mobx-react-lite'
 import { Popover, Tabs } from 'antd'
 import { useStore } from '@views/stores'
 import Utils from '@utils/utils'
-import { formatTimestamp, getColor, getRateClassName, getWidth, isPositive } from '@pages/utils'
+import {formatTimestamp, getColor, getRateClassName, getWidth, isPositive, parseCNNumber} from '@pages/utils'
 import * as echarts from 'echarts/core'
 import { useNavigate } from 'react-router-dom'
 import RouterUrls from '@route/router.url.toml'
+import GroupTemplate from "@views/components/group/one";
+import GroupTwoTemplate from "@views/components/group/two";
 
 interface IMarketDetailStockProps {
   resetSize: Function
@@ -28,6 +30,112 @@ const MarketDetailStock = (props: IMarketDetailStockProps): ReactElement => {
   const [ccDetalActiveTabIndex, setCcDetailActiveTabIndex] = useState('1')
   // const navigate = useNavigate()
 
+  const gdBarChartRef = useRef(null)
+  const gdChartRef = useRef<echarts.ECharts | null>(null)
+
+  useEffect(() => {
+    if (!gdBarChartRef.current ) {
+      return
+    }
+
+    const gdBarChart = getGDBarChart()
+
+    // @ts-ignore
+    gdChartRef.current = gdBarChart
+
+    return () => {
+      gdBarChart?.dispose()
+    }
+  }, [marketStore.shareholders?.shareholders?.list || []])
+
+  useEffect(() => {
+    const handleResize = () => {
+      gdChartRef.current?.resize()
+      props.resetSize?.()
+    }
+
+    window.addEventListener('resize', handleResize)
+
+    return () => {
+      window.removeEventListener('resize', handleResize)
+    }
+  }, [])
+
+  // 股东人数
+  const getGDBarChart = () => {
+    if (!gdBarChartRef.current) return
+
+    let data = []
+    let xAxisData = []
+    let list = marketStore.shareholders?.shareholders?.list || []
+    const lineData = []
+    if (list.length > 0) {
+      for (let l of list) {
+        data.push(parseCNNumber(l.num) || 0.0)
+        xAxisData.push(l.reportDate || '')
+        lineData.push(parseCNNumber(l.price))
+      }
+    }
+
+    const chart = echarts.init(gdBarChartRef.current)
+    const option = {
+      legend: {
+        data: ['股东人数', '股价']
+      },
+      tooltip: {
+        show: true
+      },
+      xAxis: {
+        type: 'category',
+        show: true,
+        data: xAxisData || [],
+        axisLine: { show: false },
+        axisTick: { show: false },
+        splitLine: { show: false },
+        axisLabel: {
+          rotate: 45
+        }
+      },
+      yAxis: [
+        {
+          type: 'value',
+          name: '股东人数'
+        },
+        {
+          type: 'value',
+          name: '股价',
+          position: 'right'
+        }
+      ],
+      series: [
+        {
+          name: '股东人数',
+          type: 'bar',
+          radius: '50%',
+          barWidth: 20,
+          yAxisIndex: 0,
+          data
+        },
+        {
+          name: '股价',
+          type: 'line',
+          smooth: true,
+          yAxisIndex: 1,
+          symbol: 'circle',
+          symbolSize: 8,
+          lineStyle: {
+            width: 3
+          },
+          data: lineData
+        }
+      ]
+    }
+
+    console.log('option: ', option)
+    chart.setOption(option)
+    return chart
+  }
+
   const getArrowSvg = () => {
     return (
       <svg className="wh100" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
@@ -39,7 +147,7 @@ const MarketDetailStock = (props: IMarketDetailStockProps): ReactElement => {
     )
   }
 
-  const getQuesitonSvg = () => {
+  const getQuestionSvg = () => {
     return (
       <svg className="w-6 h-6 color-gray" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
         <path
@@ -299,7 +407,7 @@ const MarketDetailStock = (props: IMarketDetailStockProps): ReactElement => {
                 </div>
               }
             >
-              {getQuesitonSvg()}
+              {getQuestionSvg()}
             </Popover>
             {!Utils.isObjectNull(result || {}) && <p className="ml-4 color-gray">单位：亿</p>}
           </div>
@@ -675,7 +783,6 @@ const MarketDetailStock = (props: IMarketDetailStockProps): ReactElement => {
       series
     }
 
-    console.log('option: ', option)
     chart.setOption(option)
     return chart
   }
@@ -804,7 +911,6 @@ const MarketDetailStock = (props: IMarketDetailStockProps): ReactElement => {
       series
     }
 
-    console.log('option: ', option)
     chart.setOption(option)
     return chart
   }
@@ -1007,7 +1113,7 @@ const MarketDetailStock = (props: IMarketDetailStockProps): ReactElement => {
             arrow={false}
             content={<p>目前有{organRating.organNum || 0}家机构对目标进行预测</p>}
           >
-            {getQuesitonSvg()}
+            {getQuestionSvg()}
           </Popover>
         </div>
 
@@ -1263,59 +1369,87 @@ const MarketDetailStock = (props: IMarketDetailStockProps): ReactElement => {
     const equityChange = marketStore.shareholders?.equityChange || {}
     const body = equityChange.list || []
 
+    const shareholders = (marketStore.shareholders?.shareholders?.list || []).slice().reverse()
     return (
       <div className="flex-direction-column flex-1 border rounded-lg p-4 mt-8">
-        <p className="font-bold text-xl">{shareholderEquity.title || ''}</p>
+        <p className="font-bold text-2xl">{shareholderEquity.title || ''}</p>
 
         <div className="flex-direction-column mt-4">
-          <p className="font-bold text-base">{equityChange.title || ''}</p>
-          <div className="flex-direction-column color-gray mt-2">
-            <div className="flex-align-center">
-              <p className="flex-1 text-l pl-2">变动日期</p>
-              <p className="flex-1 text-c">总股本(变动)</p>
-              <p className="flex-1 text-r pr-2">流动股(变动)</p>
+          <div className="flex-direction-column">
+            <p className="font-bold text-lg">{equityChange.title || ''}</p>
+            <div className="flex-direction-column color-gray mt-2">
+              <div className="flex-align-center">
+                <p className="flex-1 text-l pl-2">变动日期</p>
+                <p className="flex-1 text-c">总股本(变动)</p>
+                <p className="flex-1 text-r pr-2">流动股(变动)</p>
+              </div>
+            </div>
+
+            <div className="flex-direction-column mt-2 overflow-y-auto no-scrollbar h-[300px]">
+              {body.map((b: Record<string, any> = {}, index: number) => {
+                const bb = b.body || []
+
+                const bb1 = bb.length > 0 ? bb[0] || [] : []
+                const bb2 = bb.length > 1 ? bb[1] || [] : []
+
+                let value1 = ''
+                let value1ClassName = ''
+                if (bb1.length >= 2) {
+                  value1 = splitMoney(bb1[2] || '')
+                  value1ClassName = value1 !== '未变' ? getRateClassName(isPositive(value1) ? 1 : -1) : ''
+                }
+
+                let value2 = ''
+                let value2ClassName = ''
+                if (bb2.length >= 2) {
+                  value2 = splitMoney(bb2[2] || '')
+                  value2ClassName = value2 !== '未变' ? getRateClassName(isPositive(value2) ? 1 : -1) : ''
+                }
+
+                return (
+                    <div
+                        className="flex-align-center border-bottom bg-line-hover flex-align-center min-h-12 hover:rounded-md p-2"
+                        key={index}
+                    >
+                      <p className="flex-1 text-l pl-2">{b.reportDate || ''}</p>
+                      <div className="flex-1 text-c flex-center">
+                        <p>{bb1.length >= 1 ? bb1[1] : ''}</p>
+                        <p className={`font-bold ${value1ClassName}`}>({value1})</p>
+                      </div>
+                      <div className="flex-1 text-r pr-2 flex items-end justify-end">
+                        <p>{bb2.length >= 1 ? bb1[1] : ''}</p>
+                        <p className={`font-bold ${value2ClassName}`}>({value2})</p>
+                      </div>
+                    </div>
+                )
+              })}
             </div>
           </div>
 
-          <div className="flex-direction-column mt-2 overflow-y-auto no-scrollbar h-[300px]">
-            {body.map((b: Record<string, any> = {}, index: number) => {
-              const bb = b.body || []
-
-              const bb1 = bb.length > 0 ? bb[0] || [] : []
-              const bb2 = bb.length > 1 ? bb[1] || [] : []
-
-              let value1 = ''
-              let value1ClassName = ''
-              if (bb1.length >= 2) {
-                value1 = splitMoney(bb1[2] || '')
-                value1ClassName = value1 !== '未变' ? getRateClassName(isPositive(value1) ? 1 : -1) : ''
-              }
-
-              let value2 = ''
-              let value2ClassName = ''
-              if (bb2.length >= 2) {
-                value2 = splitMoney(bb2[2] || '')
-                value2ClassName = value2 !== '未变' ? getRateClassName(isPositive(value2) ? 1 : -1) : ''
-              }
-
-              return (
-                <div
-                  className="flex-align-center border-bottom bg-line-hover flex-align-center min-h-12 hover:rounded-md p-2"
-                  key={index}
-                >
-                  <p className="flex-1 text-l pl-2">{b.reportDate || ''}</p>
-                  <div className="flex-1 text-c flex-center">
-                    <p>{bb1.length >= 1 ? bb1[1] : ''}</p>
-                    <p className={`font-bold ${value1ClassName}`}>({value1})</p>
-                  </div>
-                  <div className="flex-1 text-r pr-2 flex items-end justify-end">
-                    <p>{bb2.length >= 1 ? bb1[1] : ''}</p>
-                    <p className={`font-bold ${value2ClassName}`}>({value2})</p>
+          {/* 股东人数 */}
+          <GroupTwoTemplate title={shareholders.title || ''} className="mt-4 flex-1">
+            <GroupTemplate className="flex-direction-column flex-1">
+              <div className="mt-2 h-[350px]">
+                <div className="aspect-square h-full" ref={gdBarChartRef}></div>
+              </div>
+            </GroupTemplate>
+            <GroupTemplate className="flex-direction-column flex-1">
+              <div className="mt-2 flex-direction-column">
+                <div className="flex-direction-column color-gray mt-2">
+                  <div className="flex-align-center">
+                    <p className="flex-1 text-l pl-2">变动日期</p>
+                    <p className="flex-1 text-c">股东总人数</p>
+                    <p className="flex-1 text-r pr-2">变动比例</p>
+                    <p className="flex-1 text-r pr-2">股价</p>
                   </div>
                 </div>
-              )
-            })}
-          </div>
+
+                <div className="flex-direction-column mt-2 overflow-y-auto no-scrollbar h-[300px]">
+
+                </div>
+              </div>
+            </GroupTemplate>
+          </GroupTwoTemplate>
         </div>
       </div>
     )

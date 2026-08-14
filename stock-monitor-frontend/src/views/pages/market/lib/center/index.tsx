@@ -144,7 +144,6 @@ const MarketCenter = (): ReactElement => {
       ]
     }
 
-    console.log('option: ', option)
     chart.setOption(option)
     return chart
   }

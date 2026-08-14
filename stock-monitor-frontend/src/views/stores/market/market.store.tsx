@@ -1104,8 +1104,9 @@ class MarketStore extends BaseStore {
       if (!Utils.isObjectNull(this.companyProfile || {})) {
         const basicInfo = (this.companyProfile.newCompany || {}).basicInfo || {}
         const shareholderEquity = (this.companyProfile.newCompany || {}).shareholderEquity || {}
+
+        // 查询高管等信息
         if (!Utils.isObjectNull(basicInfo || {})) {
-          // 查询高管等信息
           await this.onGetExecutiveChanges(
             code,
             market,
@@ -1122,7 +1123,6 @@ class MarketStore extends BaseStore {
 
         // 查询股本股东
         if (!Utils.isObjectNull(shareholderEquity || {})) {
-          // 查询高管等信息
           setTimeout(async () => {
             await this.onGetExecutiveChanges(
               code,

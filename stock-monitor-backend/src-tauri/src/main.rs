@@ -21,7 +21,7 @@ use rayon::ThreadPoolBuilder;
 
 use crate::database::Database;
 use crate::system::tray::Tray;
-use crate::utils::baidu::{BaiduToken, BAIDU_REFRESHING, BAIDU_TOKEN, BAIDU_TOKEN_NOTIFY};
+use crate::utils::baidu::{BaiduToken, BAIDU_REFRESHING, BAIDU_TOKEN, BAIDU_TOKEN_NOTIFY, BaiduAuth};
 use exports::market::{
     get_time_data, query_brief, query_by_url, query_company_info, query_company_profile, query_economic_indicators, query_executive_changes, query_financial_calendar, query_fund_graph, query_hot_indicators, query_hot_stock_list, query_income,
     query_industrial_chain, query_industry_fund_flow, query_industry_hot, query_market_status, query_news, query_open_data, query_popular_section, query_position_distribution, query_stock_rank, query_stock_rf_distribution, query_worldwide,
@@ -35,7 +35,7 @@ use sqlx::MySql;
 use std::sync::atomic::Ordering;
 use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
-use tauri::{Listener, Manager, WebviewWindowBuilder};
+use tauri::{Listener, Manager};
 
 const PROJECT_NAME: &str = "stock-monitor";
 
@@ -100,15 +100,19 @@ async fn main() {
             Tray::builder(&app_handle);
 
             app.listen("baidu-token", move |event| {
-                let token = event.payload().trim_matches('"').to_string();
+                let payload = event.payload();
+                let payload = payload.replace("\\\"", "\"");
 
-                info!("{} 收到百度token: {}", LOGGER_PREFIX, token);
-                let mut store = BAIDU_TOKEN.write().unwrap();
-                store.token = token;
+                let payload = payload.trim_matches('"').to_string();
+                let auth: BaiduAuth = serde_json::from_str(&payload).unwrap();
+
+                info!("{} 收到百度 token: {}", LOGGER_PREFIX, &auth.token);
+                info!("{} 收到百度 cookie: {}", LOGGER_PREFIX, &auth.cookie);
 
                 let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs();
-
-                // 一分钟过期
+                let mut store = BAIDU_TOKEN.write().unwrap();
+                store.token = auth.token;
+                store.cookie = auth.cookie;
                 store.expire_at = now + 1;
 
                 BAIDU_REFRESHING.store(false, Ordering::SeqCst);

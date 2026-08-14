@@ -113,3 +113,24 @@ export function getWidth(value: number = 0, largest: number = 0, needSqrt: boole
 
   return (Math.abs(value) / largest) * 100
 }
+
+export function parseCNNumber(value: string = '') {
+  const match = value.match(/^([-+]?\d*\.?\d+)(万|亿)?/)
+
+  if (!match) {
+    return 0
+  }
+
+  const num = Number(match[1])
+  const unit = match[2]
+
+  if (unit === '万') {
+    return num * 10000
+  }
+
+  if (unit === '亿') {
+    return num * 100000000
+  }
+
+  return num
+}

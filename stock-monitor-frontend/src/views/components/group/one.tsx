@@ -11,7 +11,7 @@ interface IGroupTemplateProps {
   className?: string
   bodyClassName?: string
   bodyNeedMargin?: boolean
-  title: string
+  title?: string
   titleRight?: React.ReactNode
   needBorder?: boolean
   needRounded?: boolean
@@ -19,24 +19,36 @@ interface IGroupTemplateProps {
 }
 
 const GroupTemplate = (props: PropsWithChildren<IGroupTemplateProps>): ReactElement => {
-  const render = () => {
-    const bodyNeedMargin = props.bodyNeedMargin ?? true
+
+  const getTitle = () => {
     let titleSizeClassName = props.titleSizeClassName || ''
     if (Utils.isBlank(titleSizeClassName || '')) {
       titleSizeClassName = 'text-2xl'
     }
-    return (
-      <div
-        className={`one-template flex-direction-column ${props.className || ''} ${props.needBorder ? 'border' : ''} ${props.needBorder ? 'rounded-lg' : ''}`}
-      >
-        {props.titleRight ? (
+
+    if (props.titleRight) {
+      return (
           <div className="flex-align-center flex-jsc-between">
             <p className={`${titleSizeClassName || ''} font-bold mr-2`}>{props.title || ''}</p>
             {props.titleRight}
           </div>
-        ) : (
-          <p className={`${titleSizeClassName || ''} font-bold`}>{props.title || ''}</p>
-        )}
+      )
+    }
+
+    if (Utils.isBlank(props.title || '')) {
+      return null
+    }
+
+    return  <p className={`${titleSizeClassName || ''} font-bold`}>{props.title || ''}</p>
+  }
+
+  const render = () => {
+    const bodyNeedMargin = props.bodyNeedMargin ?? true
+    return (
+      <div
+        className={`one-template flex-direction-column ${props.className || ''} ${props.needBorder ? 'border' : ''} ${props.needBorder ? 'rounded-lg' : ''}`}
+      >
+        {getTitle()}
         <div className={`${bodyNeedMargin ? 'mt-4' : ''} ${props.bodyClassName || ''}`}>{props.children}</div>
       </div>
     )

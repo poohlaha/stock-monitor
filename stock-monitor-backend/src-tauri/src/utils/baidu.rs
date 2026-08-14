@@ -7,27 +7,38 @@ use log::{error, info};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{LazyLock, Mutex, OnceLock, RwLock};
 use std::time::{SystemTime, UNIX_EPOCH};
+use serde::Deserialize;
 use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindow, WebviewWindowBuilder};
 use tokio::sync::Notify;
 use tokio::time::{timeout, Duration};
 
 pub struct BaiduToken {
     pub token: String,
+    pub cookie: String,
     pub expire_at: u64,
+}
+
+#[derive(Deserialize)]
+pub struct BaiduAuth {
+    pub token: String,
+    pub cookie: String,
 }
 
 impl BaiduToken {
     pub const fn empty() -> Self {
-        Self { token: String::new(), expire_at: 0 }
+        Self {
+            token: String::new(),
+            cookie: String::new(),
+            expire_at: 0
+        }
     }
 
     pub fn is_expired(&self) -> bool {
         let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs();
-
         now >= self.expire_at
     }
 
-    pub fn get_token() -> Option<String> {
+    pub fn get_token() -> Option<(String, String)> {
         let store = BAIDU_TOKEN.read().unwrap();
 
         if store.token.is_empty() {
@@ -38,7 +49,7 @@ impl BaiduToken {
             return None;
         }
 
-        Some(store.token.clone())
+        Some((store.token.clone(), store.cookie.clone()))
     }
 
     // 创建百度隐藏webview
@@ -67,7 +78,8 @@ impl BaiduToken {
         }
     }
 
-    pub fn init_baidu(window: WebviewWindow) {
+    #[allow(dead_code)]
+    pub fn init_baidu_old(window: WebviewWindow) {
         window
             .eval(
                 r#"
@@ -116,7 +128,37 @@ impl BaiduToken {
             .unwrap();
     }
 
-    pub fn refresh_baidu_token() {
+    pub fn init_baidu(window: WebviewWindow) {
+        window
+            .eval(
+                r#"
+                (function(){
+                    let timer=setInterval(()=>{
+                        if(window.paris_2108){
+                            clearInterval(timer);
+                            console.log("paris ready");
+                            window.paris_2108.getAcsToken(
+                                function(token){
+                                    console.log("getAcsToken:", token);
+
+                                    if(token){
+                                        window.__TAURI__.event.emit(
+                                            "baidu-token",
+                                             JSON.stringify({ token: token, cookie: document.cookie })
+                                        );
+                                    }
+                                }
+                            );
+                        }
+                    },1000);
+                })();
+            "#,
+            )
+            .unwrap();
+    }
+
+    #[allow(dead_code)]
+    pub fn refresh_baidu_token_old() {
         if let Some(window) = BAIDU_WINDOW.get() {
             if let Err(e) = window.eval(
                 r#"
@@ -151,7 +193,52 @@ impl BaiduToken {
         }
     }
 
-    pub async fn get_token_async() -> Option<String> {
+    pub fn refresh_baidu_token() {
+        if let Some(window) = BAIDU_WINDOW.get() {
+            window
+                .eval(
+                    r#"
+                    (function(){
+                        if(!window.paris_2108){
+                            return;
+                        }
+
+                        window.paris_2108.getAcsToken(
+                            function(token){
+                                console.log("refresh token", token);
+
+                                window.__TAURI__.event.emit(
+                                    "baidu-token",
+                                    JSON.stringify({ token: token, cookie: document.cookie })
+                                );
+                            }
+                        );
+                    })();
+                    "#,
+                )
+                .unwrap();
+        }
+    }
+
+    pub async fn ensure_token() -> Option<String> {
+        if let Some((token, _)) = Self::get_token() {
+            return Some(token);
+        }
+
+        Self::refresh_baidu_token();
+
+        for _ in 0..30 {
+            if let Some((token, _)) = Self::get_token() {
+                return Some(token);
+            }
+
+            tokio::time::sleep(Duration::from_millis(100)).await;
+        }
+
+        None
+    }
+
+    pub async fn get_token_async() -> Option<(String, String)> {
         loop {
             if let Some(token) = Self::get_token() {
                 return Some(token);
@@ -177,6 +264,18 @@ impl BaiduToken {
             if timeout(Duration::from_secs(5), notified).await.is_err() {
                 return None;
             }
+
+            /*
+            tokio::select! {
+                _ = notified => {
+                    continue;
+                }
+
+                _ = timeout(Duration::from_secs(5), async {}) => {
+                    continue;
+                }
+            }
+             */
         }
     }
 }

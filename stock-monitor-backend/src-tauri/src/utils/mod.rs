@@ -40,8 +40,9 @@ impl Utils {
             warn!("{} get baidu token error!", LOGGER_PREFIX);
         }
 
-        // let token = { BAIDU_TOKEN.read().unwrap().clone() };
+        let (token, cookie) = token.unwrap();
         info!("{} baidu token: {:#?}", LOGGER_PREFIX, token);
+        info!("{} baidu cookie: {:#?}", LOGGER_PREFIX, cookie);
 
         let response = http::client::HttpClient::send(
             Options {
@@ -54,17 +55,19 @@ impl Utils {
                     "Origin": "https://finance.baidu.com",
                     "Referer": "https://finance.baidu.com/",
                      "Accept": "application/vnd.finance-web.v1+json",
-                     "Accept-Encoding": "gzip, deflate, br, zstd",
+                    "Accept-Encoding": "gzip, deflate, br, zstd",
                     "Accept-Language": "zh-CN,zh;q=0.9",
                     "Connection": "keep-alive",
                     "Cache-Control": "no-cache",
                     "Pragma": "no-cache",
+                    "Sec-Ch-Ua": "\"Not=A?Brand\";v=\"99\", \"Google Chrome\";v=\"151\", \"Chromium\";v=\"151\"",
                     "Sec-Ch-Ua-Mobile": "?0",
                     "Sec-Ch-Ua-Platform": "macos",
                     "Sec-Fetch-Dest": "empty",
                     "Sec-Fetch-Mode": "cors",
-                    "Acs-Token": token
-                    // "Cookie": Utils::get_cookie()
+                    "Sec-Fetch-Site": "same-site",
+                    "Acs-Token": token,
+                     "Cookie": cookie
                 })),
                 timeout: Some(10),
             },
