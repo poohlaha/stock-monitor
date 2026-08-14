@@ -48,6 +48,8 @@ class MarketStore extends BaseStore {
   @observable stockIndustryHot: Array<Record<string, any>> = [] // 热力图
   @observable popularSectionList: Array<Record<string, any>> = [] // 热门板块
   @observable stockRankList: Array<Record<string, any>> = [] // 排行
+  @observable breakingNews: Record<string, any> = [] // 7 * 24 快讯
+  @observable stockMainMoneyInList: Record<string, any> = [] // 查询A|港|美股主力净流入
 
   readonly HOT_TYPE_LIST: Array<string> = ['Stock', 'Search', 'Plate', 'Sentiment', 'Analysis', 'Institution']
 
@@ -1259,12 +1261,9 @@ class MarketStore extends BaseStore {
     try {
       let result: { [K: string]: any } = (await invoke('query_industry_hot', { market, sortKey })) || {}
       const data = this.handleResult(result) || {}
-      const list = data.list || []
       this.stockIndustryHot = []
 
-      if (list.length > 0) {
-        this.stockIndustryHot = list[0].body || []
-      }
+      this.stockIndustryHot = (data.list || {}).body || []
 
       console.log('stock industry hot: ', this.stockIndustryHot)
       return result || {}
@@ -1297,12 +1296,39 @@ class MarketStore extends BaseStore {
     try {
       let result: { [K: string]: any } = (await invoke('query_stock_rank', { market })) || {}
       const data = this.handleResult(result) || []
-      this.popularSectionList = []
-      if (data.length > 0) {
-        this.stockRankList = data[0].blocks || []
-      }
-
+      this.stockRankList = []
+      this.stockRankList = (data.list || {}).body || []
       console.log('stock rank list: ', this.stockRankList)
+      return result || {}
+    } catch (e: any) {
+      this.loading = false
+      throw new Error(e)
+    }
+  }
+
+  // 7 * 24 快讯
+  async onGetBreakingNews(name: string = '') {
+    try {
+      let result: { [K: string]: any } = (await invoke('query_breaking_news', { name })) || {}
+      const data = this.handleResult(result) || []
+      this.breakingNews = {}
+      this.breakingNews = data.content || {}
+      console.log('stock rank list: ', this.breakingNews)
+      return result || {}
+    } catch (e: any) {
+      this.loading = false
+      throw new Error(e)
+    }
+  }
+
+  // 查询A|港|美股主力净流入
+  async onGetMainMoneyIn(market: string = '') {
+    try {
+      let result: { [K: string]: any } = (await invoke('query_main_money_in', { market })) || {}
+      const data = this.handleResult(result) || []
+      this.stockMainMoneyInList = []
+      this.stockMainMoneyInList = data.fundflow || []
+      console.log('stock main money in list: ', this.stockMainMoneyInList)
       return result || {}
     } catch (e: any) {
       this.loading = false

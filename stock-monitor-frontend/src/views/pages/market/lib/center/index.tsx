@@ -10,15 +10,33 @@ import { useStore } from '@views/stores'
 import GroupTemplate from '@views/components/group/one'
 import MarketCenterGlobal from '@pages/market/lib/center/global'
 import GroupTwoTemplate from '@views/components/group/two'
-import { createSparkline, getColor, getRateClassName, getWidth } from '@pages/utils'
+import { createSparkline, getColor, getNumberType, getRateClassName, getWidth, parseCNNumber } from '@pages/utils'
 import * as echarts from 'echarts/core'
+import Utils from '@utils/utils'
+import TwoTemplateRank from '@pages/market/lib/twoTemplateRank'
 
 const MarketCenter = (): ReactElement => {
   const { marketStore } = useStore()
 
+  const industryHotItems = [
+    {
+      label: '成交额',
+      key: 'amount'
+    },
+    {
+      label: '成交量',
+      key: 'volume'
+    },
+    {
+      label: '市值',
+      key: 'marketValue'
+    }
+  ]
+
   const [activeTabIndex, setActiveTabIndex] = useState('global')
-  const [industryHotActiveTabIndex, setIndustryHotActiveTabIndex] = useState('amount')
+  const [industryHotActiveTabIndex, setIndustryHotActiveTabIndex] = useState(industryHotItems[0].key || '')
   const [popularSectionActiveTabIndex, setPopularSectionActiveTabIndex] = useState(0)
+  const [mainInActiveTabIndex, setMainInActiveTabIndex] = useState('HY')
 
   const industryHotTreeChartRef = useRef(null)
   const industryHotChartRef = useRef<echarts.ECharts | null>(null)
@@ -97,21 +115,6 @@ const MarketCenter = (): ReactElement => {
     }
   }, [])
 
-  const industryHotItems = [
-    {
-      label: '成交额',
-      key: 'amount'
-    },
-    {
-      label: '成交量',
-      key: 'volume'
-    },
-    {
-      label: '市值',
-      key: 'marketValue'
-    }
-  ]
-
   const onGetIndustryHotTreeChart = () => {
     if (!industryHotTreeChartRef.current || (marketStore.stockIndustryHot || []).length === 0) {
       return
@@ -120,13 +123,16 @@ const MarketCenter = (): ReactElement => {
     const data = marketStore.stockIndustryHot || []
     const chart = echarts.init(industryHotTreeChartRef.current)
 
+    const item: Record<string, any> =
+      (industryHotItems || []).find((it: Record<string, any> = {}) => it.key === industryHotActiveTabIndex) || {}
+
     const seriesData = []
     for (let hot of data) {
       seriesData.push({
         name: hot.name || '',
-        value: hot.rawData?.marketValue || 0,
+        value: Utils.isObjectNull(item || {}) ? 0 : (hot.rawData || {})[item.key] || 0,
         itemStyle: {
-          color: getColor(hot.rawData?.marketValue || 0)
+          color: getColor(hot.rawData?.pxChange || 0)
         },
         ...(hot || {})
       })
@@ -134,16 +140,109 @@ const MarketCenter = (): ReactElement => {
 
     const option = {
       tooltip: {
-        trigger: 'axis'
+        trigger: 'item',
+        confine: true,
+        extraCssText: `
+          min-width: 180px;
+          width: 180px;
+          padding: 12px;
+          border-radius: 8px;
+          border: none;
+        `,
+        formatter(params: Record<string, any> = {}) {
+          const data = params.data || {}
+
+          if (Utils.isObjectNull(data || {}) || !data.name) {
+            return ''
+          }
+
+          const pxChangeColor = getColor(data.pxChange || '-')
+          const pxChangeRateColor = getColor(data.pxChangeRate || '-')
+          return `
+            <div>
+              <p style="font-weight:bold;font-size:14px;margin-bottom:8px;color:#333333">
+                ${data.name || ''}
+              </p>
+              
+               <div style="display:flex;justify-content:space-between;">
+                    <span>报价:</span>    
+                    <span>${data.lastPx || '--'}</span>    
+              </div>
+              
+              <div style="display:flex;justify-content:space-between;">
+                    <span>涨跌幅:</span>    
+                    <span style="color:${pxChangeRateColor}">${data.pxChangeRate || '--'}</span>    
+              </div>
+      
+              <div style="display:flex;justify-content:space-between;">
+                    <span>涨跌额:</span>    
+                    <span style="color:${pxChangeColor}">${data.pxChange || '--'}</span>    
+              </div>
+              
+             <div style="display:flex;justify-content:space-between;">
+                    <span>成交量:</span>    
+                    <span>${data.volume || '--'}</span>    
+              </div>
+              
+               <div style="display:flex;justify-content:space-between;">
+                    <span>成交额:</span>    
+                    <span>${data.amount || '--'}</span>    
+              </div>
+              
+               <div style="display:flex;justify-content:space-between;">
+                    <span>总市值:</span>    
+                    <span>${data.marketValue || '--'}</span>    
+              </div>
+            </div>
+            `
+        }
       },
       series: [
         {
           type: 'treemap',
+          roam: false,
+          nodeClick: false,
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          breadcrumb: {
+            show: false
+          },
+          label: {
+            show: true,
+            position: 'inside',
+            align: 'center',
+            verticalAlign: 'middle',
+            formatter(params: Record<string, any>) {
+              return `{name|${params.name}}\n{value|${params.data?.amount || ''}}`
+            },
+            rich: {
+              name: {
+                align: 'center',
+                fontSize: 14,
+                fontWeight: 700,
+                lineHeight: 22
+              },
+              value: {
+                align: 'center',
+                fontSize: 12,
+                lineHeight: 18
+              }
+            }
+          },
+          itemStyle: {
+            borderColor: '#fff',
+            borderWidth: 1,
+            gapWidth: 2,
+            borderRadius: 8
+          },
           data: seriesData || []
         }
       ]
     }
 
+    console.log('option: ', option)
     chart.setOption(option)
     return chart
   }
@@ -195,7 +294,7 @@ const MarketCenter = (): ReactElement => {
                       }}
                     />
                   </div>
-                  <p className="mt-1">{d.title || ''}</p>
+                  <p className="mt-1 whitespace-nowrap">{d.title || ''}</p>
                 </div>
               )
             })}
@@ -255,17 +354,14 @@ const MarketCenter = (): ReactElement => {
                     await marketStore.onGetStockIndustryHot(activeTabIndex, h.key)
                   }}
                 >
-                  <p className="whitespace-nowrap">{h.name || ''}</p>
+                  <p className="whitespace-nowrap">{h.label || ''}</p>
                 </div>
               )
             })}
           </div>
 
           <div className="mt-2 flex h-[250px]">
-            <div
-              className="flex-1 min-w-0 aspect-square h-full border-right networth-line"
-              ref={industryHotTreeChartRef}
-            ></div>
+            <div className="flex-1 min-w-0 aspect-square h-full networth-line" ref={industryHotTreeChartRef}></div>
           </div>
         </GroupTemplate>
       </GroupTwoTemplate>
@@ -276,20 +372,18 @@ const MarketCenter = (): ReactElement => {
   const getAPopularSection = () => {
     const popularSectionList = marketStore.popularSectionList || []
     const tabs = popularSectionList.map((p: Record<string, any> = {}) => p.name || '') || []
-    const list =
-      popularSectionList
-        .map((p: Record<string, any> = {}, i: number) => {
-          if (i === popularSectionActiveTabIndex) {
-            return p.list || []
-          }
+    const list = popularSectionList.flatMap((p: Record<string, any> = {}, i: number) => {
+      if (i === popularSectionActiveTabIndex) {
+        return p.list || []
+      }
 
-          return null
-        })
-        .filter(Boolean) || []
+      return []
+    })
+
     return (
       <GroupTemplate title="A股热门板块" className="flex-1 flex-direction-column mt-8" titleSizeClassName="text-xl">
         <div className="flex-align-center flex-wrap gap-2.5">
-          {(tabs || []).map((t: Record<string, any> = {}, index: number) => {
+          {(tabs || []).map((t: string, index: number) => {
             const active = popularSectionActiveTabIndex === index
             return (
               <div
@@ -299,13 +393,13 @@ const MarketCenter = (): ReactElement => {
                   setPopularSectionActiveTabIndex(index)
                 }}
               >
-                <p className="whitespace-nowrap">{t.name || ''}</p>
+                <p className="whitespace-nowrap">{t || ''}</p>
               </div>
             )
           })}
         </div>
 
-        <div className="mt-2">
+        <div className="mt-4 flex-wrap gap-4">
           {(list || []).map((l: Record<string, any> = {}, index: number) => {
             const firstList = l.rise_first || []
             const first = firstList.length > 0 ? firstList[0] || {} : {}
@@ -318,8 +412,12 @@ const MarketCenter = (): ReactElement => {
               >
                 <div className="flex-1 pr-2 flex-direction-column">
                   <div className="flex-align-center">
-                    <img src={l.logo?.logo || ''} className="w-10 h-10 rounded-full mr=2" />
-                    <div className="flex-direction-column">
+                    {Utils.isBlank(l.logo?.logo || '') ? (
+                      <div className="w-10 h-10 rounded-full mr=2" />
+                    ) : (
+                      <img src={l.logo?.logo || ''} className="w-10 h-10 rounded-full mr=2" />
+                    )}
+                    <div className="flex-direction-column ml-2">
                       <p className="font-bold">{l.name || ''}</p>
                       <p className={`font-bold mt-1 ${getRateClassName(l.ratio?.value || '0')}`}>
                         {l.ratio?.value || '0'}
@@ -350,11 +448,88 @@ const MarketCenter = (): ReactElement => {
   // A 股排行
   const getARank = () => {
     return (
-      <GroupTemplate
-        title="A股排行"
-        className="flex-1 flex-direction-column mt-8"
-        titleSizeClassName="text-xl"
-      ></GroupTemplate>
+      <GroupTemplate title="A股排行" className="flex-1 flex-direction-column mt-8" titleSizeClassName="text-xl">
+        <TwoTemplateRank type={4} list={marketStore.stockRankList || []} onAddSelection={() => {}} />
+      </GroupTemplate>
+    )
+  }
+
+  // 主力净流入
+  const getMainIn = () => {
+    const item = items.find((t: Record<string, any> = {}) => t.key === activeTabIndex) || {}
+    const list = marketStore.stockMainMoneyInList || []
+    const tabs = (list || {}).map((d: Record<string, any> = {}) => d) || []
+
+    const data = (list || []).flatMap((d: Record<string, any> = {}) => {
+      if (d.blockType === mainInActiveTabIndex) {
+        return d.data || []
+      }
+
+      return []
+    })
+
+    const largest =
+      Math.max(...(data || []).map((d: Record<any, any> = {}) => Math.abs(parseCNNumber(d.mainNetTurnover)))) || 0
+    return (
+      <GroupTemplate title={`${item.label}主力净流入`}>
+        <div className="flex-align-center flex-wrap gap-2.5">
+          {(tabs || []).map((t: Record<string, any> = {}, index: number) => {
+            const active = mainInActiveTabIndex === t.blockType
+            return (
+              <div
+                className={`${active ? 'hot-active active' : ''} menu-item pl-2 pr-2 pt-1 pb-1 rounded-lg mr-2 change-color cursor-pointer`}
+                key={index}
+                onClick={async () => {
+                  setMainInActiveTabIndex(t.blockType)
+                }}
+              >
+                <p className="whitespace-nowrap">{t.blockTypeName || ''}</p>
+              </div>
+            )
+          })}
+        </div>
+
+        <div className="flex-align-center mt-4">
+          <div className="flex-align-center mr-4">
+            <div className="red w-2 h-2 rounded-full"></div>
+            <div className="ml-1">净流入</div>
+          </div>
+
+          <div className="flex-align-center">
+            <div className="green w-2 h-2 rounded-full"></div>
+            <div className="ml-2">净流出</div>
+          </div>
+        </div>
+
+        <div className="flex items-start justify-between w100 mt-4">
+          {(data || []).map((d: Record<string, any> = {}, index: number) => {
+            let flag = getNumberType(d.mainNetTurnover || '0')
+            let height = getWidth(parseCNNumber(d.mainNetTurnover || '0'), largest)
+            if (height < 1) {
+              height = 1
+            }
+
+            const color = getColor(flag) || ''
+            return (
+              <div className="flex flex-col items-center flex-1 min-w-16" key={index}>
+                <div className="h-[200px] w-10 rounded flex flex-col justify-end items-center">
+                  <p className="whitespace-nowrap" style={{ color }}>
+                    {d.mainNetTurnover || '0'}
+                  </p>
+                  <p
+                    className="w-full rounded-md shrink-0 h-4"
+                    style={{
+                      background: color,
+                      height: `${height}%`
+                    }}
+                  />
+                </div>
+                <p className="mt-1 whitespace-nowrap">{d.name || ''}</p>
+              </div>
+            )
+          })}
+        </div>
+      </GroupTemplate>
     )
   }
 
@@ -379,6 +554,7 @@ const MarketCenter = (): ReactElement => {
               await marketStore.onGetStockIndustryHot(tabIndex, industryHotActiveTabIndex)
               await marketStore.onGetPopularSection('ab')
               await marketStore.onGetStockRank('ab')
+              await marketStore.onGetMainMoneyIn('ab')
             }
           }}
         />
@@ -389,6 +565,9 @@ const MarketCenter = (): ReactElement => {
           <div className="flex-direction-column">
             {/* 涨跌分布 | 热力图 */}
             {getRfDistribution()}
+
+            {/* 主力净流入 */}
+            {getMainIn()}
 
             {/* A 股热门板块 */}
             {getAPopularSection()}

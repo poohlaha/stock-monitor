@@ -4,10 +4,10 @@
 
 use crate::{BD_HTTP_URL_PREFIX2, LOGGER_PREFIX};
 use log::{error, info};
+use serde::Deserialize;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{LazyLock, Mutex, OnceLock, RwLock};
 use std::time::{SystemTime, UNIX_EPOCH};
-use serde::Deserialize;
 use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindow, WebviewWindowBuilder};
 use tokio::sync::Notify;
 use tokio::time::{timeout, Duration};
@@ -29,7 +29,7 @@ impl BaiduToken {
         Self {
             token: String::new(),
             cookie: String::new(),
-            expire_at: 0
+            expire_at: 0,
         }
     }
 
@@ -84,43 +84,42 @@ impl BaiduToken {
             .eval(
                 r#"
                     (function(){
-                    console.log("start check paris");
+                        console.log("start check paris");
+                        let timer = setInterval(()=>{
+                            console.log("check:", !!window.paris_2108);
+                            if(window.paris_2108){
+                                clearInterval(timer);
+                                console.log("paris ready");
 
-                    let timer = setInterval(()=>{
-                        console.log("check:", !!window.paris_2108);
-                        if(window.paris_2108){
-                            clearInterval(timer);
-                            console.log("paris ready");
-
-                            window.paris_2108.getAcsInstance(
-                            function(err, instance){
-                                console.log("getAcsInstance", err, instance);
-                                if(err){
-                                    return;
-                                }
-
-                                instance.getSign(
-                                    function(err, sign){
-                                        console.log("getSign result", err, sign);
-                                         clearInterval(timer);
-                                        if(err){
-                                            return;
-                                        }
-
-                                        if (sign) {
-                                           window.__TAURI__.event.emit("baidu-token", sign).then(() => {
-                                                console.log("emit success");
-                                           }).catch(e => {
-                                                console.error("emit error", e);
-                                           });
-                                        }
+                                window.paris_2108.getAcsInstance(
+                                function(err, instance){
+                                    console.log("getAcsInstance", err, instance);
+                                    if(err){
+                                        return;
                                     }
-                                );
 
-                            });
-                        }
+                                    instance.getSign(
+                                        function(err, sign){
+                                            console.log("getSign result", err, sign);
+                                             clearInterval(timer);
+                                            if(err){
+                                                return;
+                                            }
 
-                    },1000);
+                                            if (sign) {
+                                               window.__TAURI__.event.emit("baidu-token", sign).then(() => {
+                                                    console.log("emit success");
+                                               }).catch(e => {
+                                                    console.error("emit error", e);
+                                               });
+                                            }
+                                        }
+                                    );
+
+                                });
+                            }
+
+                        },1000);
                     })();
 
             "#,

@@ -16,6 +16,37 @@ import MacroIndustrialChain from '@pages/market/lib/industrial'
 import MarketGlobalMacro from '@pages/market/lib/macro'
 import MarketHostStock from '@pages/market/lib/hot'
 import MarketFinancialCalendar from '@pages/market/lib/calendar'
+import MarketBreakingNews from '@pages/market/lib/breakingNews'
+
+import {
+  LegendComponent,
+  TitleComponent,
+  TooltipComponent,
+  GridComponent,
+  DatasetComponent,
+  TransformComponent
+} from 'echarts/components'
+
+import * as echarts from 'echarts/core'
+import { BarChart, LineChart, PieChart, TreemapChart } from 'echarts/charts'
+import { LabelLayout, UniversalTransition } from 'echarts/features'
+import { CanvasRenderer } from 'echarts/renderers'
+
+echarts.use([
+  LegendComponent,
+  TitleComponent,
+  TooltipComponent,
+  GridComponent,
+  DatasetComponent,
+  TransformComponent,
+  BarChart,
+  PieChart,
+  LineChart,
+  TreemapChart,
+  LabelLayout,
+  UniversalTransition,
+  CanvasRenderer
+])
 
 const Market = (): ReactElement => {
   const { marketStore } = useStore()
@@ -59,8 +90,18 @@ const Market = (): ReactElement => {
 
     setTimeout(async () => {
       await marketStore.onGetIndustrialChain()
+    }, 500)
+
+    setTimeout(async () => {
       await marketStore.onGetHotStock()
+    }, 500)
+
+    setTimeout(async () => {
       await marketStore.onGetFinancialCalendar()
+    }, 500)
+
+    setTimeout(async () => {
+      await marketStore.onGetBreakingNews()
     }, 500)
   }
 
@@ -80,6 +121,9 @@ const Market = (): ReactElement => {
 
         {/* 行情中心 */}
         <MarketCenter />
+
+        {/* 7 * 24 快讯 */}
+        <MarketBreakingNews />
 
         {/* 热股榜 */}
         <MarketHostStock />

@@ -150,3 +150,15 @@ pub async fn query_industry_hot(market: &str, sort_key: &str) -> Result<HttpResp
 pub async fn query_stock_rank(market: &str) -> Result<HttpResponse, String> {
     Market::query_stock_rank(market).await
 }
+
+/// 7 * 24 快讯
+#[tauri::command]
+pub async fn query_breaking_news(name: &str) -> Result<HttpResponse, String> {
+    Market::query_breaking_news(name).await
+}
+
+/// 查询A|港|美股主力净流入
+#[tauri::command]
+pub async fn query_main_money_in(market: &str) -> Result<HttpResponse, String> {
+    Market::query_main_money_in(market).await
+}

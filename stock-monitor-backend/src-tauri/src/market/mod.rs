@@ -279,6 +279,14 @@ impl Market {
     }
 
     /**
+      查询A|港|美股主力净流入
+      例: https://finance.pae.baidu.com/sapi/v1/marketquote?bizType=fundflow&rn=12&market=ab&finClientType=pc
+    */
+    pub async fn query_main_money_in(market: &str) -> Result<HttpResponse, String> {
+        let url = format!("{}sapi/v1/marketquote?bizType=fundflow&rn=12&market={}&finClientType=pc", BD_HTTP_URL_PREFIX, market);
+        Utils::get_time_response(&url).await
+    }
+    /**
       查询热力图
       例: https://finance.pae.baidu.com/vapi/v2/blocks?style=heatmap&market=ab&typeCode=HY&sortKey=amount&sortType=desc&pn=0&rn=20&finClientType=pc
     */
@@ -293,6 +301,18 @@ impl Market {
     */
     pub async fn query_stock_rank(market: &str) -> Result<HttpResponse, String> {
         let url = format!("{}sapi/v1/ranks?bizType=stock_rank&category=&market={}&pn=0&rn=12&fieldsType=base&finClientType=pc", BD_HTTP_URL_PREFIX, market);
+        Utils::get_time_response(&url).await
+    }
+
+    /**
+      7 * 24 快讯
+      例: https://finance.pae.baidu.com/selfselect/expressnews?rn=6&pn=0&tag=&finClientType=pc
+    */
+    pub async fn query_breaking_news(name: &str) -> Result<HttpResponse, String> {
+        let mut url = format!("{}selfselect/expressnews?rn=6&pn=0&tag=&finClientType=pc", BD_HTTP_URL_PREFIX);
+        if !name.is_empty() {
+            url = format!("{}&tag={}", url, name);
+        }
         Utils::get_time_response(&url).await
     }
 }

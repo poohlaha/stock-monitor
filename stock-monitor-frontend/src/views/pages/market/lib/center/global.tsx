@@ -126,7 +126,9 @@ const MarketCenterGlobal = (): ReactElement => {
                       </div>
 
                       <div className="flex-1">
-                        <p className={getRateClassName(l.px_change_rate || '-')}>{l.px_change_rate || '-'}</p>
+                        <p className={`${getRateClassName(l.px_change_rate || '-')} font-bold`}>
+                          {l.px_change_rate || '-'}
+                        </p>
                       </div>
 
                       <div className="w-12">

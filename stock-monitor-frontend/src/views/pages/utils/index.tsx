@@ -134,3 +134,32 @@ export function parseCNNumber(value: string = '') {
 
   return num
 }
+
+export function getNumberType(value: string) {
+  if (!value) return 0
+
+  const str = value.replace(/,/g, '').trim()
+
+  // 转换中文单位
+  let num = 0
+
+  if (str.includes('亿')) {
+    num = parseFloat(str.replace('亿', '')) * 100000000
+  } else if (str.includes('万')) {
+    num = parseFloat(str.replace('万', '')) * 10000
+  } else {
+    num = parseFloat(str)
+  }
+
+  if (num > 0) return 1 // 正数
+  if (num < 0) return -1 // 负数
+  return 0 // 0
+}
+
+export function getTodayText() {
+  const date = new Date()
+
+  const week = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六']
+
+  return `${date.getFullYear()}年${String(date.getMonth() + 1).padStart(2, '0')}月${String(date.getDate()).padStart(2, '0')}日${week[date.getDay()]}`
+}

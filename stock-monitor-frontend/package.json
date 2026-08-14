@@ -65,7 +65,7 @@
     "@bale-tools/mutate-minimize": "^1.0.7",
     "@bale-tools/mutate-service": "^2.4.3",
     "@bale-tools/mutate-version": "^2.5.0",
-    "@bale-sprint/react": "^1.2.6",
+    "@bale-sprint/react": "^1.2.7",
     "core-js": "3",
     "autoprefixer": "^10.4.13",
     "esno": "^0.16.3",
