@@ -161,3 +161,16 @@ pub async fn query_breaking_news(name: &str) -> Result<HttpResponse, String> {
 pub async fn query_main_money_in(market: &str) -> Result<HttpResponse, String> {
     Market::query_main_money_in(market).await
 }
+
+/// 查询股评(浮动)
+#[tauri::command]
+pub async fn query_float_stock_commentary(args: Args) -> Result<HttpResponse, String> {
+    MarketDetailInfo::query_float_stock_commentary(&args).await
+}
+
+/// 查询股票分析
+#[tauri::command]
+pub async fn query_stock_analysis(args: Args) -> Result<HttpResponse, String> {
+    MarketDetailInfo::query_stock_analysis(&args).await
+}
+

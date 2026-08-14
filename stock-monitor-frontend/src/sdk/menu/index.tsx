@@ -210,13 +210,15 @@ const TrayMenu = (): ReactElement => {
 
               <div className="flex-align-center flex-jsc-between mt-1">
                 <p className={`font-bold text-base ${getRateClassName(w.basicInfo?.ratio)}`}>
-                  {w.basicInfo?.price || '0'}
+                  {w.basicInfo?.price || '-'}
                 </p>
                 <div className="flex-align-center">
-                  <p className={`font-bold ${getRateClassName(w.basicInfo?.increase)} mr-2`}>
-                    {w.basicInfo?.increase || '0'}
-                  </p>
-                  <p className={`font-bold ${getRateClassName(w.basicInfo?.ratio)}`}>{w.basicInfo?.ratio || '0'}</p>
+                  {w.fundType !== 'fund' && (
+                    <p className={`font-bold ${getRateClassName(w.basicInfo?.increase)} mr-2`}>
+                      {w.basicInfo?.increase || '0'}
+                    </p>
+                  )}
+                  <p className={`font-bold ${getRateClassName(w.basicInfo?.ratio)}`}>{w.basicInfo?.ratio || '-'}</p>
                 </div>
               </div>
             </div>
@@ -268,7 +270,7 @@ const TrayMenu = (): ReactElement => {
             <div
               className="ml-2 text-xs cursor-pointer theme-color"
               onClick={async () =>
-                await marketStore.onGetWatchListTimer((hasAllInTrade: boolean = false) =>
+                await marketStore.onGetWatchList(true, (hasAllInTrade: boolean = false) =>
                   setHasAllInTrade(hasAllInTrade)
                 )
               }

@@ -200,11 +200,15 @@ const MarketDetail = (): ReactElement => {
     if (t === 'stock') {
       setTimeout(async () => {
         await marketStore.onGetStockNews(c, m)
-      }, 1000)
+      }, 500)
 
       setTimeout(async () => {
         await marketStore.onGetCompanyProfile(c, m)
-      })
+      }, 500)
+
+      setTimeout(async () => {
+        await marketStore.onGetFloatStockCommentary(c, m)
+      }, 500)
     }
   }
 
@@ -351,6 +355,8 @@ const MarketDetail = (): ReactElement => {
                   monthList={marketStore.monthList || []}
                   xLabels={marketStore.xLabels || []}
                   preClosePrice={marketStore.preClosePrice || 0}
+                  floatStockCommentary={marketStore.floatStockCommentary || []}
+                  fiveInfo={marketStore.pankouInfo?.fiveInfo || {}}
                   onTabChange={async value => {
                     console.log('timelineList: ', marketStore.timelineList)
                     if (value === 'five') {

@@ -389,3 +389,19 @@ svg {
 .tag {
   background: #f5f6fa;
 }
+
+.stock-ticker {
+  display: inline-flex;
+  white-space: nowrap;
+  animation: ticker 50s linear forwards;
+}
+
+@keyframes ticker {
+  from {
+    transform: translateX(100vw);
+  }
+
+  to {
+    transform: translateX(calc(-100% - 100vw));
+  }
+}

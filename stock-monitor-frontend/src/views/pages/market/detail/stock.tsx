@@ -1108,7 +1108,7 @@ const MarketDetailStock = (props: IMarketDetailStockProps): ReactElement => {
             classNames={{
               root: 'm-table-sortable-popover'
             }}
-            placement="bottomRight"
+            placement="top"
             arrow={false}
             content={<p>目前有{organRating.organNum || 0}家机构对目标进行预测</p>}
           >
@@ -1444,18 +1444,19 @@ const MarketDetailStock = (props: IMarketDetailStockProps): ReactElement => {
                 </div>
 
                 <div className="flex-direction-column mt-2 overflow-y-auto no-scrollbar h-[300px]">
-                  {
-                    (shareholders || []).map((h: Record<string, any> = {}, index: number) => {
-                      return (
-                          <div className="flex-align-center border-bottom bg-line-hover flex-align-center min-h-12 hover:rounded-md p-2" key={index}>
-                            <p className="flex-1 text-l">{h.reportDate || '-'}</p>
-                            <p className="flex-1 text-c">{h.num || '-'}</p>
-                            <p className={`flex-1 text-c ${getRateClassName(h.change || '-')}`}>{h.change || '-'}</p>
-                            <p className="flex-1 text-r">{h.price || ''}</p>
-                          </div>
-                      )
-                    })
-                  }
+                  {(shareholders || []).map((h: Record<string, any> = {}, index: number) => {
+                    return (
+                      <div
+                        className="flex-align-center border-bottom bg-line-hover flex-align-center min-h-12 hover:rounded-md p-2"
+                        key={index}
+                      >
+                        <p className="flex-1 text-l">{h.reportDate || '-'}</p>
+                        <p className="flex-1 text-c">{h.num || '-'}</p>
+                        <p className={`flex-1 text-c ${getRateClassName(h.change || '-')}`}>{h.change || '-'}</p>
+                        <p className="flex-1 text-r">{h.price || ''}</p>
+                      </div>
+                    )
+                  })}
                 </div>
               </div>
             </GroupTemplate>
@@ -1552,30 +1553,30 @@ const MarketDetailStock = (props: IMarketDetailStockProps): ReactElement => {
     const fundList = marketStore.shareholders?.fundPosition?.body || []
 
     return (
-        <GroupTemplate title="持仓基金" className='mt-8 border rounded-lg p-4' bodyClassName="flex-direction-column">
-          <div className="flex-direction-column color-gray mt-2">
-            <div className="flex-align-center">
-              <p className="flex-1 text-l pl-2">股东名称</p>
-              <p className="flex-1 text-r">持股数量</p>
-              <p className="flex-1 text-r pr-2">占流通股比例</p>
-            </div>
-
-            <div className="flex-direction-column mt-2 overflow-y-auto no-scrollbar max-h-[300px]">
-              {
-                (fundList || []).map((f: Record<string, any> = {}, index: number) => {
-                  return (
-                      <div className="flex-align-center border-bottom bg-line-hover flex-align-center min-h-12 hover:rounded-md p-2" key={index}>
-                        <p className="flex-1 text-l">{f.holder || '-'}</p>
-                        <p className="flex-1 text-r">{f.holdNum || '-'}</p>
-                        <p className="flex-1 text-r">{f.per || ''}</p>
-                      </div>
-                  )
-                })
-              }
-            </div>
+      <GroupTemplate title="持仓基金" className="mt-8 border rounded-lg p-4" bodyClassName="flex-direction-column">
+        <div className="flex-direction-column color-gray mt-2">
+          <div className="flex-align-center">
+            <p className="flex-1 text-l pl-2">股东名称</p>
+            <p className="flex-1 text-r">持股数量</p>
+            <p className="flex-1 text-r pr-2">占流通股比例</p>
           </div>
 
-        </GroupTemplate>
+          <div className="flex-direction-column mt-2 overflow-y-auto no-scrollbar max-h-[300px]">
+            {(fundList || []).map((f: Record<string, any> = {}, index: number) => {
+              return (
+                <div
+                  className="flex-align-center border-bottom bg-line-hover flex-align-center min-h-12 hover:rounded-md p-2"
+                  key={index}
+                >
+                  <p className="flex-1 text-l">{f.holder || '-'}</p>
+                  <p className="flex-1 text-r">{f.holdNum || '-'}</p>
+                  <p className="flex-1 text-r">{f.per || ''}</p>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      </GroupTemplate>
     )
   }
 

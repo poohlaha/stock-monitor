@@ -25,7 +25,7 @@ use crate::utils::baidu::{BaiduAuth, BaiduToken, BAIDU_REFRESHING, BAIDU_TOKEN, 
 use exports::market::{
     get_time_data, query_breaking_news, query_brief, query_by_url, query_company_info, query_company_profile, query_economic_indicators, query_executive_changes, query_financial_calendar, query_fund_graph, query_hot_indicators, query_hot_stock_list,
     query_income, query_industrial_chain, query_industry_fund_flow, query_industry_hot, query_market_status, query_news, query_open_data, query_popular_section, query_position_distribution, query_stock_rank, query_stock_rf_distribution,
-    query_worldwide, query_worldwide_market_center, query_main_money_in
+    query_worldwide, query_worldwide_market_center, query_main_money_in, query_float_stock_commentary,query_stock_analysis
 };
 use exports::my::{add_to_my_fund_watchlist, find_by_fund_code, find_by_fund_codes, query_watchlist};
 use exports::search::search;
@@ -207,7 +207,9 @@ async fn main() {
             query_industry_hot,
             query_stock_rank,
             query_breaking_news,
-            query_main_money_in
+            query_main_money_in,
+            query_float_stock_commentary,
+            query_stock_analysis
         ])
         .build(tauri::generate_context!())
         .expect("error while running tauri application");

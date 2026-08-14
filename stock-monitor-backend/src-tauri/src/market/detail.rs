@@ -54,20 +54,20 @@ impl MarketDetailInfo {
     // 获取十大持仓等数据
     pub async fn query_open_data(code: &str) -> Result<HttpResponse, String> {
         let url = format!("{}opendata?query={}&resource_id=5803&finClientType=pc", BD_HTTP_URL_PREFIX2, code);
-        info!("{} query open data url {}", LOGGER_PREFIX.cyan().bold(), url);
+        // info!("{} query open data url {}", LOGGER_PREFIX.cyan().bold(), url);
         Utils::get_time_response(&url).await
     }
 
     // 查询基金曲线
     pub async fn query_fund_graph(code: &str, name: &str, month: &str) -> Result<HttpResponse, String> {
         let url = format!("{}opendata?query={}&resource_id=5824&finClientType=pc&t={}&m={}", BD_HTTP_URL_PREFIX2, code, name, month);
-        info!("{} query open data url {}", LOGGER_PREFIX.cyan().bold(), url);
+        // info!("{} query open data url {}", LOGGER_PREFIX.cyan().bold(), url);
         Utils::get_time_response(&url).await
     }
 
     /**
-    获取分时图
-    例如: https://finance.pae.baidu.com/vapi/v1/getquotation?srcid=5353&pointType=string&group=quotation_minute_ab&query=588710&code=588710&market_type=ab&newFormat=1&name=%E5%8D%8E%E6%B3%B0%E6%9F%8F%E7%91%9E%E4%B8%8A%E8%AF%81%E7%A7%91%E5%88%9B%E6%9D%BF%E5%8D%8A%E5%AF%BC%E4%BD%93%E6%9D%90%E6%96%99%E8%AE%BE%E5%A4%87%E4%B8%BB%E9%A2%98ETF&is_kc=1&finClientType=pc&financeType=etf&finClientType=pc
+      获取分时图
+      例如: https://finance.pae.baidu.com/vapi/v1/getquotation?srcid=5353&pointType=string&group=quotation_minute_ab&query=588710&code=588710&market_type=ab&newFormat=1&name=%E5%8D%8E%E6%B3%B0%E6%9F%8F%E7%91%9E%E4%B8%8A%E8%AF%81%E7%A7%91%E5%88%9B%E6%9D%BF%E5%8D%8A%E5%AF%BC%E4%BD%93%E6%9D%90%E6%96%99%E8%AE%BE%E5%A4%87%E4%B8%BB%E9%A2%98ETF&is_kc=1&finClientType=pc&financeType=etf&finClientType=pc
     */
     pub async fn get_time_data(args: &Args) -> Result<HttpResponse, String> {
         if args.market.is_empty() {
@@ -98,6 +98,26 @@ impl MarketDetailInfo {
         }
 
         // info!("{} get time url {}", LOGGER_PREFIX.cyan().bold(), url);
+        Utils::get_time_response(&url).await
+    }
+
+    /**
+      查询股评(浮动)
+      例: https://finance.pae.baidu.com/sapi/v1/bulletscreen?financeType=stock&code=300502&market=ab&interval=120&finClientType=pc
+     */
+    pub async fn query_float_stock_commentary(args: &Args) -> Result<HttpResponse, String> {
+        let url = format!("{}sapi/v1/bulletscreen?financeType=stock&code={}&market={}&interval=120&finClientType=pc", BD_HTTP_URL_PREFIX, args.code, args.market);
+        // info!("{} query open data url {}", LOGGER_PREFIX.cyan().bold(), url);
+        Utils::get_time_response(&url).await
+    }
+
+    /**
+      查询股票分析
+      例: https://finance.pae.baidu.com/vapi/v1/overviewwidget?market=ab&code=300502&financeType=stock&modules=analysis&finClientType=pc
+     */
+    pub async fn query_stock_analysis(args: &Args) -> Result<HttpResponse, String> {
+        let url = format!("{}vapi/v1/overviewwidget?code={}&market={}&financeType=stock&modules=analysis&finClientType=pc", BD_HTTP_URL_PREFIX, args.code, args.market);
+        // info!("{} query open data url {}", LOGGER_PREFIX.cyan().bold(), url);
         Utils::get_time_response(&url).await
     }
 }

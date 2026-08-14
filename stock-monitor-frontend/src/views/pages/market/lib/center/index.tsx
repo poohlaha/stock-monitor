@@ -470,7 +470,7 @@ const MarketCenter = (): ReactElement => {
     const largest =
       Math.max(...(data || []).map((d: Record<any, any> = {}) => Math.abs(parseCNNumber(d.mainNetTurnover)))) || 0
     return (
-      <GroupTemplate title={`${item.label}主力净流入`}>
+      <GroupTemplate title={`${item.label}主力净流入`} className="mt-8">
         <div className="flex-align-center flex-wrap gap-2.5">
           {(tabs || []).map((t: Record<string, any> = {}, index: number) => {
             const active = mainInActiveTabIndex === t.blockType

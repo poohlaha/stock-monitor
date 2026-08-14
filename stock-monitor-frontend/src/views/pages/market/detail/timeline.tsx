@@ -7,6 +7,7 @@ import React, { ReactElement, useState } from 'react'
 import { observer } from 'mobx-react-lite'
 import { ShareLine } from '@pages/time-k-line'
 import Utils from '@utils/utils'
+import { getColor } from '@pages/utils'
 
 interface IMarketDetailTimelineProps {
   pankouInfo: Record<string, any>
@@ -19,6 +20,8 @@ interface IMarketDetailTimelineProps {
   xLabels: Array<string>
   preClosePrice: number
   onTabChange: (value: string) => void
+  floatStockCommentary: Array<Record<string, any>>
+  fiveInfo: Record<string, any>
 }
 
 const MarketDetailTimeline = (props: IMarketDetailTimelineProps): ReactElement => {
@@ -120,6 +123,104 @@ const MarketDetailTimeline = (props: IMarketDetailTimelineProps): ReactElement =
     return Promise.resolve(data)
   }
 
+  // 股评
+  const getFloatStockCommentary = () => {
+    const list = props.floatStockCommentary || []
+    if (list.length === 0) {
+      return null
+    }
+
+    return (
+      <div className="absolute top-16 left-0 right-0 overflow-hidden">
+        <div className="stock-ticker">
+          {(list || []).map((l: Record<string, any> = {}, index: number) => {
+            return (
+              <p className="mr-14 shrink-0 whitespace-nowrap notice pt-1 pb-1 pl-2 pr-2 rounded-md" key={index}>
+                {l.text || ''}
+              </p>
+            )
+          })}
+        </div>
+      </div>
+    )
+  }
+
+  // 买卖5档
+  const getFiveBuySale = () => {
+    const buyInfoList = (props.fiveInfo?.buyInfoList || []).slice(0, 5)
+    const askInfoList = (props.fiveInfo?.askInfoList || []).slice(0, 5)
+
+    const detailInfoList = props.fiveInfo?.detailInfoList || []
+
+    if (buyInfoList.length === 0 && detailInfoList.length === 0) {
+      return null
+    }
+
+    const buy = (buyInfoList || []).reduce((sum: number, b: Record<string, any>) => {
+      return sum + Number(b.bidprice || 0)
+    }, 0)
+
+    const ask = (askInfoList || []).reduce((sum: number, b: Record<string, any>) => {
+      return sum + Number(b.askprice || 0)
+    }, 0)
+
+    const total = buy + ask
+    const buyWidth = total > 0 ? (buy / total) * 100 : 0
+    const askWidth = total > 0 ? (ask / total) * 100 : 0
+
+    let askIndex = askInfoList.length + 1
+    return (
+      <div className="flex-direction-column w-[250px] pl-2 pr-2">
+        <div className="flex-align-center w-full gap-2">
+          <div
+            className="h-4 rounded-l"
+            style={{
+              background: getColor(1),
+              width: `${buyWidth}%`
+            }}
+          />
+
+          <div
+            className="h-4 rounded-r"
+            style={{
+              background: getColor(-1),
+              width: `${askWidth}%`
+            }}
+          />
+        </div>
+
+        {/* 卖产 */}
+        <div className="mt-1 flex-direction-column pb-1 border-bottom">
+          {(askInfoList || []).map((a: Record<string, any> = {}, index: number) => {
+            const bid = Math.round((Number(a.askvolume) || 0) / 1000)
+            askIndex -= 1
+            return (
+              <div className="flex-align-center h-6 w100" key={index}>
+                <p className="flex-align-center whitespace-nowrap">卖 {askIndex}</p>
+                <p className="flex-2 flex-center red">{a.askprice || '0'}</p>
+                <p className="flex-1 text-r">{bid || 0}</p>
+              </div>
+            )
+          })}
+        </div>
+
+        {/* 买 */}
+        <div className="mt-1 flex-direction-column">
+          {(buyInfoList || []).map((b: Record<string, any> = {}, index: number) => {
+            const bid = Math.round((Number(b.bidvolume) || 0) / 1000)
+            return (
+              <div className="flex-align-center h-6 w100" key={index}>
+                <p className="flex-align-center whitespace-nowrap">买 {index}</p>
+                <p className="flex-2 flex-center red">{b.bidprice || '0'}</p>
+                <p className="flex-1 text-r">{bid || 0}</p>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    )
+  }
+
   const render = () => {
     return (
       <div className="timeline-box border rounded-md p-4 w100">
@@ -127,9 +228,10 @@ const MarketDetailTimeline = (props: IMarketDetailTimelineProps): ReactElement =
 
         <div className="chart w100 flex-center">
           <div
-            className="market-chart-timer flex-center flex-direction-column"
+            className="market-chart-timer flex-align-center relative"
             style={{ width: props.size?.width || 0, height: props.size?.height || 0, background: 'white' }}
           >
+            {getFloatStockCommentary()}
             {props.timelineList.length > 0 && (
               <ShareLine
                 width={props.size?.width || 0}
@@ -198,6 +300,8 @@ const MarketDetailTimeline = (props: IMarketDetailTimelineProps): ReactElement =
                 zoomStep={1.2}
               />
             )}
+
+            {getFiveBuySale()}
           </div>
         </div>
       </div>

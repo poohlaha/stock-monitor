@@ -50,7 +50,9 @@ class MarketStore extends BaseStore {
   @observable popularSectionList: Array<Record<string, any>> = [] // 热门板块
   @observable stockRankList: Array<Record<string, any>> = [] // 排行
   @observable breakingNews: Record<string, any> = [] // 7 * 24 快讯
-  @observable stockMainMoneyInList: Record<string, any> = [] // 查询A|港|美股主力净流入
+  @observable stockMainMoneyInList: Array<Record<string, any>> = [] // 查询A|港|美股主力净流入
+  @observable floatStockCommentary: Array<Record<string, any>> = [] // 股评(浮动)
+  @observable stockAnalysis: Array<Record<string, any>> = [] // 股票分析
 
   readonly HOT_TYPE_LIST: Array<string> = ['Stock', 'Search', 'Plate', 'Sentiment', 'Analysis', 'Institution']
 
@@ -360,7 +362,6 @@ class MarketStore extends BaseStore {
       }
 
       callback?.(openDataInfo, tabs)
-
       return result || {}
     } catch (e: any) {
       this.loading = false
@@ -414,26 +415,51 @@ class MarketStore extends BaseStore {
             hasAllInTrade = w.isTrade
           }
 
-          // 获取分时图数据
-          let klineResult: { [K: string]: any } =
-            (await invoke('get_time_data', {
-              args: {
-                code: w.fundCode,
-                market: w.market,
-                type: w.fundType,
-                queryType: 'minute',
-                ktype: ''
-              }
-            })) || {}
+          if (w.fundType !== 'fund') {
+            // ETF、股票获取分时图数据
+            let klineResult: { [K: string]: any } =
+              (await invoke('get_time_data', {
+                args: {
+                  code: w.fundCode,
+                  market: w.market,
+                  type: w.fundType,
+                  queryType: 'minute',
+                  ktype: ''
+                }
+              })) || {}
 
-          const klineData = this.handleResult(klineResult) || {}
-          w.basicInfo = {
-            ...(klineData.basicinfos || {}),
-            ...(klineData.cur || {}),
-            ...(klineData.update || {})
+            const klineData = this.handleResult(klineResult) || {}
+            w.basicInfo = {
+              ...(klineData.basicinfos || {}),
+              ...(klineData.cur || {}),
+              ...(klineData.update || {})
+            }
+            w.data = this.getTimeData(klineData.newMarketData || {})
+            w.prices = w.data.map((item: Record<string, any> = {}) => Number(item.price))
+          } else {
+            // 基金
+            let result: { [K: string]: any } =
+              (await invoke('query_open_data', {
+                code: w.fundCode || ''
+              })) || {}
+            let data = this.handleResult(result) || []
+            let openDataInfo: Record<string, any> = {}
+            if (data.length > 0) {
+              openDataInfo = ((data[0] || {}).DisplayData || {}).resultData || {}
+            }
+            openDataInfo = this.getBasicData(openDataInfo || {})
+            console.log('openDataInfo: ', openDataInfo)
+
+            const newest = openDataInfo.newest || []
+            if (newest.length > 0) {
+              const ratio = (newest[0] || {}).value || '0'
+              const price = newest.length > 1 ? (newest[1] || {}).value || '0' : '0'
+              w.basicInfo = {
+                price,
+                ratio
+              }
+            }
           }
-          w.data = this.getTimeData(klineData.newMarketData || {})
-          w.prices = w.data.map((item: Record<string, any> = {}) => Number(item.price))
         }
       }
 
@@ -598,7 +624,12 @@ class MarketStore extends BaseStore {
         inside: pankouList.find((l: Record<string, any> = {}) => l.ename === 'inside') || {}, // 内盘
         outside: pankouList.find((l: Record<string, any> = {}) => l.ename === 'outside') || {}, // 外盘
         peratio: pankouList.find((l: Record<string, any> = {}) => l.ename === 'peratio') || {}, // 市盈(TTM)
-        lyr: pankouList.find((l: Record<string, any> = {}) => l.ename === 'lyr') || {} // 市盈(静)
+        lyr: pankouList.find((l: Record<string, any> = {}) => l.ename === 'lyr') || {}, // 市盈(静),
+        fiveInfo: {
+          buyInfoList: data.buyinfos || [],
+          askInfoList: data.askinfos || [],
+          detailInfoList: data.detailinfos || []
+        }
       }
 
       // 行业标签
@@ -1258,6 +1289,7 @@ class MarketStore extends BaseStore {
   }
 
   // 查询热力图
+  @action
   async onGetStockIndustryHot(market: string = '', sortKey: string = '') {
     try {
       let result: { [K: string]: any } = (await invoke('query_industry_hot', { market, sortKey })) || {}
@@ -1275,6 +1307,7 @@ class MarketStore extends BaseStore {
   }
 
   // 热门板块
+  @action
   async onGetPopularSection(market: string = '', sortKey: string = '') {
     try {
       let result: { [K: string]: any } = (await invoke('query_popular_section', { market, sortKey })) || {}
@@ -1293,6 +1326,7 @@ class MarketStore extends BaseStore {
   }
 
   // 查询排行
+  @action
   async onGetStockRank(market: string = '') {
     try {
       let result: { [K: string]: any } = (await invoke('query_stock_rank', { market })) || {}
@@ -1308,6 +1342,7 @@ class MarketStore extends BaseStore {
   }
 
   // 7 * 24 快讯
+  @action
   async onGetBreakingNews(name: string = '') {
     try {
       let result: { [K: string]: any } = (await invoke('query_breaking_news', { name })) || {}
@@ -1323,6 +1358,7 @@ class MarketStore extends BaseStore {
   }
 
   // 查询A|港|美股主力净流入
+  @action
   async onGetMainMoneyIn(market: string = '') {
     try {
       let result: { [K: string]: any } = (await invoke('query_main_money_in', { market })) || {}
@@ -1330,6 +1366,56 @@ class MarketStore extends BaseStore {
       this.stockMainMoneyInList = []
       this.stockMainMoneyInList = data.fundflow || []
       console.log('stock main money in list: ', this.stockMainMoneyInList)
+      return result || {}
+    } catch (e: any) {
+      this.loading = false
+      throw new Error(e)
+    }
+  }
+
+  // 查询股评(浮动)
+  @action
+  async onGetFloatStockCommentary(code: string = '', market: string = '') {
+    try {
+      this.floatStockCommentary = []
+      let result: { [K: string]: any } =
+        (await invoke('query_float_stock_commentary', {
+          args: {
+            code,
+            market,
+            type: 'stock',
+            queryType: '',
+            ktype: ''
+          }
+        })) || {}
+      const data = this.handleResult(result) || []
+      this.floatStockCommentary = data.list || []
+      console.log('float stock commentary: ', this.floatStockCommentary)
+      return result || {}
+    } catch (e: any) {
+      this.loading = false
+      throw new Error(e)
+    }
+  }
+
+  // 查询股票分析
+  @action
+  async onGetStockAnalysis(code: string = '', market: string = '') {
+    try {
+      this.floatStockCommentary = []
+      let result: { [K: string]: any } =
+        (await invoke('query_stock_analysis', {
+          args: {
+            code,
+            market,
+            type: 'stock',
+            queryType: '',
+            ktype: ''
+          }
+        })) || {}
+      const data = this.handleResult(result) || []
+      this.stockAnalysis = data.list || []
+      console.log('float stock commentary: ', this.stockAnalysis)
       return result || {}
     } catch (e: any) {
       this.loading = false
