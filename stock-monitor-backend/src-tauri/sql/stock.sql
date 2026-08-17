@@ -11,7 +11,7 @@
  Target Server Version : 80039 (8.0.39)
  File Encoding         : 65001
 
- Date: 30/06/2026 13:48:48
+ Date: 17/08/2026 15:25:09
 */
 
 SET NAMES utf8mb4;
@@ -33,12 +33,6 @@ CREATE TABLE `fund_acc_nav` (
   KEY `idx_fund_code` (`fund_code`),
   KEY `idx_nav_date` (`nav_date`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='基金累计净值走势表（复权净值曲线，用于长期收益展示）';
-
--- ----------------------------
--- Records of fund_acc_nav
--- ----------------------------
-BEGIN;
-COMMIT;
 
 -- ----------------------------
 -- Table structure for fund_backtest_result
@@ -76,12 +70,6 @@ CREATE TABLE `fund_backtest_result` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='基金策略回测结果表（策略验证与评估层）';
 
 -- ----------------------------
--- Records of fund_backtest_result
--- ----------------------------
-BEGIN;
-COMMIT;
-
--- ----------------------------
 -- Table structure for fund_basic
 -- ----------------------------
 DROP TABLE IF EXISTS `fund_basic`;
@@ -96,12 +84,6 @@ CREATE TABLE `fund_basic` (
   `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '记录更新时间（数据刷新时间）',
   PRIMARY KEY (`fund_code`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='基金基础信息表（存储基金静态属性，如名称、费率、申购门槛等）';
-
--- ----------------------------
--- Records of fund_basic
--- ----------------------------
-BEGIN;
-COMMIT;
 
 -- ----------------------------
 -- Table structure for fund_bond_holdings
@@ -128,12 +110,6 @@ CREATE TABLE `fund_bond_holdings` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='基金债券持仓明细表（季度级）';
 
 -- ----------------------------
--- Records of fund_bond_holdings
--- ----------------------------
-BEGIN;
-COMMIT;
-
--- ----------------------------
 -- Table structure for fund_cash_flow
 -- ----------------------------
 DROP TABLE IF EXISTS `fund_cash_flow`;
@@ -153,12 +129,6 @@ CREATE TABLE `fund_cash_flow` (
   KEY `idx_fund_code` (`fund_code`),
   KEY `idx_report_date` (`report_date`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='基金申购赎回及份额变化表（资金流动行为）';
-
--- ----------------------------
--- Records of fund_cash_flow
--- ----------------------------
-BEGIN;
-COMMIT;
 
 -- ----------------------------
 -- Table structure for fund_factor_exposure
@@ -184,12 +154,6 @@ CREATE TABLE `fund_factor_exposure` (
   KEY `idx_fund_code` (`fund_code`),
   KEY `idx_report_date` (`report_date`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='基金因子暴露表（风格与驱动分析层）';
-
--- ----------------------------
--- Records of fund_factor_exposure
--- ----------------------------
-BEGIN;
-COMMIT;
 
 -- ----------------------------
 -- Table structure for fund_holdings_snapshot
@@ -220,12 +184,6 @@ CREATE TABLE `fund_holdings_snapshot` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='基金持仓快照表（股票/债券/资产结构核心来源）';
 
 -- ----------------------------
--- Records of fund_holdings_snapshot
--- ----------------------------
-BEGIN;
-COMMIT;
-
--- ----------------------------
 -- Table structure for fund_manager
 -- ----------------------------
 DROP TABLE IF EXISTS `fund_manager`;
@@ -247,12 +205,6 @@ CREATE TABLE `fund_manager` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='基金经理信息表（包含当前及历史基金经理）';
 
 -- ----------------------------
--- Records of fund_manager
--- ----------------------------
-BEGIN;
-COMMIT;
-
--- ----------------------------
 -- Table structure for fund_nav
 -- ----------------------------
 DROP TABLE IF EXISTS `fund_nav`;
@@ -269,12 +221,6 @@ CREATE TABLE `fund_nav` (
   KEY `idx_fund_code` (`fund_code`),
   KEY `idx_nav_date` (`nav_date`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='基金单位净值走势表（每日净值 + 涨跌幅）';
-
--- ----------------------------
--- Records of fund_nav
--- ----------------------------
-BEGIN;
-COMMIT;
 
 -- ----------------------------
 -- Table structure for fund_nav_history
@@ -298,12 +244,6 @@ CREATE TABLE `fund_nav_history` (
   KEY `idx_fund_code` (`fund_code`),
   KEY `idx_nav_date` (`nav_date`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='基金净值历史表（核心时间序列数据）';
-
--- ----------------------------
--- Records of fund_nav_history
--- ----------------------------
-BEGIN;
-COMMIT;
 
 -- ----------------------------
 -- Table structure for fund_portfolio_optimizer
@@ -334,12 +274,6 @@ CREATE TABLE `fund_portfolio_optimizer` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='基金组合优化结果表（资产配置与权重分配层）';
 
 -- ----------------------------
--- Records of fund_portfolio_optimizer
--- ----------------------------
-BEGIN;
-COMMIT;
-
--- ----------------------------
 -- Table structure for fund_profile_snapshot
 -- ----------------------------
 DROP TABLE IF EXISTS `fund_profile_snapshot`;
@@ -365,12 +299,6 @@ CREATE TABLE `fund_profile_snapshot` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='基金规模、持有人结构、资产配置快照表';
 
 -- ----------------------------
--- Records of fund_profile_snapshot
--- ----------------------------
-BEGIN;
-COMMIT;
-
--- ----------------------------
 -- Table structure for fund_realtime_snapshot
 -- ----------------------------
 DROP TABLE IF EXISTS `fund_realtime_snapshot`;
@@ -388,12 +316,6 @@ CREATE TABLE `fund_realtime_snapshot` (
   UNIQUE KEY `uk_fund_time` (`fund_code`,`snapshot_time`),
   KEY `idx_fund` (`fund_code`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COMMENT='基金实时估值快照（盯盘核心）';
-
--- ----------------------------
--- Records of fund_realtime_snapshot
--- ----------------------------
-BEGIN;
-COMMIT;
 
 -- ----------------------------
 -- Table structure for fund_risk_metrics
@@ -424,12 +346,6 @@ CREATE TABLE `fund_risk_metrics` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='基金风险与绩效指标表（投研核心评价层）';
 
 -- ----------------------------
--- Records of fund_risk_metrics
--- ----------------------------
-BEGIN;
-COMMIT;
-
--- ----------------------------
 -- Table structure for fund_signal_event
 -- ----------------------------
 DROP TABLE IF EXISTS `fund_signal_event`;
@@ -446,12 +362,6 @@ CREATE TABLE `fund_signal_event` (
   KEY `idx_fund` (`fund_code`),
   KEY `idx_type` (`signal_type`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COMMENT='基金信号事件（策略输出层）';
-
--- ----------------------------
--- Records of fund_signal_event
--- ----------------------------
-BEGIN;
-COMMIT;
 
 -- ----------------------------
 -- Table structure for fund_stock_holdings
@@ -475,12 +385,6 @@ CREATE TABLE `fund_stock_holdings` (
   KEY `idx_stock_code` (`stock_code`),
   KEY `idx_report_date` (`report_date`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='基金股票持仓明细表（季度级）';
-
--- ----------------------------
--- Records of fund_stock_holdings
--- ----------------------------
-BEGIN;
-COMMIT;
 
 -- ----------------------------
 -- Table structure for fund_strategy_signal
@@ -510,12 +414,6 @@ CREATE TABLE `fund_strategy_signal` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='基金策略信号表（买卖与调仓决策层）';
 
 -- ----------------------------
--- Records of fund_strategy_signal
--- ----------------------------
-BEGIN;
-COMMIT;
-
--- ----------------------------
 -- Table structure for fund_style_rotation
 -- ----------------------------
 DROP TABLE IF EXISTS `fund_style_rotation`;
@@ -543,12 +441,6 @@ CREATE TABLE `fund_style_rotation` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='基金风格漂移与市场适应性分析表';
 
 -- ----------------------------
--- Records of fund_style_rotation
--- ----------------------------
-BEGIN;
-COMMIT;
-
--- ----------------------------
 -- Table structure for fund_total_return
 -- ----------------------------
 DROP TABLE IF EXISTS `fund_total_return`;
@@ -566,12 +458,6 @@ CREATE TABLE `fund_total_return` (
   KEY `idx_series` (`series_name`),
   KEY `idx_date` (`nav_date`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='基金累计收益对比表（基金 vs 同类 vs 基准）';
-
--- ----------------------------
--- Records of fund_total_return
--- ----------------------------
-BEGIN;
-COMMIT;
 
 -- ----------------------------
 -- Table structure for my_fund_watch_config
@@ -597,40 +483,42 @@ CREATE TABLE `my_fund_watch_config` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='我的基金盯盘配置表';
 
 -- ----------------------------
--- Records of my_fund_watch_config
+-- Table structure for my_fund_watch_group
 -- ----------------------------
-BEGIN;
-COMMIT;
+DROP TABLE IF EXISTS `my_fund_watch_group`;
+CREATE TABLE `my_fund_watch_group` (
+  `id` varchar(255) NOT NULL COMMENT '主键',
+  `user_id` bigint NOT NULL COMMENT '用户ID',
+  `name` varchar(50) NOT NULL COMMENT '分组名称',
+  `sort_order` int DEFAULT '0' COMMENT '排序',
+  `is_default` tinyint(1) DEFAULT '0' COMMENT '是否默认分组',
+  `create_time` varchar(255) DEFAULT NULL,
+  `update_time` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='自选分组表';
 
 -- ----------------------------
 -- Table structure for my_fund_watchlist
 -- ----------------------------
 DROP TABLE IF EXISTS `my_fund_watchlist`;
 CREATE TABLE `my_fund_watchlist` (
-     `id` varchar(255) NOT NULL COMMENT '主键',
-     `user_id` bigint DEFAULT NULL COMMENT '用户ID',
-     `fund_name` varchar(255) DEFAULT NULL,
-     `fund_code` varchar(10) NOT NULL COMMENT '基金代码',
-     `alias_name` varchar(100) DEFAULT NULL COMMENT '自定义名称',
-     `group_name` varchar(50) DEFAULT NULL COMMENT '分组',
-     `is_pinned` tinyint(1) DEFAULT '0' COMMENT '是否置顶',
-     `sort_order` int DEFAULT '0' COMMENT '排序',
-     `exchange` varchar(255) DEFAULT NULL,
-     `market` varchar(255) DEFAULT NULL,
-     `fund_type` varchar(255) DEFAULT NULL,
-     `create_time` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
-     `update_time` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
-     PRIMARY KEY (`id`) USING BTREE,
-     UNIQUE KEY `uk_user_fund` (`user_id`,`fund_code`),
-     KEY `idx_user` (`user_id`)
+  `id` varchar(255) NOT NULL COMMENT '主键',
+  `user_id` bigint DEFAULT NULL COMMENT '用户ID',
+  `fund_name` varchar(255) DEFAULT NULL,
+  `fund_code` varchar(10) NOT NULL COMMENT '基金代码',
+  `alias_name` varchar(100) DEFAULT NULL COMMENT '自定义名称',
+  `group_id` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL COMMENT '所属分组',
+  `is_pinned` tinyint(1) DEFAULT '0' COMMENT '是否置顶',
+  `sort_order` int DEFAULT '0' COMMENT '排序',
+  `exchange` varchar(255) DEFAULT NULL,
+  `market` varchar(255) DEFAULT NULL,
+  `fund_type` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
+  `create_time` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
+  `update_time` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE KEY `uk_user_fund` (`user_id`,`fund_code`),
+  KEY `idx_user` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='自选基金表（只存关注关系）';
-
--- ----------------------------
--- Records of my_fund_watchlist
--- ----------------------------
-BEGIN;
-INSERT INTO `my_fund_watchlist` (`id`, `user_id`, `fund_name`, `fund_code`, `alias_name`, `group_name`, `is_pinned`, `sort_order`, `create_time`, `update_time`) VALUES ('3abf19c4-c151-4345-b4a8-89ed5b3bce49', NULL, '财通品质甄选混合C', '024481', NULL, NULL, 0, 0, '2026-06-30 13:44:16', NULL);
-COMMIT;
 
 -- ----------------------------
 -- Table structure for portfolio_position
@@ -647,12 +535,6 @@ CREATE TABLE `portfolio_position` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_portfolio_fund` (`portfolio_id`,`fund_code`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COMMENT='组合持仓表（资产配置层）';
-
--- ----------------------------
--- Records of portfolio_position
--- ----------------------------
-BEGIN;
-COMMIT;
 
 -- ----------------------------
 -- Table structure for stock_basic
@@ -679,11 +561,5 @@ CREATE TABLE `stock_basic` (
   KEY `idx_level1` (`industry_level1`),
   KEY `idx_concept` (`concept_tags`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='股票基础信息维表（用于行业/概念/语义映射）';
-
--- ----------------------------
--- Records of stock_basic
--- ----------------------------
-BEGIN;
-COMMIT;
 
 SET FOREIGN_KEY_CHECKS = 1;

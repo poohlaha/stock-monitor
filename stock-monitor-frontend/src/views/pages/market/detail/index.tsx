@@ -5,7 +5,7 @@
  */
 import React, { ReactElement, useEffect, useRef, useState } from 'react'
 import { observer } from 'mobx-react-lite'
-import { ADDRESS } from '@utils/base'
+import {ADDRESS, TOAST} from '@utils/base'
 import { useStore } from '@views/stores'
 import Page from '@views/modules/page'
 import Utils from '@utils/utils'
@@ -35,6 +35,7 @@ import MarketDetailCurveGraph from '@pages/market/detail/curveGraph'
 import MarketDetailFnCurveGraph from '@pages/market/detail/fnCurveGraph'
 import MarketDetailStock from '@pages/market/detail/stock'
 import Loading from '@views/components/loading/loading'
+import AddSelectionModal from '@pages/market/addSelection'
 
 echarts.use([
   LegendComponent,
@@ -60,6 +61,8 @@ const MarketDetail = (): ReactElement => {
   const [market, setMarket] = useState('ab')
   const [exchange, setExchange] = useState('sh')
   const [fundTabs, setFundTabs] = useState<Array<any>>([])
+  const [hasInCollect, setHasInCollect] = useState<boolean>(false)
+  const [onOpenSelection, setOnOpenSelection] = useState<boolean>(false)
 
   const [size, setSize] = useState({ width: 0, height: 0 })
 
@@ -87,9 +90,9 @@ const MarketDetail = (): ReactElement => {
     resetSize(t)
     onInit(c, m, t)
 
-    return (() => {
+    return () => {
       marketStore.basicInfo = {}
-    })
+    }
   }, [location.search])
 
   const resetSize = (t: string = '') => {
@@ -131,6 +134,15 @@ const MarketDetail = (): ReactElement => {
           })
         )
          */
+
+    queue.push(
+      new Promise(async resolve => {
+        const res = marketStore.onGetMyFundListByCode(c, (obj: Array<Record<string, any>> = []) => {
+          setHasInCollect(obj.length > 0)
+        })
+        resolve(res)
+      })
+    )
 
     queue.push(
       new Promise(async resolve => {
@@ -215,7 +227,6 @@ const MarketDetail = (): ReactElement => {
       setTimeout(async () => {
         await marketStore.onGetFloatStockCommentary(c, m)
       }, 500)
-
 
       setTimeout(async () => {
         await marketStore.onGetRelatedTargets(c, m)
@@ -321,24 +332,33 @@ const MarketDetail = (): ReactElement => {
   }
 
   const render = () => {
+    const basicInfo = getBasicIInfo() || {}
+    const ex = Utils.isBlank(exchange || '') ? basicInfo?.exchange || '' : exchange || ''
+    const name = marketStore.basicInfo?.name || openDataInfo.name || ''
     return (
       <Page
         contentClassName="market-detail-page overflow-y-auto flex-direction-column pt-4 pb-4 no-scrollbar"
         title={{
-          show: false,
+          show: false
         }}
       >
         {!marketStore.loading && (
           <>
             {/* 基金信息 */}
             <MarketDetailTitle
-              name={marketStore.basicInfo?.name || openDataInfo.name || ''}
+              hasInCollect={hasInCollect}
+              name={name}
               code={marketStore.basicInfo?.code || openDataInfo.brief?.code || ''}
-              exchange={exchange}
+              exchange={ex}
               tags={openDataInfo.tags || []}
               tagList={marketStore.tagList || []}
               type={type}
-              basicInfo={getBasicIInfo()}
+              basicInfo={basicInfo}
+              onAddSelection={async () => {
+                await marketStore.onGetWatchGroupList(() => {
+                  setOnOpenSelection(true)
+                })
+              }}
             />
 
             {/* 分时图 | 持仓 */}
@@ -431,6 +451,25 @@ const MarketDetail = (): ReactElement => {
             {type === 'stock' && <MarketDetailStock resetSize={resetSize} code={code} market={market} />}
           </>
         )}
+
+        <AddSelectionModal
+          open={onOpenSelection}
+          name={name}
+          code={code}
+          market={market}
+          type={type}
+          exchange={ex}
+          onOk={async () => {
+            await marketStore.onGetMyFundListByCode(code, (obj: Array<Record<string, any>> = []) => {
+              TOAST.show({message: '添加自选成功', type: 2})
+              setHasInCollect(obj.length > 0)
+              setOnOpenSelection(false)
+            })
+          }}
+          onCancel={() => {
+            setOnOpenSelection(false)
+          }}
+        />
 
         {marketStore.loading && <Loading show={marketStore.loading} />}
       </Page>

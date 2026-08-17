@@ -102,9 +102,9 @@ impl MarketDetailInfo {
     }
 
     /**
-      查询股评(浮动)
-      例: https://finance.pae.baidu.com/sapi/v1/bulletscreen?financeType=stock&code=300502&market=ab&interval=120&finClientType=pc
-     */
+     查询股评(浮动)
+     例: https://finance.pae.baidu.com/sapi/v1/bulletscreen?financeType=stock&code=300502&market=ab&interval=120&finClientType=pc
+    */
     pub async fn query_float_stock_commentary(args: &Args) -> Result<HttpResponse, String> {
         let url = format!("{}sapi/v1/bulletscreen?financeType=stock&code={}&market={}&interval=120&finClientType=pc", BD_HTTP_URL_PREFIX, args.code, args.market);
         // info!("{} query open data url {}", LOGGER_PREFIX.cyan().bold(), url);
@@ -112,9 +112,9 @@ impl MarketDetailInfo {
     }
 
     /**
-      查询股票分析
-      例: https://finance.pae.baidu.com/vapi/v1/overviewwidget?market=ab&code=300502&financeType=stock&modules=analysis&finClientType=pc
-     */
+     查询股票分析
+     例: https://finance.pae.baidu.com/vapi/v1/overviewwidget?market=ab&code=300502&financeType=stock&modules=analysis&finClientType=pc
+    */
     pub async fn query_stock_analysis(args: &Args) -> Result<HttpResponse, String> {
         let url = format!("{}vapi/v1/overviewwidget?code={}&market={}&financeType=stock&modules=analysis&finClientType=pc", BD_HTTP_URL_PREFIX, args.code, args.market);
         // info!("{} query open data url {}", LOGGER_PREFIX.cyan().bold(), url);

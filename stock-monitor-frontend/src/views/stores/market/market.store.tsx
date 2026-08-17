@@ -54,6 +54,14 @@ class MarketStore extends BaseStore {
   @observable floatStockCommentary: Array<Record<string, any>> = [] // 股评(浮动)
   @observable stockAnalysis: Array<Record<string, any>> = [] // 股票分析
   @observable relatedTarget: Record<string, any> = {} // 股票关联标的
+  @observable watchGroupList: Array<any> = [] // 分组列表
+  @observable groupWatchList: Array<any> = [] // 分组下的列表
+
+  readonly ADD_GROUP_FORM_DEFAULT: Record<string, any> = {
+    name: ''
+  } // 分组表单
+
+  @observable addGroupForm: Record<string, any> = Utils.deepCopy(this.ADD_GROUP_FORM_DEFAULT) // 分组表单
 
   readonly HOT_TYPE_LIST: Array<string> = ['Stock', 'Search', 'Plate', 'Sentiment', 'Analysis', 'Institution']
 
@@ -153,7 +161,27 @@ class MarketStore extends BaseStore {
       })
 
       const list = this.handleResult(result) || []
+      console.log('my fund list: ', list)
       callback?.(list)
+    } catch (e: any) {
+      this.loading = false
+      throw new Error(e)
+    }
+  }
+
+  /**
+   * 根据基金代码查找基金列表
+   */
+  @action
+  async onGetMyFundListByCode(code: string, callback?: Function) {
+    try {
+      let result: { [K: string]: any } = await invoke('find_by_fund_code', {
+        fundCode: code || ''
+      })
+
+      const obj = this.handleResult(result) || {}
+      callback?.(obj)
+      return result
     } catch (e: any) {
       this.loading = false
       throw new Error(e)
@@ -164,15 +192,16 @@ class MarketStore extends BaseStore {
    * 添加到我的自选
    */
   @action
-  async onAddToMyFundWatchlist(item: Record<string, any> = {}, callback?: Function) {
+  async onAddToMyFundWatchlist(item: Record<string, any> = {}, callback?: Function, groupIdList: Array<string> = []) {
     try {
       let result: { [K: string]: any } = await invoke('add_to_my_fund_watchlist', {
         args: {
-          fundCode: item.CODE || '',
-          fundName: item.NAME || '',
+          fundCode: item.code || item.CODE || '',
+          fundName: item.name || item.NAME || '',
           market: item.market || '',
           exchange: item.exchange || '',
-          fundType: item.type || ''
+          fundType: item.type || '',
+          groupIdList
         }
       })
 
@@ -180,7 +209,7 @@ class MarketStore extends BaseStore {
       this.search.list = (this.search.list || []).map((v: Record<string, any> = {}) => {
         return {
           ...v,
-          hasCollect: item.CODE === v.CODE
+          hasCollect: item.code === v.code
         }
       })
       callback?.()
@@ -1425,23 +1454,93 @@ class MarketStore extends BaseStore {
   }
 
   // 查询关联标的
-   @action
-   async onGetRelatedTargets(code: string = '', market: string = '') {
+  @action
+  async onGetRelatedTargets(code: string = '', market: string = '') {
     try {
       this.relatedTarget = {}
       let result: { [K: string]: any } =
-          (await invoke('query_related_targets', {
-            args: {
-              code,
-              market,
-              type: 'stock',
-              queryType: '',
-              ktype: ''
-            }
-          })) || {}
+        (await invoke('query_related_targets', {
+          args: {
+            code,
+            market,
+            type: 'stock',
+            queryType: '',
+            ktype: ''
+          }
+        })) || {}
       const data = this.handleResult(result) || {}
       this.relatedTarget = data || {}
       console.log('related target: ', this.relatedTarget)
+      return result || {}
+    } catch (e: any) {
+      this.loading = false
+      throw new Error(e)
+    }
+  }
+
+  // 获取分组
+  @action
+  async onGetWatchGroupList(callback?: Function) {
+    try {
+      this.watchGroupList = []
+      let result: { [K: string]: any } = (await invoke('get_my_group_watch_list', {})) || {}
+      const data = this.handleResult(result) || []
+
+      this.watchGroupList = (data || []).map((d: Record<string, any> = {}) => {
+        return {
+          label: d.name || '',
+          key: d.id || '',
+          value: d.id || ''
+        }
+      })
+      console.log('watch group: ', this.watchGroupList)
+      callback?.(data.length > 0 ? data[0].id || '' : '')
+      return result || {}
+    } catch (e: any) {
+      this.loading = false
+      throw new Error(e)
+    }
+  }
+
+  // 获取分组
+  @action
+  async onGetWatchListByGroupId(groupId: string = '') {
+    try {
+      this.groupWatchList = []
+      let result: { [K: string]: any } =
+        (await invoke('query_my_watch_list_by_group_id', {
+          groupId
+        })) || {}
+      const data = this.handleResult(result) || []
+
+      this.groupWatchList = data || []
+      console.log('group watch list: ', this.groupWatchList)
+      return result || {}
+    } catch (e: any) {
+      this.loading = false
+      throw new Error(e)
+    }
+  }
+
+  // 添加分组
+  @action
+  async onAddGroup(callback?: Function) {
+    try {
+      let result: { [K: string]: any } =
+        (await invoke('my_group_add', {
+          args: {
+            id: '',
+            name: this.addGroupForm.name || ''
+          }
+        })) || {}
+      this.handleResult(result) || {}
+
+      if (result.code === 200) {
+        TOAST.show({ message: '添加分组成功', type: 2 })
+        callback?.()
+        await this.onGetWatchGroupList()
+      }
+
       return result || {}
     } catch (e: any) {
       this.loading = false

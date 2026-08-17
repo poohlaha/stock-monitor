@@ -3,7 +3,7 @@
  * @date 2023-08-28
  * @author poohlaha
  */
-import React, { ReactElement } from 'react'
+import React, {ReactElement, useState} from 'react'
 import { observer } from 'mobx-react-lite'
 import { Input } from 'antd'
 import { SearchOutlined } from '@ant-design/icons'
@@ -13,15 +13,20 @@ import { useNavigate } from 'react-router'
 import Loading from '@views/components/loading/loading'
 import RouterUrls from '@route/router.url.toml'
 import { getRateClassName } from '@pages/utils'
+import AddSelectionModal from "@pages/market/addSelection";
 
 const Search = (): ReactElement => {
   const { marketStore, homeStore } = useStore()
   const navigate = useNavigate()
 
+  const [onOpenSelection, setOnOpenSelection] = useState<boolean>(false)
+  const [selectedItem, setSelectedItem] = useState<Record<string, any>>({})
+
   const getSearchContent = () => {
     if (!marketStore.showSearchDialog) {
       return null
     }
+
     const list = marketStore.search.list || []
 
     return (
@@ -65,9 +70,14 @@ const Search = (): ReactElement => {
                           viewBox="0 0 1024 1024"
                           version="1.1"
                           xmlns="http://www.w3.org/2000/svg"
-                          onClick={() => marketStore.onAddToMyFundWatchlist(item || {})}
+                          onClick={() => {
+                            setSelectedItem(item)
+                            console.log('item: ', item)
+                            setOnOpenSelection(true)
+                          }}
                           onMouseDown={e => {
                             e.stopPropagation()
+                            e.preventDefault()
                           }}
                         >
                           <path
@@ -124,6 +134,24 @@ const Search = (): ReactElement => {
 
           {getSearchContent()}
         </div>
+
+        <AddSelectionModal
+            open={onOpenSelection}
+            name={selectedItem.name || ''}
+            code={selectedItem.code || ''}
+            market={selectedItem.market || ''}
+            type={selectedItem.type || ''}
+            exchange={selectedItem.exchange || ''}
+            onOk={async () => {
+                console.log('on ok: ', selectedItem)
+               await marketStore.onAddToMyFundWatchlist(selectedItem || {}, () => {
+                   setOnOpenSelection(false)
+               })
+            }}
+            onCancel={() => {
+              setOnOpenSelection(false)
+            }}
+        />
       </div>
     )
   }

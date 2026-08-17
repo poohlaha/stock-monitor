@@ -179,4 +179,3 @@ pub async fn query_stock_analysis(args: Args) -> Result<HttpResponse, String> {
 pub async fn query_related_targets(args: Args) -> Result<HttpResponse, String> {
     MarketDetailInfo::query_related_targets(&args).await
 }
-
