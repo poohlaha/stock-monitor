@@ -13,7 +13,7 @@ import { useNavigate } from 'react-router'
 import { Button, Input, Modal, Tabs } from 'antd'
 import Utils from '@utils/utils'
 import { TOAST } from '@utils/base'
-import AddSelectionModal from "@pages/market/addSelection";
+import AddSelectionModal from '@pages/market/addSelection'
 
 const Dashboard = (): ReactElement => {
   const { marketStore, homeStore } = useStore()
@@ -53,7 +53,7 @@ const Dashboard = (): ReactElement => {
               <Tabs
                 items={marketStore.watchGroupList}
                 activeKey={activeGroupTabIndex}
-                onChange={async (tabIndex) => {
+                onChange={async tabIndex => {
                   if (tabIndex === activeGroupTabIndex) return
                   setActiveGroupTabIndex(tabIndex)
                   await marketStore.onGetWatchListByGroupId(tabIndex)

@@ -27,7 +27,7 @@ use exports::market::{
     query_hot_indicators, query_hot_stock_list, query_income, query_industrial_chain, query_industry_fund_flow, query_industry_hot, query_main_money_in, query_market_status, query_news, query_open_data, query_popular_section,
     query_position_distribution, query_related_targets, query_stock_analysis, query_stock_rank, query_stock_rf_distribution, query_worldwide, query_worldwide_market_center,
 };
-use exports::my::{add_to_my_fund_watchlist, find_by_fund_code, find_by_fund_codes, get_my_group_list, my_group_add, my_group_delete, my_group_update, query_watchlist, get_my_group_watch_list, query_my_watch_list_by_group_id};
+use exports::my::{add_to_my_fund_watchlist, find_by_fund_code, find_by_fund_codes, get_my_group_list, get_my_group_watch_list, my_group_add, my_group_delete, my_group_update, query_my_watch_list_by_group_id, query_watchlist};
 use exports::search::search;
 use exports::settings::{get_setting, hide_dock, save_setting, show_dock};
 use log::info;

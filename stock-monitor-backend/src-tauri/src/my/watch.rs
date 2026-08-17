@@ -3,13 +3,13 @@
 */
 
 use crate::database::helper::DBHelper;
+use crate::my::group::MyWatchGroup;
 use crate::prepare::{get_error_response, HttpResponse};
 use handlers::utils::Utils;
 use log::info;
 use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, MySql};
 use uuid::Uuid;
-use crate::my::group::MyWatchGroup;
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub struct Args {
@@ -109,15 +109,15 @@ impl MyWatchList {
                     create_time
                 )
                 VALUES (?, ?, ?, ?, ?, ?, ?)
-                "#
+                "#,
         )
-            .bind(&watch_id)
-            .bind(&args.fund_code)
-            .bind(&args.fund_name)
-            .bind(&args.exchange)
-            .bind(&args.fund_type)
-            .bind(&args.market)
-            .bind(&time);
+        .bind(&watch_id)
+        .bind(&args.fund_code)
+        .bind(&args.fund_name)
+        .bind(&args.exchange)
+        .bind(&args.fund_type)
+        .bind(&args.market)
+        .bind(&time);
 
         query_list.push(watch_query);
 
@@ -132,11 +132,11 @@ impl MyWatchList {
                             group_id
                         )
                         VALUES (?, ?, ?)
-                    "#
+                    "#,
             )
-                .bind(Uuid::new_v4().to_string())
-                .bind(&watch_id)
-                .bind(group_id);
+            .bind(Uuid::new_v4().to_string())
+            .bind(&watch_id)
+            .bind(group_id);
 
             query_list.push(relation_query);
         }
@@ -256,7 +256,7 @@ impl MyWatchList {
                     w.id = r.watchlist_id
                 WHERE
                     r.group_id = ?
-                ORDER BY create_time DESC
+                ORDER BY create_time ASC
            "#,
         );
 

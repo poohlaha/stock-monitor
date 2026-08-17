@@ -3,12 +3,12 @@
 */
 
 use crate::database::helper::DBHelper;
+use crate::my::watch::MyWatchList;
 use crate::prepare::{get_error_response, HttpResponse};
 use handlers::utils::Utils;
 use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, MySql, Row};
 use uuid::Uuid;
-use crate::my::watch::MyWatchList;
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub struct Args {
@@ -160,18 +160,18 @@ impl MyWatchGroup {
             r#"
                     DELETE FROM my_fund_watch_group_relation
                     WHERE group_id = ?
-                "#
+                "#,
         )
-            .bind(id);
+        .bind(id);
 
         // 2. 删除分组
         let group_query = sqlx::query::<MySql>(
             r#"
                     DELETE FROM my_fund_watch_group
                     WHERE id = ?
-                "#
+                "#,
         )
-            .bind(id);
+        .bind(id);
 
         query_list.push(group_query);
         DBHelper::batch_commit(query_list).await

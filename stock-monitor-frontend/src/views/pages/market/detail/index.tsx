@@ -5,7 +5,7 @@
  */
 import React, { ReactElement, useEffect, useRef, useState } from 'react'
 import { observer } from 'mobx-react-lite'
-import {ADDRESS, TOAST} from '@utils/base'
+import { ADDRESS, TOAST } from '@utils/base'
 import { useStore } from '@views/stores'
 import Page from '@views/modules/page'
 import Utils from '@utils/utils'
@@ -461,7 +461,7 @@ const MarketDetail = (): ReactElement => {
           exchange={ex}
           onOk={async () => {
             await marketStore.onGetMyFundListByCode(code, (obj: Array<Record<string, any>> = []) => {
-              TOAST.show({message: '添加自选成功', type: 2})
+              TOAST.show({ message: '添加自选成功', type: 2 })
               setHasInCollect(obj.length > 0)
               setOnOpenSelection(false)
             })

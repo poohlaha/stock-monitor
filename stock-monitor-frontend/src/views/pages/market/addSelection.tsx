@@ -33,27 +33,26 @@ const AddSelectionModal = (props: IAddSelectionModalProps): ReactElement => {
         }}
         open={props.open}
         onOk={async () => {
+          console.log('on ok ....', props.code)
           if (ids.length === 0) {
             TOAST.show({ message: '请选择分组', type: 4 })
             return
           }
 
-            await marketStore.onAddToMyFundWatchlist(
-                {
-                    NAME: props.name || '',
-                    CODE: props.code || '',
-                    market: props.market || '',
-                    exchange: props.exchange || '',
-                    type: props.type || ''
-                },
-                () => {
-                    setIds([])
-                    props.onOk?.()
-                },
-                ids || []
-            )
-
-            props.onOk?.()
+          await marketStore.onAddToMyFundWatchlist(
+            {
+              NAME: props.name || '',
+              CODE: props.code || '',
+              market: props.market || '',
+              exchange: props.exchange || '',
+              type: props.type || ''
+            },
+            () => {
+              setIds([])
+              props.onOk?.()
+            },
+            ids || []
+          )
         }}
         onCancel={() => {
           setIds([])
