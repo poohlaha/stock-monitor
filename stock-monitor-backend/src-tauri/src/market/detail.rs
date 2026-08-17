@@ -120,4 +120,14 @@ impl MarketDetailInfo {
         // info!("{} query open data url {}", LOGGER_PREFIX.cyan().bold(), url);
         Utils::get_time_response(&url).await
     }
+
+    /**
+      查询关联标的
+      例: https://finance.pae.baidu.com/vapi/v1/stockrelatedobjects?market=ab&code=300502&type=stock&finClientType=pc
+    */
+    pub async fn query_related_targets(args: &Args) -> Result<HttpResponse, String> {
+        let url = format!("{}vapi/v1/stockrelatedobjects?code={}&market={}&type=stock&finClientType=pc", BD_HTTP_URL_PREFIX, args.code, args.market);
+        // info!("{} query open data url {}", LOGGER_PREFIX.cyan().bold(), url);
+        Utils::get_time_response(&url).await
+    }
 }

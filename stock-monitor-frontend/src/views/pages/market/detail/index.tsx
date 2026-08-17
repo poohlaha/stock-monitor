@@ -86,23 +86,29 @@ const MarketDetail = (): ReactElement => {
 
     resetSize(t)
     onInit(c, m, t)
+
+    return (() => {
+      marketStore.basicInfo = {}
+    })
   }, [location.search])
 
   const resetSize = (t: string = '') => {
     if (Utils.isBlank(t || '')) {
       t = type
     }
-    let chart = document.querySelector('.chart')
+
+    let chart = document.querySelector('.content-box')
     if (!chart) return
 
     const rect = chart.getBoundingClientRect()
-    let width = rect.width - (t !== 'stock' ? 400 : 0)
+    let width = rect.width - (t !== 'stock' ? 400 : 0) - 32
     // console.log('content-box rect: ', rect, width, t)
     if (width < 500) {
       width = 500
     }
 
     let height = 350
+    console.log('width: ', width, ';height: ', height)
     setSize({ width, height })
   }
 
@@ -209,6 +215,11 @@ const MarketDetail = (): ReactElement => {
       setTimeout(async () => {
         await marketStore.onGetFloatStockCommentary(c, m)
       }, 500)
+
+
+      setTimeout(async () => {
+        await marketStore.onGetRelatedTargets(c, m)
+      }, 500)
     }
   }
 
@@ -314,7 +325,7 @@ const MarketDetail = (): ReactElement => {
       <Page
         contentClassName="market-detail-page overflow-y-auto flex-direction-column pt-4 pb-4 no-scrollbar"
         title={{
-          show: false
+          show: false,
         }}
       >
         {!marketStore.loading && (
@@ -357,6 +368,7 @@ const MarketDetail = (): ReactElement => {
                   preClosePrice={marketStore.preClosePrice || 0}
                   floatStockCommentary={marketStore.floatStockCommentary || []}
                   fiveInfo={marketStore.pankouInfo?.fiveInfo || {}}
+                  resetSize={resetSize}
                   onTabChange={async value => {
                     console.log('timelineList: ', marketStore.timelineList)
                     if (value === 'five') {

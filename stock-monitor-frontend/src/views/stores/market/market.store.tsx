@@ -49,10 +49,11 @@ class MarketStore extends BaseStore {
   @observable stockIndustryHot: Array<Record<string, any>> = [] // 热力图
   @observable popularSectionList: Array<Record<string, any>> = [] // 热门板块
   @observable stockRankList: Array<Record<string, any>> = [] // 排行
-  @observable breakingNews: Record<string, any> = [] // 7 * 24 快讯
+  @observable breakingNews: Record<string, any> = {} // 7 * 24 快讯
   @observable stockMainMoneyInList: Array<Record<string, any>> = [] // 查询A|港|美股主力净流入
   @observable floatStockCommentary: Array<Record<string, any>> = [] // 股评(浮动)
   @observable stockAnalysis: Array<Record<string, any>> = [] // 股票分析
+  @observable relatedTarget: Record<string, any> = {} // 股票关联标的
 
   readonly HOT_TYPE_LIST: Array<string> = ['Stock', 'Search', 'Plate', 'Sentiment', 'Analysis', 'Institution']
 
@@ -1416,6 +1417,31 @@ class MarketStore extends BaseStore {
       const data = this.handleResult(result) || []
       this.stockAnalysis = data.list || []
       console.log('float stock commentary: ', this.stockAnalysis)
+      return result || {}
+    } catch (e: any) {
+      this.loading = false
+      throw new Error(e)
+    }
+  }
+
+  // 查询关联标的
+   @action
+   async onGetRelatedTargets(code: string = '', market: string = '') {
+    try {
+      this.relatedTarget = {}
+      let result: { [K: string]: any } =
+          (await invoke('query_related_targets', {
+            args: {
+              code,
+              market,
+              type: 'stock',
+              queryType: '',
+              ktype: ''
+            }
+          })) || {}
+      const data = this.handleResult(result) || {}
+      this.relatedTarget = data || {}
+      console.log('related target: ', this.relatedTarget)
       return result || {}
     } catch (e: any) {
       this.loading = false

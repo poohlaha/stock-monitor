@@ -8,6 +8,7 @@ import { observer } from 'mobx-react-lite'
 import Utils from '@utils/utils'
 import { getRateClassName } from '@pages/utils'
 import NoticePng from '@assets/images/notice.png'
+import CommonHtmlHandler from "@views/handlers/common";
 
 interface IMarketDetailTitleProps {
   name: string
@@ -26,7 +27,11 @@ const MarketDetailTitle = (props: IMarketDetailTitleProps): ReactElement => {
     }
 
     return (
-      <div className="fund-info mt-4">
+      <div className="fund-info mt-4 relative">
+        <div className="absolute -left-4 top-1.5">
+          {CommonHtmlHandler.getBackNode()}
+        </div>
+
         <div className="flex-direction-column pl-4 pr-4 rounded-md">
           {/* 标题 */}
           <div className="flex-align-center">

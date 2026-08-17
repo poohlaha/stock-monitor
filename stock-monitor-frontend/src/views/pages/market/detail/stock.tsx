@@ -28,6 +28,7 @@ const MarketDetailStock = (props: IMarketDetailStockProps): ReactElement => {
 
   const [zjlxActiveTabIndex, setZjlxActiveTabIndex] = useState('1')
   const [ccDetalActiveTabIndex, setCcDetailActiveTabIndex] = useState('1')
+  const [relatedTargetActiveTabIndex, setRelatedTargetActiveTabIndex] = useState('stocks')
   // const navigate = useNavigate()
 
   const gdBarChartRef = useRef(null)
@@ -540,11 +541,11 @@ const MarketDetailStock = (props: IMarketDetailStockProps): ReactElement => {
           <div className="flex-align-center">
             <div className="flex-1 pr-4 flex-align-center flex-jsc-between">
               <p className="color-gray">主力流入</p>
-              <p>{todayMainFlow.mainIn || '-'}</p>
+              <p className="font-bold">{todayMainFlow.mainIn || '-'}</p>
             </div>
             <div className="flex-1 pl-4 flex-align-center flex-jsc-between">
               <p className="color-gray">主力流出</p>
-              <p>{todayMainFlow.mainOut || '-'}</p>
+              <p className="font-bold">{todayMainFlow.mainOut || '-'}</p>
             </div>
 
             <div className="flex-1 pl-4 flex-align-center flex-jsc-between">
@@ -1053,6 +1054,128 @@ const MarketDetailStock = (props: IMarketDetailStockProps): ReactElement => {
           </div>
         </div>
       </div>
+    )
+  }
+
+  // 关联标的
+  const getRelatedTarget = () => {
+    const relatedTarget = marketStore.relatedTarget || {}
+    if (Utils.isObjectNull(relatedTarget || {})){
+      return (
+          <GroupTemplate className="p-4 border rounded-lg h-[350px] mt-8" bodyClassName="flex-center wh100" title="关联标的">
+            <p className="color-gray">暂无数据</p>
+          </GroupTemplate>
+      )
+    }
+
+    const list = relatedTarget[relatedTargetActiveTabIndex] || []
+
+    const maxIndex = list.reduce((maxIdx: number, item: Record<string, any>, index: number) => {
+      const maxValue = Number(list[maxIdx]?.holdingRate || 0)
+      const currentValue = Number(item.holdingRate || 0)
+      return currentValue > maxValue ? index : maxIdx
+    }, 0)
+
+    return (
+        <GroupTemplate className="flex-direction-column p-4 border rounded-lg mt-8" title="关联标的">
+          <Tabs
+              className="m-ant-tabs"
+              items={[
+                {
+                  label: '行业/概念',
+                  key: 'stocks'
+                },
+                {
+                  label: '产业链',
+                  key: 'industries'
+                },
+                {
+                  label: '持仓基金',
+                  key: 'funds'
+                }
+              ]}
+              activeKey={relatedTargetActiveTabIndex}
+              onChange={async tabIndex => {
+                if (tabIndex === relatedTargetActiveTabIndex) return
+                setRelatedTargetActiveTabIndex(tabIndex)
+              }}
+          />
+
+          <div className={`mt-2 ${relatedTargetActiveTabIndex === 'stocks' ? 'grid stock-grid' : 'flex-direction-column'}`}>
+            {
+              (list || []).map((l: Record<string, any>, index: number) => {
+                if (relatedTargetActiveTabIndex === 'stocks') {
+                  return (
+                      <div className="stock-card flex-direction-column p-4 h-24 bg-line-hover hover:shadow-md rounded-lg cursor-pointer" key={index}>
+                        <div className="flex-align-center">
+                          <img src={l.logo || ''} className="w-8 h-8 rounded-full" />
+                          <div className="flex-direction-column ml-2">
+                            <p className="font-bold overflow-hidden overflow-ellipsis">{l.name || '-'}</p>
+                            <p className="color-gray mt-1 text-xs">{l.code || '-'}.{l.exchange || '-'}</p>
+                          </div>
+                        </div>
+
+                        <div className="mt-2 flex-align-center flex-jsc-between">
+                          <p className={`font-bold ${getRateClassName(l.ratio)}`}>{l.ratio || '-'}</p>
+                          <p className="border rounded pt-0.5 pl-1 pr-1 pb-0.5 text-xs ml-2">{l.label || '-'}</p>
+                        </div>
+                      </div>
+                  )
+                }
+
+                if (relatedTargetActiveTabIndex === 'industries') {
+                  return (
+                      <div className="flex-align-center bg-line-hover rounded-lg cursor-pointer p-4" key={index}>
+                        <img src={l.cover || ''} className="h-14 w-14 rounded-md"/>
+                        <div className="flex-jsc-between ml-2 flex-2">
+                          <div className="flex-align-center">
+                            <p className="font-bold text-base">{l.name || ''}</p>
+                            <p className="ml-2 color-gray">{l.blocks || ''}</p>
+                          </div>
+
+                          <p className="mt-2 color-gray">
+                            {l.number || 0}家公司
+                          </p>
+                        </div>
+
+                        <div className="flex-1 ml-2 flex-jsc-between mt-2">
+                          <p className={`font-bold ${getRateClassName(l.chgRatio || '-')}`}>{l.chgRatio || '-'}</p>
+                          <p className="color-gray">年初至今涨跌幅</p>
+                        </div>
+                      </div>
+                  )
+                }
+
+                if (relatedTargetActiveTabIndex === 'funds') {
+                  const recentRatioList = l.recentRatio || []
+                  let recentRatio = recentRatioList.length > 0 ? recentRatioList[0] || {} : {}
+                  return (
+                      <div className="flex-direction-column bg-line-hover rounded-lg cursor-pointer p-4" key={index}>
+                        <div className="flex-jsc-between flex-align-center">
+                          <div className="flex-2 flex-direction-column">
+                            <div className="font-bold">{l.name || ''}</div>
+                            <div className="mt-1 flex-align-center">
+                              <div className="color-gray">持仓该股票占比{l.holdingRate || ''}%</div>
+                              {
+                                  maxIndex === index && (
+                                      <p className="tag text-xs border rounded pt-0.5 pb-0.5 pl-1 pr-1 ml-2">占比最多</p>
+                                  )
+                              }
+                            </div>
+                          </div>
+                          <div className="flex-1 ml-2 flex-align-end flex-direction-column">
+                            <div className={`font-bold ${getRateClassName(recentRatio.ratio || '-')}`}>{recentRatio.ratio || '-'}</div>
+                            <div className="mt-1 color-gray">{recentRatio.title || ''}</div>
+                          </div>
+                        </div>
+                      </div>
+                  )
+                }
+
+              })
+            }
+          </div>
+        </GroupTemplate>
     )
   }
 
@@ -1608,6 +1731,9 @@ const MarketDetailStock = (props: IMarketDetailStockProps): ReactElement => {
           {/* 基本信息 */}
           {getCompanyProfile()}
         </div>
+
+        {/* 关联标的 */}
+        {getRelatedTarget()}
 
         {/* 机构评级 */}
         <div className="mt-8">{getInstitutionalRatings()}</div>

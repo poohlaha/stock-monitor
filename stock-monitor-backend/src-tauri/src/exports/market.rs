@@ -174,3 +174,9 @@ pub async fn query_stock_analysis(args: Args) -> Result<HttpResponse, String> {
     MarketDetailInfo::query_stock_analysis(&args).await
 }
 
+/// 查询关联标的
+#[tauri::command]
+pub async fn query_related_targets(args: Args) -> Result<HttpResponse, String> {
+    MarketDetailInfo::query_related_targets(&args).await
+}
+

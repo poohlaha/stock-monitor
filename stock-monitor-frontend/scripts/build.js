@@ -157,8 +157,7 @@ class ProjectBuilder {
           openBrowser: false,
           jsLoaderInclude: [
             path.resolve(this._copyDir, 'src/common'),
-            path.resolve(this._copyDir, 'src', this._copyDestDir),
-            path.resolve(this._nodeModulesDir, '@bale-react-components/pipeline')
+            path.resolve(this._copyDir, 'src', this._copyDestDir)
           ],
           usePurgecssPlugin: false,
           usePwaPlugin: false,

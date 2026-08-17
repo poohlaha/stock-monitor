@@ -393,7 +393,7 @@ svg {
 .stock-ticker {
   display: inline-flex;
   white-space: nowrap;
-  animation: ticker 50s linear forwards;
+  animation: ticker 180s linear forwards;
 }
 
 @keyframes ticker {
@@ -404,4 +404,21 @@ svg {
   to {
     transform: translateX(calc(-100% - 100vw));
   }
+}
+
+.stock-grid {
+  grid-template-columns: repeat(auto-fill, 256px);
+}
+
+.stock-card {
+  aspect-ratio: 1 / 1;
+  padding: 12px;
+  border-right: @border;
+  border-bottom: @border;
+}
+
+.time-k-share-tabs-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
