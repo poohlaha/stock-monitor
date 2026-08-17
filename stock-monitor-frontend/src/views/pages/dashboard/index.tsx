@@ -13,7 +13,6 @@ import { useNavigate } from 'react-router'
 import { Button, Input, Modal, Tabs } from 'antd'
 import Utils from '@utils/utils'
 import { TOAST } from '@utils/base'
-import AddSelectionModal from '@pages/market/addSelection'
 
 const Dashboard = (): ReactElement => {
   const { marketStore, homeStore } = useStore()

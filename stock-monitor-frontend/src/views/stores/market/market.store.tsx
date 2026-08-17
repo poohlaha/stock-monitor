@@ -1494,6 +1494,7 @@ class MarketStore extends BaseStore {
         }
       })
       console.log('watch group: ', this.watchGroupList)
+
       callback?.(data.length > 0 ? data[0].id || '' : '')
       return result || {}
     } catch (e: any) {
@@ -1504,7 +1505,7 @@ class MarketStore extends BaseStore {
 
   // 获取分组
   @action
-  async onGetWatchListByGroupId(groupId: string = '') {
+  async onGetWatchListByGroupId(groupId: string = '', needQueryMarketTrends: boolean = false, callback?: Function) {
     try {
       this.groupWatchList = []
       let result: { [K: string]: any } =
@@ -1514,7 +1515,69 @@ class MarketStore extends BaseStore {
       const data = this.handleResult(result) || []
 
       this.groupWatchList = data || []
+
+      // 查询行情数据
+      let hasAllInTrade = false
+      if (needQueryMarketTrends) {
+        for (let w of this.groupWatchList) {
+          // 查询是否在交易中
+          let tradeResult: { [K: string]: any } = (await invoke('query_market_status', {})) || {}
+          let tradeData = this.handleResult(tradeResult) || {}
+          w.isTrade = this.onGetTrade(tradeData || {}, w.market || '')
+          if (!hasAllInTrade) {
+            hasAllInTrade = w.isTrade
+          }
+
+          if (w.fundType !== 'fund') {
+            // ETF、股票获取分时图数据
+            let klineResult: { [K: string]: any } =
+              (await invoke('get_time_data', {
+                args: {
+                  code: w.fundCode,
+                  market: w.market,
+                  type: w.fundType,
+                  queryType: 'minute',
+                  ktype: ''
+                }
+              })) || {}
+
+            const klineData = this.handleResult(klineResult) || {}
+            w.basicInfo = {
+              ...(klineData.basicinfos || {}),
+              ...(klineData.cur || {}),
+              ...(klineData.update || {})
+            }
+            w.data = this.getTimeData(klineData.newMarketData || {})
+            w.prices = w.data.map((item: Record<string, any> = {}) => Number(item.price))
+          } else {
+            // 基金
+            let result: { [K: string]: any } =
+              (await invoke('query_open_data', {
+                code: w.fundCode || ''
+              })) || {}
+            let data = this.handleResult(result) || []
+            let openDataInfo: Record<string, any> = {}
+            if (data.length > 0) {
+              openDataInfo = ((data[0] || {}).DisplayData || {}).resultData || {}
+            }
+            openDataInfo = this.getBasicData(openDataInfo || {})
+            console.log('openDataInfo: ', openDataInfo)
+
+            const newest = openDataInfo.newest || []
+            if (newest.length > 0) {
+              const ratio = (newest[0] || {}).value || '0'
+              const price = newest.length > 1 ? (newest[1] || {}).value || '0' : '0'
+              w.basicInfo = {
+                price,
+                ratio
+              }
+            }
+          }
+        }
+      }
+
       console.log('group watch list: ', this.groupWatchList)
+      callback?.(hasAllInTrade)
       return result || {}
     } catch (e: any) {
       this.loading = false

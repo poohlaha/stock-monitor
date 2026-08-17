@@ -12,7 +12,7 @@ import { emitTo, listen } from '@tauri-apps/api/event'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 import { CONSTANT } from '@config/index'
 import Utils from '@utils/utils'
-import { Button } from 'antd'
+import { Button, Tabs } from 'antd'
 import { useStore } from '@views/stores'
 import NoData from '@views/components/noData'
 import RouterUrls from '@route/router.url.toml'
@@ -21,6 +21,7 @@ import { createSparkline, getRateClassName } from '@pages/utils'
 
 const TrayMenu = (): ReactElement => {
   const { trayStore, marketStore } = useStore()
+  const [activeGroupTabIndex, setActiveGroupTabIndex] = useState('')
 
   const timerRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined)
   const tradeStatusTimerRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined)
@@ -73,7 +74,13 @@ const TrayMenu = (): ReactElement => {
 
   useEffect(() => {
     if (marketStore.watchList.length === 0) {
-      marketStore.onGetWatchList(true, (hasAllInTrade: boolean = false) => setHasAllInTrade(hasAllInTrade))
+      // marketStore.onGetWatchList(true, (hasAllInTrade: boolean = false) => setHasAllInTrade(hasAllInTrade))
+      marketStore.onGetWatchGroupList(async (groupId: string = '') => {
+        setActiveGroupTabIndex(groupId)
+        await marketStore.onGetWatchListByGroupId(groupId, true, (hasAllInTrade: boolean = false) =>
+          setHasAllInTrade(hasAllInTrade)
+        )
+      })
     }
   }, [marketStore.watchList])
 
@@ -163,7 +170,7 @@ const TrayMenu = (): ReactElement => {
   }, [hasAllInTrade])
 
   const getWatchListHtml = () => {
-    if (marketStore.watchList.length === 0) {
+    if (marketStore.watchGroupList.length === 0 && marketStore.groupWatchList.length === 0) {
       return (
         <div className="wh100 flex-center">
           <NoData />
@@ -171,59 +178,75 @@ const TrayMenu = (): ReactElement => {
       )
     }
 
+    console.log('groupWatchList: ', marketStore.watchGroupList)
+
     return (
-      <div className="wh100 overflow-y-auto p-4">
-        {(marketStore.watchList || []).map((w: Record<string, any> = {}, index: number) => {
-          const rateClassName = getRateClassName(w.basicInfo?.ratio)
-          let rateColor = '#333333'
-          if (rateClassName === 'red') {
-            rateColor = '#f5222d'
-          } else if (rateClassName === 'green') {
-            rateColor = '#00a854'
-          }
-          return (
-            <div
-              className={`p-2 bg-line-hover hover:rounded-md flex-direction-column border-bottom ${index !== marketStore.watchList.length - 1 ? 'mb-2' : ''}`}
-              key={w.fundCode}
-            >
-              <div className="flex-align-center flex-jsc-between">
-                <div className="flex-direction-column mr-1">
-                  <p className="font-bold">{w.fundName || ''}</p>
-                  <div className="mt-1 flex-align-center text-xs">
-                    <p className="exchange-tag rounded-md text-xs pt-0.5 pb-0.5 pl-1 pr-1">{w.exchange || ''}</p>
-                    <p className="color-gray ml-1 overflow-ellipsis overflow-hidden whitespace-nowrap">
-                      {w.fundCode || ''}
-                    </p>
+      <div className="wh100 p-4 flex-direction-column">
+        <Tabs
+          items={marketStore.watchGroupList || []}
+          activeKey={activeGroupTabIndex}
+          onChange={async tabIndex => {
+            if (tabIndex === activeGroupTabIndex) return
+            setActiveGroupTabIndex(tabIndex)
+            await marketStore.onGetWatchListByGroupId(tabIndex, true, (hasAllInTrade: boolean = false) =>
+              setHasAllInTrade(hasAllInTrade)
+            )
+          }}
+        />
+
+        <div className="overflow-y-auto no-scrollbar flex-direction-column flex-1 mb-12">
+          {(marketStore.groupWatchList || []).map((w: Record<string, any> = {}, index: number) => {
+            const rateClassName = getRateClassName(w.basicInfo?.ratio)
+            let rateColor = '#333333'
+            if (rateClassName === 'red') {
+              rateColor = '#f5222d'
+            } else if (rateClassName === 'green') {
+              rateColor = '#00a854'
+            }
+            return (
+              <div
+                className={`p-2 bg-line-hover hover:rounded-md flex-direction-column border-bottom ${index !== marketStore.groupWatchList.length - 1 ? 'mb-2' : ''}`}
+                key={w.fundCode}
+              >
+                <div className="flex-align-center flex-jsc-between">
+                  <div className="flex-direction-column mr-1">
+                    <p className="font-bold">{w.fundName || ''}</p>
+                    <div className="mt-1 flex-align-center text-xs">
+                      <p className="exchange-tag rounded-md text-xs pt-0.5 pb-0.5 pl-1 pr-1">{w.exchange || ''}</p>
+                      <p className="color-gray ml-1 overflow-ellipsis overflow-hidden whitespace-nowrap">
+                        {w.fundCode || ''}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div
+                    className="sp w-20 h-10"
+                    style={{
+                      backgroundImage: createSparkline(w.prices || [], rateColor),
+                      backgroundRepeat: 'no-repeat',
+                      backgroundPosition: 'center',
+                      backgroundSize: '100% 100%'
+                    }}
+                  />
+                </div>
+
+                <div className="flex-align-center flex-jsc-between mt-1">
+                  <p className={`font-bold text-base ${getRateClassName(w.basicInfo?.ratio)}`}>
+                    {w.basicInfo?.price || '-'}
+                  </p>
+                  <div className="flex-align-center">
+                    {w.fundType !== 'fund' && (
+                      <p className={`font-bold ${getRateClassName(w.basicInfo?.increase)} mr-2`}>
+                        {w.basicInfo?.increase || '0'}
+                      </p>
+                    )}
+                    <p className={`font-bold ${getRateClassName(w.basicInfo?.ratio)}`}>{w.basicInfo?.ratio || '-'}</p>
                   </div>
                 </div>
-
-                <div
-                  className="sp w-20 h-10"
-                  style={{
-                    backgroundImage: createSparkline(w.prices || [], rateColor),
-                    backgroundRepeat: 'no-repeat',
-                    backgroundPosition: 'center',
-                    backgroundSize: '100% 100%'
-                  }}
-                />
               </div>
-
-              <div className="flex-align-center flex-jsc-between mt-1">
-                <p className={`font-bold text-base ${getRateClassName(w.basicInfo?.ratio)}`}>
-                  {w.basicInfo?.price || '-'}
-                </p>
-                <div className="flex-align-center">
-                  {w.fundType !== 'fund' && (
-                    <p className={`font-bold ${getRateClassName(w.basicInfo?.increase)} mr-2`}>
-                      {w.basicInfo?.increase || '0'}
-                    </p>
-                  )}
-                  <p className={`font-bold ${getRateClassName(w.basicInfo?.ratio)}`}>{w.basicInfo?.ratio || '-'}</p>
-                </div>
-              </div>
-            </div>
-          )
-        })}
+            )
+          })}
+        </div>
       </div>
     )
   }

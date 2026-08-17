@@ -33,7 +33,6 @@ const AddSelectionModal = (props: IAddSelectionModalProps): ReactElement => {
         }}
         open={props.open}
         onOk={async () => {
-          console.log('on ok ....', props.code)
           if (ids.length === 0) {
             TOAST.show({ message: '请选择分组', type: 4 })
             return

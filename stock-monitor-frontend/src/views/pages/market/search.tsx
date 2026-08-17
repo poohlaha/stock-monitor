@@ -146,7 +146,6 @@ const Search = (): ReactElement => {
           type={selectedItem.type || ''}
           exchange={selectedItem.exchange || ''}
           onOk={async () => {
-            console.log('on ok: ', selectedItem)
             setOnOpenSelection(false)
           }}
           onCancel={() => {
