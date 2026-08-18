@@ -36,6 +36,7 @@ import MarketDetailFnCurveGraph from '@pages/market/detail/fnCurveGraph'
 import MarketDetailStock from '@pages/market/detail/stock'
 import Loading from '@views/components/loading/loading'
 import AddSelectionModal from '@pages/market/addSelection'
+import MarketDetailEtfBasicInfo from "@pages/market/detail/eftInfo";
 
 echarts.use([
   LegendComponent,
@@ -172,6 +173,13 @@ const MarketDetail = (): ReactElement => {
             const res = marketStore.onGetIncome(c, m, t)
             resolve(res)
           })
+        )
+
+        queue.push(
+            new Promise(async resolve => {
+              const res = marketStore.onGetBrief(c, m, t)
+              resolve(res)
+            })
         )
       }
 
@@ -344,7 +352,7 @@ const MarketDetail = (): ReactElement => {
       >
         {!marketStore.loading && (
           <>
-            {/* 基金信息 */}
+            {/* 信息 */}
             <MarketDetailTitle
               hasInCollect={hasInCollect}
               name={name}
@@ -431,6 +439,12 @@ const MarketDetail = (): ReactElement => {
                 })}
               </div>
             )}
+
+            {
+                type === 'etf' && (
+                    <MarketDetailEtfBasicInfo info={marketStore.briefInfo || {}}/>
+                )
+            }
 
             {/* 基金信息 */}
             {type === 'fund' && (

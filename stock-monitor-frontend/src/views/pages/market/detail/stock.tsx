@@ -991,7 +991,7 @@ const MarketDetailStock = (props: IMarketDetailStockProps): ReactElement => {
     const area = basicInfo.area || []
     const concepts = basicInfo.concepts || []
     return (
-      <div className="info flex-direction-column flex-1 border rounded-lg p-4">
+      <div className="info flex-direction-column flex-1 border rounded-lg p-4 mt-8">
         <p className="font-bold text-xl">基本信息</p>
 
         <div className="flex-direction-column mt-4">
@@ -1733,10 +1733,8 @@ const MarketDetailStock = (props: IMarketDetailStockProps): ReactElement => {
           </div>
         </div>
 
-        <div className="flex flex-col lg:flex-row gap-5 mt-8">
-          {/* 基本信息 */}
-          {getCompanyProfile()}
-        </div>
+        {/* 基本信息 */}
+        {getCompanyProfile()}
 
         {/* 关联标的 */}
         {getRelatedTarget()}

@@ -59,7 +59,7 @@
     "tailwindcss": "^3.4.14",
     "@bale-web/request": "^0.2.0",
     "react-infinite-scroll-component": "^6.1.0",
-    "time-k-line": "^0.1.0"
+    "time-k-line": "^0.1.1"
   },
   "devDependencies": {
     "@bale-tools/utils": "^2.0.8",

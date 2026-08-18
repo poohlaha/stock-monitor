@@ -203,6 +203,7 @@ const TrayMenu = (): ReactElement => {
             } else if (rateClassName === 'green') {
               rateColor = '#00a854'
             }
+
             return (
               <div
                 className={`p-2 bg-line-hover hover:rounded-md flex-direction-column border-bottom ${index !== marketStore.groupWatchList.length - 1 ? 'mb-2' : ''}`}
