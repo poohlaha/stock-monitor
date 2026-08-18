@@ -39,7 +39,7 @@ const MarketGlobalMarket = (): ReactElement => {
               >
                 <div className="flex-align-center">
                   <div className="flex-1 flex-align-center">
-                    <img src={item.logo?.logo || ''} className="w-8 h-8 mr-2 rounded-full border" />
+                    <img src={item.logo?.logo || null} className="w-8 h-8 mr-2 rounded-full border" />
                     <div className="flex-direction-column">
                       <p className="font-bold">{item.name || '-'}</p>
                       <div className="flex-align-center text-xs mt-1">

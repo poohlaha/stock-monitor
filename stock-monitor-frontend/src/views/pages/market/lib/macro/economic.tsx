@@ -36,7 +36,7 @@ const MacroEconomicMap = (): ReactElement => {
             return (
               <div className="flex-align-center border-top" key={index}>
                 <div className="flex-1 h-14 border-left flex-center">
-                  <img src={r.countryIcon || ''} className="rounded-full w-6 h-6 mr-1" />
+                  <img src={r.countryIcon || null} className="rounded-full w-6 h-6 mr-1" />
                   <p className="text-base font-bold">{r.country || '-'}</p>
                 </div>
 

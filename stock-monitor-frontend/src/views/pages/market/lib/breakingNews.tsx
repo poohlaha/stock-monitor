@@ -6,10 +6,10 @@
 import React, { ReactElement, useState } from 'react'
 import { observer } from 'mobx-react-lite'
 import { useStore } from '@views/stores'
-import GroupTwoTemplate from '@views/components/group/two'
 import { Popover, Tabs } from 'antd'
 import { formatTimestamp, getRateClassName, getTodayText } from '@pages/utils'
 import Utils from '@utils/utils'
+import GroupTemplate from "@views/components/group/one";
 
 const MarketBreakingNews = (): ReactElement => {
   const { marketStore } = useStore()
@@ -34,7 +34,7 @@ const MarketBreakingNews = (): ReactElement => {
 
     const list = marketStore.breakingNews?.list || []
     return (
-      <GroupTwoTemplate title="7*24快讯" className="mt-8" bodyClassName="flex-direction-column">
+      <GroupTemplate title="7*24快讯" className="mt-8" bodyClassName="flex-direction-column">
         <Tabs
           className="m-ant-tabs wh100"
           items={itemList}
@@ -47,7 +47,7 @@ const MarketBreakingNews = (): ReactElement => {
           }}
         />
 
-        <div className="flex-direction-column">
+        <div className="flex-direction-column mt-4">
           <p className="font-bold text-base h-8">{getTodayText()}</p>
           <div className="grid grid-cols-2 gap-5 h-[450px] overflow-y-auto no-scrollbar">
             {(list || []).map((l: Record<any, any>, index: number) => {
@@ -105,7 +105,7 @@ const MarketBreakingNews = (): ReactElement => {
             })}
           </div>
         </div>
-      </GroupTwoTemplate>
+      </GroupTemplate>
     )
   }
 

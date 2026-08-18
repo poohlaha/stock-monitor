@@ -209,7 +209,7 @@ const MarketDetailTimeline = (props: IMarketDetailTimelineProps): ReactElement =
           {/* 卖 */}
           <div className="mt-1 flex-direction-column pb-1 border-bottom">
             {(askInfoList || []).map((a: Record<string, any> = {}, index: number) => {
-              const bid = Math.round((Number(a.askvolume) || 0) / 1000)
+              const bid = Math.round((Number(a.askvolume) || 0) / 100)
               askIndex -= 1
               return (
                 <div className="flex-align-center h-4 w100" key={index}>
@@ -224,7 +224,7 @@ const MarketDetailTimeline = (props: IMarketDetailTimelineProps): ReactElement =
           {/* 买 */}
           <div className="mt-1 flex-direction-column">
             {(buyInfoList || []).map((b: Record<string, any> = {}, index: number) => {
-              const bid = Math.round((Number(b.bidvolume) || 0) / 1000)
+              const bid = Math.round((Number(b.bidvolume) || 0) / 100)
               return (
                 <div className="flex-align-center h-4 w100" key={index}>
                   <p className="flex-1 whitespace-nowrap">买 {index}</p>

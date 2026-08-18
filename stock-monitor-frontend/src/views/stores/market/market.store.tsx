@@ -625,6 +625,10 @@ class MarketStore extends BaseStore {
         })) || {}
       let data = this.handleResult(result) || {}
 
+      if (Utils.isObjectNull(data || {})) {
+        return
+      }
+
       // 基本信息
       this.basicInfo = {
         ...(data.basicinfos || {}),

@@ -35,7 +35,7 @@ const MacroIndustrialChain = (): ReactElement => {
                   key={l.id}
                 >
                   <div className="flex-2 flex-align-center mr-1">
-                    <img src={l.cover || ''} className="w-14 h-14 rounded-lg" />
+                    <img src={l.cover || null} className="w-14 h-14 rounded-lg" />
                     <div className="flex-direction-column flex-jsc-center ml-1">
                       <p className="font-bold">{l.name || '-'}</p>
                       <p className="color-gray mt-1">{l.number || '0'}家公司</p>

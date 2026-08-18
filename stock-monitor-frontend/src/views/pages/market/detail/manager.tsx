@@ -102,7 +102,7 @@ const MarketDetailFundInfo = (props: IMarketDetailFundManagerProps): ReactElemen
                 </div>
                 {!Utils.isBlank(fundManager.avatar || '') && (
                   <div className="avatar w-24 h-24">
-                    <img src={fundManager.avatar || ''} className="wh100 rounded-full" />
+                    <img src={fundManager.avatar || null} className="wh100 rounded-full" />
                   </div>
                 )}
               </div>

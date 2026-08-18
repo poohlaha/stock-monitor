@@ -418,7 +418,7 @@ const MarketCenter = (props: IMarketCenterProps): ReactElement => {
                     {Utils.isBlank(l.logo?.logo || '') ? (
                       <div className="w-10 h-10 rounded-full mr=2" />
                     ) : (
-                      <img src={l.logo?.logo || ''} className="w-10 h-10 rounded-full mr=2" />
+                      <img src={l.logo?.logo || null} className="w-10 h-10 rounded-full mr=2" />
                     )}
                     <div className="flex-direction-column ml-2">
                       <p className="font-bold">{l.name || ''}</p>

@@ -109,7 +109,7 @@ const TwoTemplateRank = (props: ITwoTemplateRankProps): ReactElement => {
 
                 <div className="flex-2 text-l flex-align-center">
                   {!Utils.isBlank(logo || '') && (
-                    <img src={logo || ''} className="w-10 h-10 mr-2 rounded-full border" />
+                    <img src={logo || null} className="w-10 h-10 mr-2 rounded-full border" />
                   )}
                   <div className="flex-direction-column">
                     <p className="font-bold">{l.name || ''}</p>

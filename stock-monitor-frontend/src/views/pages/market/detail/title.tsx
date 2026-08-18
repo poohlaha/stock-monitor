@@ -40,7 +40,7 @@ const MarketDetailTitle = (props: IMarketDetailTitleProps): ReactElement => {
               {/* logo */}
               {!Utils.isBlank(props.basicInfo?.logo || '') && (
                 <div className="logo mr-2">
-                  <img src={props.basicInfo?.logo || ''} className="rounded-full w-14 h-14" />
+                  <img src={props.basicInfo?.logo || null} className="rounded-full w-14 h-14" />
                 </div>
               )}
             </div>
@@ -101,7 +101,7 @@ const MarketDetailTitle = (props: IMarketDetailTitleProps): ReactElement => {
                     {(props.tagList || []).map((t: Record<string, any> = {}, index: number) => {
                       return (
                         <div className="flex-align-center ml-1 cursor-pointer" key={index}>
-                          {!Utils.isBlank(t.imageUrl || '') && <img src={t.imageUrl || ''} className="w-3 h-3 mr-1" />}
+                          {!Utils.isBlank(t.imageUrl || '') && <img src={t.imageUrl || null} className="w-3 h-3 mr-1" />}
                           <p>{t.desc || ''}</p>
                         </div>
                       )

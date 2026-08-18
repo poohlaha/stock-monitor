@@ -137,7 +137,7 @@ const MarketCenterGlobal = (props: IMarketCenterGlobalProps): ReactElement => {
                     >
                       <div className="flex-2 flex-align-center pr-1">
                         <div className="mr-2">
-                          <img src={l.logo?.logo || ''} className="h-10 w-10 rounded-full" />
+                          <img src={l.logo?.logo || null} className="h-10 w-10 rounded-full" />
                         </div>
 
                         <div className="flex-direction-column flex-1">

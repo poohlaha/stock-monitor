@@ -1116,7 +1116,7 @@ const MarketDetailStock = (props: IMarketDetailStockProps): ReactElement => {
                   key={index}
                 >
                   <div className="flex-align-center">
-                    <img src={l.logo || ''} className="w-8 h-8 rounded-full" />
+                    <img src={l.logo || null} className="w-8 h-8 rounded-full" />
                     <div className="flex-direction-column ml-2">
                       <p className="font-bold overflow-hidden overflow-ellipsis">{l.name || '-'}</p>
                       <p className="color-gray mt-1 text-xs">
@@ -1136,7 +1136,7 @@ const MarketDetailStock = (props: IMarketDetailStockProps): ReactElement => {
             if (relatedTargetActiveTabIndex === 'industries') {
               return (
                 <div className="flex-align-center bg-line-hover rounded-lg cursor-pointer p-4" key={index}>
-                  <img src={l.cover || ''} className="h-14 w-14 rounded-md" />
+                  <img src={l.cover || null} className="h-14 w-14 rounded-md" />
                   <div className="flex-jsc-between ml-2 flex-2">
                     <div className="flex-align-center">
                       <p className="font-bold text-base">{l.name || ''}</p>

@@ -280,7 +280,7 @@ const MarketDetail = (): ReactElement => {
     const loop = async () => {
       await marketStore.getTimelineData(c, m, t)
       // @ts-ignore
-      timerRef.current = setTimeout(loop, 3000)
+      timerRef.current = setTimeout(loop, 5000)
     }
 
     loop()

@@ -64,7 +64,7 @@ const MarketFinancialCalendar = (): ReactElement => {
                   </div>
 
                   <div className="mt-2 flex-align-center">
-                    <img src={item.countryIcon || ''} className="w-6 h-6 border rounded-full mr=2" />
+                    <img src={item.countryIcon || null} className="w-6 h-6 border rounded-full mr=2" />
                     <p className="text-base font-bold">{item.title || ''}</p>
                   </div>
 

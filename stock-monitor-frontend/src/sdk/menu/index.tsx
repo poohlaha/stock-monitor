@@ -143,7 +143,7 @@ const TrayMenu = (): ReactElement => {
     const loop = async () => {
       await marketStore.onGetWatchListTimer((hasAllInTrade: boolean = false) => setHasAllInTrade(hasAllInTrade))
       // @ts-ignore
-      timerRef.current = setTimeout(loop, 3000)
+      timerRef.current = setTimeout(loop, 5000)
     }
 
     loop()

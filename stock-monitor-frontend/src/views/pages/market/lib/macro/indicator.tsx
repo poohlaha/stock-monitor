@@ -56,7 +56,7 @@ const MacroHotIndicator = (): ReactElement => {
                   key={index}
                 >
                   <div className="flex-2 flex-align-center pt-2 pb-2">
-                    <img src={l.countryIcon || ''} className="w-6 h-6 mr-1" />
+                    <img src={l.countryIcon || null} className="w-6 h-6 mr-1" />
                     <p className="">
                       {l.country || ''}
                       {l.name || ''}
