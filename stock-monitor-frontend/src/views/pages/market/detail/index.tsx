@@ -370,7 +370,7 @@ const MarketDetail = (): ReactElement => {
             />
 
             {/* 分时图 | 持仓 */}
-            <div className="content-box mt-4 h-[550px] flex">
+            <div className="content-box mt-4 h-[600px] flex">
               {/* 分时图 */}
               {type === 'fund' ? (
                 <MarketDetailFnCurveGraph

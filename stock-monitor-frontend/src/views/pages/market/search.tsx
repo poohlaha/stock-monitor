@@ -72,7 +72,6 @@ const Search = (): ReactElement => {
                           xmlns="http://www.w3.org/2000/svg"
                           onClick={async () => {
                             setSelectedItem(item)
-                            console.log('item: ', item)
                             await marketStore.onGetWatchGroupList(() => {
                               setOnOpenSelection(true)
                             })

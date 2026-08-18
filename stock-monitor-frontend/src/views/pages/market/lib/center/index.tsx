@@ -15,7 +15,11 @@ import * as echarts from 'echarts/core'
 import Utils from '@utils/utils'
 import TwoTemplateRank from '@pages/market/lib/twoTemplateRank'
 
-const MarketCenter = (): ReactElement => {
+interface IMarketCenterProps {
+  toDetailPage: (item: Record<string, any>) => void
+}
+
+const MarketCenter = (props: IMarketCenterProps): ReactElement => {
   const { marketStore } = useStore()
 
   const industryHotItems = [
@@ -558,7 +562,7 @@ const MarketCenter = (): ReactElement => {
           }}
         />
 
-        {activeTabIndex === items[0].key && <MarketCenterGlobal />}
+        {activeTabIndex === items[0].key && <MarketCenterGlobal toDetailPage={(item: Record<any, any> = {}) => props.toDetailPage?.(item)} />}
 
         {activeTabIndex === items[1].key && (
           <div className="flex-direction-column">

@@ -6,7 +6,7 @@
 import React, { ReactElement } from 'react'
 import { observer } from 'mobx-react-lite'
 import { useStore } from '@views/stores'
-// import { useNavigate } from 'react-router'
+import { useNavigate } from 'react-router'
 import Page from '@views/modules/page'
 import useMount from '@hooks/useMount'
 import Search from './search'
@@ -31,6 +31,7 @@ import * as echarts from 'echarts/core'
 import { BarChart, LineChart, PieChart, TreemapChart } from 'echarts/charts'
 import { LabelLayout, UniversalTransition } from 'echarts/features'
 import { CanvasRenderer } from 'echarts/renderers'
+import RouterUrls from "@route/router.url.toml";
 
 echarts.use([
   LegendComponent,
@@ -50,7 +51,7 @@ echarts.use([
 
 const Market = (): ReactElement => {
   const { marketStore } = useStore()
-  // const navigate = useNavigate()
+  const navigate = useNavigate()
 
   useMount(async () => {
     await onInit()
@@ -105,6 +106,16 @@ const Market = (): ReactElement => {
     }, 500)
   }
 
+  /**
+   * @param item: code, type, market, exchange
+   *
+   */
+  const toDetailPage = (item: Record<any, any> = {}) => {
+    navigate(
+        `${RouterUrls.MARKET.URL}${RouterUrls.MARKET.DETAIL.URL}/${item.code || ''}?code=${item.code || ''}&type=${item.type || ''}&market=${item.market || ''}&exchange=${item.exchange || ''}`
+    )
+  }
+
   const render = () => {
     return (
       <Page
@@ -120,7 +131,7 @@ const Market = (): ReactElement => {
         <MarketGlobalMarket />
 
         {/* 行情中心 */}
-        <MarketCenter />
+        <MarketCenter toDetailPage={(item: Record<any, any> = {}) => toDetailPage(item)} />
 
         {/* 7 * 24 快讯 */}
         <MarketBreakingNews />
