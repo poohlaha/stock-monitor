@@ -28,10 +28,10 @@ const MarketDetailPosition = (props: IMarketDetailPositionProps): ReactElement =
         </div>
 
         {/* 十大重仓 */}
-        <div className="stock-position-body flex-align-center w100 tex-xs flex-direction-column mt-2">
+        <div className="stock-position-body flex-align-center w100 tex-xs flex-direction-column mt-2 max-h-[350px] overflow-y-auto no-scrollbar">
           {(((props.position || {}).heavyStock || {}).body || []).map((b: Record<string, any> = {}, index: number) => {
             return (
-              <div className="flex-align-center h-8 w100 bg-line-hover pl-4 pr-4 rounded-md" key={index}>
+              <div className="flex-align-center min-h-8 pt-2 pb-2 w100 bg-line-hover pl-4 pr-4 rounded-md" key={index}>
                 <p className="flex-1 text-center theme-hover cursor-pointer" onClick={() => props.onStockClick?.(b)}>
                   {b.name || '-'}
                 </p>
@@ -57,10 +57,10 @@ const MarketDetailPosition = (props: IMarketDetailPositionProps): ReactElement =
               <p className="flex-1 text-center">持仓占比</p>
             </div>
 
-            <div className="stock-position-body flex-align-center w100 tex-xs flex-direction-column mt-2">
+            <div className="stock-position-body flex-align-center w100 tex-xs flex-direction-column mt-2 max-h-[100px] overflow-y-auto no-scrollbar">
               {(((props.position || {}).heavyBond || {}).body || []).map((b: Array<string> = [], index: number) => {
                 return (
-                  <div className="flex-align-center h-8 w100 bg-line-hover pl-4 pr-4 rounded-md" key={index}>
+                  <div className="flex-align-center min-h-8 pt-2 pb-2 w100 bg-line-hover pl-4 pr-4 rounded-md" key={index}>
                     <p className="flex-1 text-center">{b[0] || '-'}</p>
                     <p className="flex-1 text-center">{b[1] || '-'}</p>
                   </div>

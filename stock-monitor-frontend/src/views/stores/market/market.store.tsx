@@ -719,7 +719,8 @@ class MarketStore extends BaseStore {
         if (ktype === 'day') {
           // @ts-ignore
           this.klineList = this.onGetKlineData(data.newMarketData || {})
-          list = this.klineList || []
+          list = Utils.deepCopy(this.klineList || [])
+          this.klineList = (this.klineList || []).slice().reverse()
         }
 
         if (ktype === 'week') {
