@@ -1,25 +1,23 @@
+use crate::error::Error;
 use crate::prepare::{get_success_response, HttpResponse};
 use crate::utils::baidu::BaiduToken;
 use crate::LOGGER_PREFIX;
 use base64::Engine;
 use colored::Colorize;
-use http::options::Options;
+use http::options::{HttpError, Options};
 use log::{error, info, warn};
+use serde_json::Value;
+use std::collections::HashMap;
 use std::sync::OnceLock;
 
 pub mod baidu;
 pub(crate) mod cache;
 pub mod file;
+pub mod json;
 
 pub struct Utils;
 
-static BAIDU_COOKIE: OnceLock<String> = OnceLock::new();
-
 impl Utils {
-    fn get_cookie() -> String {
-        BAIDU_COOKIE.get().cloned().unwrap_or_default()
-    }
-
     /// 生成 base64 图片
     pub fn generate_image(data: Vec<u8>) -> String {
         let str = base64::engine::general_purpose::STANDARD.encode::<Vec<u8>>(data);
@@ -28,10 +26,9 @@ impl Utils {
         content
     }
 
-    /// 使用 GET 方法查询数据
-    pub async fn get_time_response(url: &str) -> Result<HttpResponse, String> {
+    pub async fn get_response(url: &str) -> Result<Value, String> {
         if url.is_empty() {
-            return Ok(crate::prepare::get_error_response("url is empty!"));
+            return Err(Error::Error(String::from("`url` is empty!")).to_string());
         }
 
         // 获取token
@@ -41,10 +38,10 @@ impl Utils {
         }
 
         let (token, cookie) = token.unwrap();
-        info!("{} baidu token: {:#?}", LOGGER_PREFIX, token);
-        info!("{} baidu cookie: {:#?}", LOGGER_PREFIX, cookie);
+        // info!("{} baidu token: {:#?}", LOGGER_PREFIX, token);
+        // info!("{} baidu cookie: {:#?}", LOGGER_PREFIX, cookie);
 
-        let response = http::client::HttpClient::send(
+        let response = http::client::HttpClient::http_send(
             Options {
                 url: url.to_string(),
                 method: Some(String::from("GET")),
@@ -75,35 +72,50 @@ impl Utils {
         )
         .await;
 
-        info!("{} get data response {:#?} .", LOGGER_PREFIX.cyan().bold(), response);
-
         match response {
-            Ok(res) => {
-                if res.status_code != 200 {
-                    return Ok(crate::prepare::get_error_response("get data error!"));
+            Ok((status, _, body)) => {
+                if !status.is_success() {
+                    error!("status is not success");
+                    return Err(Error::Error(String::from("get data error!")).to_string());
                 }
 
-                if let Some(cookie) = res.headers.get("set-cookie") {
-                    let cookie = cookie.split(';').next().unwrap().to_string();
-
-                    let _ = BAIDU_COOKIE.set(cookie);
-                }
-
-                let body = res.body;
-                let data = match body.get("Result") {
-                    Some(value) => value.clone(),
-                    None => {
-                        error!("{} missing Result, body: {:#?}", LOGGER_PREFIX, body);
-                        return Ok(crate::prepare::get_error_response("missing Result"));
+                let body: Value = match serde_json::from_str(&body) {
+                    Ok(value) => value,
+                    Err(err) => {
+                        error!("parse json error: {:?}", err);
+                        return Err(Error::Error(String::from("parse json error!")).to_string());
                     }
                 };
 
-                Ok(get_success_response(Some(data.clone())))
+                info!("{} response : {:#?}", LOGGER_PREFIX, body);
+
+                let data = match body.get("Result") {
+                    Some(value) => value.clone(),
+                    None => {
+                        error!("{} missing Result", LOGGER_PREFIX);
+                        return Err(Error::Error(String::from("missing Result!")).to_string());
+                    }
+                };
+
+                Ok(data)
             }
             Err(err) => {
                 error!("{} get data error: {:#?} .", LOGGER_PREFIX.cyan().bold(), err);
-                Ok(crate::prepare::get_error_response("get data error!"))
+                Err(Error::Error(String::from("get data error!")).to_string())
             }
+        }
+    }
+
+    /// 使用 GET 方法查询数据
+    pub async fn get_time_response(url: &str) -> Result<HttpResponse, String> {
+        let response = Self::get_response(url).await;
+        Self::parepare_response(response)
+    }
+
+    pub fn parepare_response(response: Result<Value, String>) -> Result<HttpResponse, String> {
+        match response {
+            Ok(data) => Ok(get_success_response(Some(data))),
+            Err(err) => Ok(crate::prepare::get_error_response(&err)),
         }
     }
 }

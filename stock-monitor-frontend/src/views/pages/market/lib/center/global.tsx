@@ -15,7 +15,6 @@ interface IMarketCenterGlobalProps {
   onAddSelection?: (item: Record<string, any>) => void
 }
 
-
 const MarketCenterGlobal = (props: IMarketCenterGlobalProps): ReactElement => {
   const { marketStore } = useStore()
 
@@ -42,16 +41,18 @@ const MarketCenterGlobal = (props: IMarketCenterGlobalProps): ReactElement => {
           <div className="mt-2">
             {(marketStore.worldwideMarket?.index_map || []).map((m: Record<string, any> = {}) => {
               return (
-                <div className="flex-align-center pt-2 pb-2 bg-line-hover pl-2 pr-2 rounded-md" key={m.code || '-'}
-                     onMouseDown={() => {
-                       console.log('item: ', m)
-                       /*
+                <div
+                  className="flex-align-center pt-2 pb-2 bg-line-hover pl-2 pr-2 rounded-md"
+                  key={m.code || '-'}
+                  onMouseDown={() => {
+                    console.log('item: ', m)
+                    /*
                        props.toDetailPage({
                          ...(m || {}),
                          type: 'stock'
                        })
                         */
-                     }}
+                  }}
                 >
                   <div className="flex-2 flex-direction-column">
                     <p className="font-bold theme-hover">{m.name || '-'}</p>

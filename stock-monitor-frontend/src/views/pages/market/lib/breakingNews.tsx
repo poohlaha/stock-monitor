@@ -9,7 +9,7 @@ import { useStore } from '@views/stores'
 import { Popover, Tabs } from 'antd'
 import { formatTimestamp, getRateClassName, getTodayText } from '@pages/utils'
 import Utils from '@utils/utils'
-import GroupTemplate from "@views/components/group/one";
+import GroupTemplate from '@views/components/group/one'
 
 const MarketBreakingNews = (): ReactElement => {
   const { marketStore } = useStore()

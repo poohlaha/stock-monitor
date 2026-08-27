@@ -13,8 +13,7 @@ interface IMarketDetailFnCurveGraphProps {
   performanceGraph: Array<Record<string, any>>
   networthGraph: Array<Record<string, any>>
   size: Record<string, any>
-  tabs: Array<Record<string, any>>
-  onTabChange: (tabIndex: string, tab: string, index: number, month: string) => void
+  onTabChange: (tabIndex: string, month: string) => void
 }
 
 const MarketDetailFnCurveGraph = (props: IMarketDetailFnCurveGraphProps): ReactElement => {
@@ -45,11 +44,11 @@ const MarketDetailFnCurveGraph = (props: IMarketDetailFnCurveGraphProps): ReactE
     },
     {
       label: '成立以来',
-      value: '10'
+      value: ''
     }
   ]
 
-  const [fundPNCurveGraphTabIndex, setFundPNCurveGraphTabIndex] = useState('0')
+  const [fundPNCurveGraphTabIndex, setFundPNCurveGraphTabIndex] = useState('ai')
   const [itemTabIndex, setItemTabIndex] = useState(items[3].value)
 
   const performanceLineChartRef = useRef(null)
@@ -67,62 +66,148 @@ const MarketDetailFnCurveGraph = (props: IMarketDetailFnCurveGraphProps): ReactE
     const data = props.networthGraph || []
     const chart = echarts.init(networthLineChartRef.current)
 
-    const d = data[0].data || []
-    const xAxisData = (d || []).map((dd: Record<string, any> = {}) => dd.date) || []
+    const xAxisData = data.map((d: Record<string, any> = {}) => d.reportDate) || []
 
-    const convertToCumulative = (list: number[]) => {
-      let total = 1
-
-      return list.map(rate => {
-        total = total * (1 + rate / 100)
-
-        return Number(((total - 1) * 100).toFixed(2))
-      })
+    const last = data[data.length - 1] || {}
+    const legendMap: Record<string, any> = {
+      '单位净值': Number(last?.unitNav || 0),
+      '日涨幅': Number(last?.dayChange || 0),
+      '累计净值': Number(last?.accumulatedNav || 0)
     }
 
-    const series = data.map((d: Record<string, any>) => {
-      const dd =
-        (d.data || []).length > 0 ? d.data.map((l: Record<string, any> = {}) => l.value2 || 0).filter(Boolean) : []
-      return {
-        ...d,
+    const series = [
+      {
+        name: '单位净值',
+        type: 'line',
+        smooth: 0.3,
+        showSymbol: false,
+        showAllSymbol: false,
         lineStyle: {
           width: 1
         },
-        dataOld:
-          (d.data || []).length > 0
-            ? d.data.map((l: Record<string, any> = {}) => [l.value1 || 0, l.value2 || 0, l.value3 || 0]).filter(Boolean)
-            : [],
-        data: convertToCumulative(dd || [])
+        areaStyle: {
+          color: {
+            type: 'linear',
+            x: 0,
+            y: 0,
+            x2: 0,
+            y2: 1,
+            colorStops: [
+              {
+                offset: 0,
+                color: '#d6eaff' // 曲线附近浅蓝
+              },
+              {
+                offset: 1,
+                color: '#ffffff' // 底部白色
+              }
+            ]
+          }
+        },
+        data: (data || []).map(d => Number(d.unitNav || '0'))
+      },
+      {
+        name: '日涨幅',
+        type: 'line',
+        smooth: 0.3,
+        showSymbol: false,
+        showAllSymbol: false,
+        lineStyle: {
+          width: 1,
+          opacity: 0
+        },
+        tooltip: {
+          show: false
+        },
+        data: []
+      },
+      {
+        name: '累计净值',
+        type: 'line',
+        smooth: 0.3,
+        showSymbol: false,
+        showAllSymbol: false,
+        lineStyle: {
+          width: 1,
+          opacity: 0
+        },
+        tooltip: {
+          show: false
+        },
+        data: []
       }
-    })
+    ]
 
     const option = {
       tooltip: {
         trigger: 'axis',
         formatter(params: Record<string, any>) {
-          let html = `${params[0].axisValue}<br/>`
-          params.forEach((item: Record<string, any>) => {
-            const value = Number(item.value || 0)
+          const index = params[0].dataIndex
+          const item = data[index]
 
-            const color =
-              value > 0
-                ? '#f5222d' // 红
-                : value < 0
-                  ? '#00a854' // 绿
-                  : '#333'
+          let html = `${item.reportDate}<br/>`
 
-            html += `
-              ${item.marker}
-              ${item.seriesName}:
-              <b style="color:${color}">
-                ${value > 0 ? '+' : ''}${value}%
-              </b>
-              <br/>
+          const formatValue = (name: string, value: any, percent = false) => {
+            if (value === null || value === undefined || value === '') {
+              return ''
+            }
+
+            const num = Number(value)
+
+            let color = '#333'
+
+            if (percent) {
+              color = num > 0 ? '#f5222d' : num < 0 ? '#00a854' : '#333'
+            }
+
+            return `
+              <div style="display:flex;justify-content:space-between;min-width:160px;">
+                <span>${name}</span>
+                <b style="color:${color}">
+                  ${percent && num > 0 ? '+' : ''}${num}${percent ? '%' : ''}
+                </b>
+              </div>
             `
-          })
+          }
 
+          html += formatValue('单位净值', item.unitNav)
+          html += formatValue('日涨幅', item.dayChange, true)
+          html += formatValue('累计净值', item.accumulatedNav)
           return html
         }
+      },
+      legend: {
+        left: 0,
+        top: 0,
+        icon: 'circle',
+        itemWidth: 6,
+        itemHeight: 6,
+        selectedMode: false,
+        data: [
+          {
+            name: '单位净值'
+          },
+          {
+            name: '日涨幅'
+          },
+          {
+            name: '累计净值'
+          }
+        ],
+      },
+      formatter(name: string) {
+        const value = legendMap[name] || 0
+        if (name === '日涨幅') {
+          return `${name} ${value > 0 ? '+' : ''}${value}%`
+        }
+
+        return `${name} ${value}`
+      },
+      grid: {
+        left: 30,
+        right: 50,
+        bottom: 30,
+        containLabel: true
       },
       xAxis: {
         type: 'category',
@@ -138,19 +223,23 @@ const MarketDetailFnCurveGraph = (props: IMarketDetailFnCurveGraphProps): ReactE
 
         splitLine: {
           show: false
+        },
+        axisLabel: {
+          interval: 0,
+          hideOverlap: false,
+          formatter(value: any, index: number) {
+            return index === 0 || index === xAxisData.length - 1 ? value : ''
+          }
         }
       },
       yAxis: {
-        type: false,
-
+        show: false,
         axisLine: {
           show: false
         },
-
         axisTick: {
           show: false
         },
-
         splitLine: {
           show: false
         }
@@ -170,51 +259,165 @@ const MarketDetailFnCurveGraph = (props: IMarketDetailFnCurveGraphProps): ReactE
 
     const data = props.performanceGraph || []
     const chart = echarts.init(performanceLineChartRef.current)
-    const legendData = (data || []).map((d: Record<string, any>) => d.name || '') || []
 
-    const d = data[0].data || []
-    const xAxisData = (d || []).map((dd: Record<string, any> = {}) => dd.date) || []
+    const xAxisData = data.map((d: Record<string, any> = {}) => d.reportDate) || []
 
-    const series = data.map((d: Record<string, any>) => {
-      return {
-        ...d,
+    const lastItem = data[data.length - 1]
+    const legendFormatter = (name: string) => {
+      let value = '0'
+
+      if (name === '本基金') {
+        value = Number(lastItem.fund || 0).toFixed(2)
+      }
+
+      if (name === '同类平均') {
+        value = Number(lastItem.average || 0).toFixed(2)
+      }
+
+      if (name === '沪深300') {
+        value = Number(lastItem.index || 0).toFixed(2)
+      }
+
+      return `${name}  ${Number(value) > 0 ? '+' : ''}${value}%`
+    }
+
+    const series = [
+      {
+        name: '本基金',
+        type: 'line',
+        smooth: 0.3,
+        showSymbol: false,
+        showAllSymbol: false,
         lineStyle: {
           width: 1
         },
-        data: (d.data || []).length > 0 ? d.data.map((l: Record<string, any> = {}) => l.value || 0).filter(Boolean) : []
+        areaStyle: {
+          color: {
+            type: 'linear',
+            x: 0,
+            y: 0,
+            x2: 0,
+            y2: 1,
+            colorStops: [
+              {
+                offset: 0,
+                color: '#d6eaff' // 曲线附近浅蓝
+              },
+              {
+                offset: 1,
+                color: '#ffffff' // 底部白色
+              }
+            ]
+          }
+        },
+        data: data.map(item => Number(item.fund || 0))
+      },
+      {
+        name: '同类平均',
+        type: 'line',
+        smooth: 0.3,
+        showSymbol: false,
+        showAllSymbol: false,
+        lineStyle: {
+          width: 1,
+          opacity: 0
+        },
+        tooltip: {
+          show: false
+        },
+        data: data.map(item => Number(item.average || 0))
+      },
+      {
+        name: '沪深300',
+        type: 'line',
+        smooth: 0.3,
+        showSymbol: false,
+        showAllSymbol: false,
+        lineStyle: {
+          width: 1,
+          opacity: 0
+        },
+        tooltip: {
+          show: false
+        },
+        data: data.map(item => Number(item.index || 0))
       }
-    })
+    ]
 
     const option = {
-      legend: {
-        data: legendData
-      },
       tooltip: {
         trigger: 'axis',
-        formatter(params: Record<string, any>) {
-          let html = `${params[0].axisValue}<br/>`
-          params.forEach((item: Record<string, any>) => {
-            const value = Number(item.value || 0)
 
-            const color =
-              value > 0
-                ? '#f5222d' // 红
-                : value < 0
-                  ? '#00a854' // 绿
-                  : '#333'
+        formatter(params: any[]) {
+          const date = params[0].axisValue
+          const item = data.find((d: any) => d.reportDate === date)
+          if (!item) {
+            return date
+          }
+
+          const list = [
+            {
+              name: '本基金',
+              value: item.fund
+            },
+            {
+              name: '同类平均',
+              value: item.average
+            },
+            {
+              name: '沪深300',
+              value: item.index
+            }
+          ]
+
+          let html = `
+              <div>${date}</div>
+            `
+
+          list.forEach(row => {
+            const value = Number(row.value || 0)
+            const color = value > 0 ? '#f5222d' : value < 0 ? '#00a854' : '#333'
 
             html += `
-              ${item.marker}
-              ${item.seriesName}:
-              <b style="color:${color}">
-                ${value > 0 ? '+' : ''}${value}%
-              </b>
-              <br/>
+              <div style="
+                display:flex;
+                justify-content:space-between;
+                width:160px;
+              ">
+                <span>
+                  ${row.name}
+                </span>
+      
+                <b style="color:${color}">
+                  ${value > 0 ? '+' : ''}${value}%
+                </b>
+              </div>
             `
           })
 
           return html
         }
+      },
+      legend: {
+        show: true,
+        left: 10,
+        top: 0,
+        icon: 'circle',
+        itemWidth: 6,
+        itemHeight: 6,
+        data: [
+          '本基金',
+          '同类平均',
+          '沪深300'
+        ],
+        selectedMode: false, // 不让点击控制series
+        formatter: legendFormatter
+      },
+      grid: {
+        left: 10,
+        right: 50,
+        bottom: 30,
+        containLabel: true
       },
       xAxis: {
         type: 'category',
@@ -223,17 +426,23 @@ const MarketDetailFnCurveGraph = (props: IMarketDetailFnCurveGraphProps): ReactE
         axisLine: {
           show: false
         },
-
         axisTick: {
           show: false
         },
-
         splitLine: {
           show: false
+        },
+        axisLabel: {
+          interval: 0,
+          hideOverlap: false,
+          formatter(value: any, index: number) {
+            return index === 0 || index === xAxisData.length - 1 ? value : ''
+          }
         }
       },
       yAxis: {
         type: 'value',
+        show: false,
         axisLine: {
           show: false
         },
@@ -294,23 +503,18 @@ const MarketDetailFnCurveGraph = (props: IMarketDetailFnCurveGraphProps): ReactE
           activeKey={fundPNCurveGraphTabIndex}
           items={[
             {
-              key: '0',
+              key: 'ai',
               label: '业绩走势'
             },
             {
-              key: '1',
+              key: 'nvl',
               label: '净值曲线'
             }
           ]}
           onChange={async tabIndex => {
             if (tabIndex === fundPNCurveGraphTabIndex) return
             setFundPNCurveGraphTabIndex(tabIndex)
-            props.onTabChange?.(
-              tabIndex,
-              (props.tabs || []).length > 0 ? props.tabs[Number(tabIndex)].param : '',
-              Number(tabIndex),
-              itemTabIndex
-            )
+            props.onTabChange?.(tabIndex, itemTabIndex)
           }}
         />
 
@@ -324,12 +528,7 @@ const MarketDetailFnCurveGraph = (props: IMarketDetailFnCurveGraphProps): ReactE
                   key={item.value}
                   onClick={async () => {
                     setItemTabIndex(item.value)
-                    props.onTabChange?.(
-                      item.value,
-                      (props.tabs || []).length > 0 ? props.tabs[Number(fundPNCurveGraphTabIndex)].param : '',
-                      Number(fundPNCurveGraphTabIndex),
-                      item.value
-                    )
+                    props.onTabChange?.(fundPNCurveGraphTabIndex, item.value)
                   }}
                 >
                   <p className="whitespace-nowrap">{item.label || ''}</p>
@@ -339,7 +538,7 @@ const MarketDetailFnCurveGraph = (props: IMarketDetailFnCurveGraphProps): ReactE
           </div>
         </div>
 
-        {fundPNCurveGraphTabIndex === '0' && (
+        {fundPNCurveGraphTabIndex === 'ai' && (
           <div className="mt-2 flex h100">
             <div
               className="flex-1 min-w-0 aspect-square h-full border-right performance-line"
@@ -351,7 +550,7 @@ const MarketDetailFnCurveGraph = (props: IMarketDetailFnCurveGraphProps): ReactE
           </div>
         )}
 
-        {fundPNCurveGraphTabIndex === '1' && (
+        {fundPNCurveGraphTabIndex === 'nvl' && (
           <div className="mt-2 flex h100">
             <div
               className="flex-1 min-w-0 aspect-square h-full border-right networth-line"

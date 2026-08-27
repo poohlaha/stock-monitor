@@ -2,14 +2,22 @@
 市场
 */
 
+use crate::fund::Fund;
 use crate::market::detail::MarketDetailInfo;
+use crate::market::stock::Stock;
 use crate::market::{Args, HotStockType, Market};
 use crate::prepare::HttpResponse;
 
 /// 获取分时图数据
 #[tauri::command]
 pub async fn get_time_data(args: Args) -> Result<HttpResponse, String> {
-    MarketDetailInfo::get_time_data(&args).await
+    Stock::get_time_data(&args).await
+}
+
+/// 获取股票/Etf信息
+#[tauri::command]
+pub async fn query_eft_stock_info_data(args: Args) -> Result<HttpResponse, String> {
+    Stock::query_info(&args).await
 }
 
 /// 查询市场情况, 交易中/交易结束
@@ -36,10 +44,10 @@ pub async fn query_income(args: Args) -> Result<HttpResponse, String> {
     MarketDetailInfo::query_income(&args).await
 }
 
-/// 获取十大持仓等数据
+/// 获取基金的信息
 #[tauri::command]
-pub async fn query_open_data(code: &str) -> Result<HttpResponse, String> {
-    MarketDetailInfo::query_open_data(code).await
+pub async fn query_fund_info(args: Args) -> Result<HttpResponse, String> {
+    Fund::query_info(&args).await
 }
 
 ///  查询基金曲线

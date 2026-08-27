@@ -67,24 +67,24 @@ const Dashboard = (): ReactElement => {
                     className="border rounded-lg flex-direction-column w-[300px] p-4 bg-line-hover hover:shadow-md select-none"
                     key={w.id || ''}
                     onClick={() => {
-                      const type = w.fundType || '' // 类型: etf | fund | stock
+                      const type = w.type || '' // 类型: etf | fund | stock
                       const market = w.market || '' // 市场: ab | hk | us | sg
                       const exchange = w.exchange || ''
                       homeStore.selectedMenu = `${RouterUrls.MARKET.KEY || ''}-${homeStore.MENU_LIST[2].key || ''}`
                       navigate(
-                        `${RouterUrls.MARKET.URL}${RouterUrls.MARKET.DETAIL.URL}/${w.fundCode || ''}?code=${w.fundCode || ''}&type=${type || ''}&market=${market || ''}&exchange=${exchange || ''}`
+                        `${RouterUrls.MARKET.URL}${RouterUrls.MARKET.DETAIL.URL}/${w.code || ''}?code=${w.code || ''}&type=${type || ''}&market=${market || ''}&exchange=${exchange || ''}`
                       )
                     }}
                   >
                     <div className="flex">
-                      <p className="font-bold">{w.fundName || ''}</p>
+                      <p className="font-bold">{w.name || ''}</p>
                       <p className="ml-1 red rounded-md text-xs pt-0.5 pb-0.5 pl-1 pr-1">
-                        {(w.fundType || '').toUpperCase()}
+                        {(w.type || '').toUpperCase()}
                       </p>
                     </div>
                     <div className="flex-align-center mt-1">
                       <p className="exchange-tag rounded-md text-xs pt-0.5 pb-0.5 pl-1 pr-1">{w.exchange || ''}</p>
-                      <p className="color-gray ml-1 text-xs">{w.fundCode || ''}</p>
+                      <p className="color-gray ml-1 text-xs">{w.code || ''}</p>
                     </div>
                   </div>
                 )

@@ -1,5 +1,6 @@
 /*!
-  我的分组
+  用户自选分组表，用于管理用户自选资产分类(my_watch_group)
+用户自选分组关联表，维护自选资产与分组之间的关系(my_watch_group_relation)
 */
 
 use crate::database::helper::DBHelper;
@@ -56,7 +57,7 @@ impl MyWatchGroup {
         }
 
         let time = Utils::get_date(None);
-        let query = sqlx::query::<MySql>("INSERT INTO my_fund_watch_group(id, name, create_time) VALUES (?, ?, ?)")
+        let query = sqlx::query::<MySql>("INSERT INTO my_watch_group(id, name, create_time) VALUES (?, ?, ?)")
             .bind(Uuid::new_v4().to_string())
             .bind(&args.name)
             .bind(&time);
@@ -75,7 +76,7 @@ impl MyWatchGroup {
                         is_default,
                         create_time,
                         update_time
-                    FROM my_fund_watch_group
+                    FROM my_watch_group
                     WHERE id = ?
                 "#,
         );
@@ -95,7 +96,7 @@ impl MyWatchGroup {
                         is_default,
                         create_time,
                         update_time
-                    FROM my_fund_watch_group
+                    FROM my_watch_group
                     WHERE name = ?
                 "#,
         );
@@ -115,7 +116,7 @@ impl MyWatchGroup {
                         is_default,
                         create_time,
                         update_time
-                    FROM my_fund_watch_group
+                    FROM my_watch_group
                 "#,
         );
 
@@ -138,7 +139,7 @@ impl MyWatchGroup {
         }
 
         let time = Utils::get_date(None);
-        let query = sqlx::query::<MySql>("UPDATE my_fund_watch_group SET name = ?, update_time = ? WHERE id = ?")
+        let query = sqlx::query::<MySql>("UPDATE my_watch_group SET name = ?, update_time = ? WHERE id = ?")
             .bind(Uuid::new_v4().to_string())
             .bind(&args.name)
             .bind(&time)
@@ -158,7 +159,7 @@ impl MyWatchGroup {
         // 1. 删除关联关系
         let relation_query = sqlx::query::<MySql>(
             r#"
-                    DELETE FROM my_fund_watch_group_relation
+                    DELETE FROM my_watch_group_relation
                     WHERE group_id = ?
                 "#,
         )
@@ -167,14 +168,14 @@ impl MyWatchGroup {
         // 2. 删除分组
         let group_query = sqlx::query::<MySql>(
             r#"
-                    DELETE FROM my_fund_watch_group
+                    DELETE FROM my_watch_group
                     WHERE id = ?
                 "#,
         )
         .bind(id);
 
         query_list.push(group_query);
-        DBHelper::batch_commit(query_list).await
+        DBHelper::batch_commit(query_list, "group").await
     }
 
     // 查找分期
@@ -184,7 +185,7 @@ impl MyWatchGroup {
                 SELECT
                     g.*
                 FROM
-                    my_fund_watch_group g
+                    my_watch_group g
                 ORDER BY
                     g.sort_order,
                     g.create_time ASC
@@ -201,7 +202,7 @@ impl MyWatchGroup {
             r#"
                     SELECT
                         g.*
-                    FROM my_fund_watch_group g
+                    FROM my_watch_group g
                     Where g.is_default = 1
                     LIMIT 1
                 "#,

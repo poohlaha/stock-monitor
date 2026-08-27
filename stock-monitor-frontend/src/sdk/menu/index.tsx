@@ -207,15 +207,15 @@ const TrayMenu = (): ReactElement => {
             return (
               <div
                 className={`p-2 bg-line-hover hover:rounded-md flex-direction-column border-bottom ${index !== marketStore.groupWatchList.length - 1 ? 'mb-2' : ''}`}
-                key={w.fundCode}
+                key={w.code}
               >
                 <div className="flex-align-center flex-jsc-between">
                   <div className="flex-direction-column mr-1">
-                    <p className="font-bold">{w.fundName || ''}</p>
+                    <p className="font-bold">{w.name || ''}</p>
                     <div className="mt-1 flex-align-center text-xs">
                       <p className="exchange-tag rounded-md text-xs pt-0.5 pb-0.5 pl-1 pr-1">{w.exchange || ''}</p>
                       <p className="color-gray ml-1 overflow-ellipsis overflow-hidden whitespace-nowrap">
-                        {w.fundCode || ''}
+                        {w.code || ''}
                       </p>
                     </div>
                   </div>
@@ -236,7 +236,7 @@ const TrayMenu = (): ReactElement => {
                     {w.basicInfo?.price || '-'}
                   </p>
                   <div className="flex-align-center">
-                    {w.fundType !== 'fund' && (
+                    {w.type !== 'fund' && (
                       <p className={`font-bold ${getRateClassName(w.basicInfo?.increase)} mr-2`}>
                         {w.basicInfo?.increase || '0'}
                       </p>

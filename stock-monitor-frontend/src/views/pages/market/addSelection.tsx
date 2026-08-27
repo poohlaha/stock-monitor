@@ -38,7 +38,7 @@ const AddSelectionModal = (props: IAddSelectionModalProps): ReactElement => {
             return
           }
 
-          await marketStore.onAddToMyFundWatchlist(
+          await marketStore.onAddToMyWatchlist(
             {
               NAME: props.name || '',
               CODE: props.code || '',

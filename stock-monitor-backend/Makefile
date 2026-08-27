@@ -24,4 +24,7 @@ buildDev:
 build:
 	$(call webInstall)
 	cd $(ROOT_ENCLOSURE_DIR) && pnpm i && pnpm tauri build
+	# cd $(ROOT_ENCLOSURE_DIR) && cargo build --release
+	# strip $(ROOT_ENCLOSURE_DIR)/target/release/stock-monitor # 去除不必要的符号信息
+
     # pnpm tauri build --bundles app

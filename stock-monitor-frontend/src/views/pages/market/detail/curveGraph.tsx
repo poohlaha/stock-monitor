@@ -9,6 +9,9 @@ import * as echarts from 'echarts/core'
 
 interface IMarketDetailCurveGraphProps {
   position: Record<string, any>
+  industryList: Array<any>
+  allocationList: Array<any>
+  historyList: Array<any>
   incomeList: Array<any>
   needIncomeGraph: boolean
   resetSize: Function
@@ -30,12 +33,12 @@ const MarketDetailCurveGraph = (props: IMarketDetailCurveGraphProps): ReactEleme
     if (!positionPieChartRef.current) return
 
     let data = []
-    let list = props.position?.fundPositon?.list || []
+    let list = props.allocationList || []
     if (list.length > 0) {
       for (let l of list) {
         data.push({
-          name: l.text || '',
-          value: Number((l.value || '').replace('%', '') || '0.00') || 0.0
+          name: l.assetTypeName || '',
+          value: Number(l.proportion || '0.00')
         })
       }
     }
@@ -43,11 +46,11 @@ const MarketDetailCurveGraph = (props: IMarketDetailCurveGraphProps): ReactEleme
     const chart = echarts.init(positionPieChartRef.current)
     const option = {
       title: {
-        text: '资产分布',
+        text: '资产配置',
         left: 'left'
       },
       tooltip: {
-        trigger: 'item'
+        show: false
       },
       legend: {
         show: false
@@ -75,26 +78,13 @@ const MarketDetailCurveGraph = (props: IMarketDetailCurveGraphProps): ReactEleme
   const getPositionBarChart = () => {
     if (!positionBarChartRef.current) return
 
-    let data = []
-    let yAxisData = []
-    let list = props.position?.industryPositon?.list || []
-    if (list.length > 0) {
-      for (let l of list) {
-        data.push({
-          label: {
-            position: 'right'
-          },
-          value: Number((l.value || '').replace('%', '') || '0.00') || 0.0
-        })
-
-        yAxisData.push(l.text || '')
-      }
-    }
+    let list = props.industryList || []
+    const names = list.map(item => item.industryName || '')
 
     const chart = echarts.init(positionBarChartRef.current)
     const option = {
       title: {
-        text: '行业分布',
+        text: '行业占比',
         left: 'left'
       },
       tooltip: {
@@ -104,31 +94,74 @@ const MarketDetailCurveGraph = (props: IMarketDetailCurveGraphProps): ReactEleme
         type: 'value',
         show: false
       },
+      grid: {
+        left: 10,
+        right: 80,
+        top: 90,
+        bottom: 20
+      },
       yAxis: {
         type: 'category',
         axisLine: { show: false },
         axisTick: { show: false },
         splitLine: { show: false },
-        axisLabel: {
-          show: true,
-          fontWeight: 'bold',
-          fontSize: 14
-        },
-        data: yAxisData || []
+        inverse: true,
+        data: names || []
       },
       series: [
         {
-          type: 'bar',
-          radius: '50%',
-          barWidth: 30,
-          label: {
-            show: true,
-            position: 'right',
-            formatter: (params: Record<string, any> = {}) => {
-              return `${params.value.toFixed(2)}%`
+          type: 'custom',
+          renderItem(params: any = {}, api: any = {}) {
+            const index = params.dataIndex
+
+            const name = list[index].industryName
+            const value = api.value(0)
+
+            const coord = api.coord([0, index])
+            const width = api.size([value, 0])[0]
+
+            return {
+              type: 'group',
+              children: [
+                {
+                  type: 'text',
+                  style: {
+                    text: name,
+                    x: coord[0],
+                    y: coord[1] - 25,
+                    fontSize: 14,
+                    fontWeight: 'bold'
+                  }
+                },
+                {
+                  type: 'rect',
+                  shape: {
+                    x: coord[0],
+                    y: coord[1],
+                    width,
+                    height: 20
+                  },
+                  style: {
+                    fill: '#5470c6'
+                  }
+                },
+                {
+                  type: 'text',
+                  style: {
+                    text: `${value.toFixed(2)}%`,
+                    x: coord[0] + width + 8,
+                    y: coord[1] + 10,
+                    textVerticalAlign: 'middle'
+                  }
+                }
+              ]
             }
           },
-          data
+          encode: {
+            x: 0,
+            y: 1
+          },
+          data: list.map((item, index) => [Number(item.proportion || 0), index])
         }
       ]
     }
@@ -215,25 +248,85 @@ const MarketDetailCurveGraph = (props: IMarketDetailCurveGraphProps): ReactEleme
   const getScaleBarChart = () => {
     if (!scaleBarChartRef.current) return
 
-    let xAxisData: Array<string> = []
-    let serieBarData = []
+    let list = props.historyList || []
 
-    let list = props.position?.fundScale?.list || []
-    list = list.flatMap((item: Record<string, any> = {}) => item.info || [])
-    list = list.slice(-5)
+    list = list.sort((a: any, b: any) => {
+      return Number(a.periodSort || 0) - Number(b.periodSort || 0)
+    })
 
-    if (list.length > 1) {
-      xAxisData = list.map((l: Record<string, any> = {}) => l.date || '') || []
-      serieBarData = list.map((l: Record<string, any> = {}) => l.value || '') || []
-    }
+    // 最后展示5个季度
+    const showList = list.slice(-5)
+
+    const xAxisData = showList.map((l: Record<string, any>) => l.name || '')
+
+    const seriesBarData = showList.map((l: Record<string, any>) => {
+      return Number(l.scale || 0).toFixed(2)
+    })
+
+    // 同比: (当前季度规模 - 去年同期规模) / 当前季度规模 * 100
+    const seriesLineData = showList.map((item: any) => {
+      const currentSort = Number(item.periodSort || 0)
+
+      // 去年同期 = 当前季度 - 100
+      const lastYearSort = currentSort - 100
+      const lastYearItem = list.find((v: any) => Number(v.periodSort || 0) === lastYearSort)
+
+      let yoy = 0
+      if (lastYearItem && Number(item.scale) !== 0) {
+        yoy = ((Number(item.scale) - Number(lastYearItem.scale)) / Number(item.scale)) * 100
+      }
+
+      return Number(yoy.toFixed(2))
+    })
 
     const chart = echarts.init(scaleBarChartRef.current)
     let option = {
       tooltip: {
-        trigger: 'axis'
+        trigger: 'axis',
+        formatter(params: any) {
+          let html = `<p style="font-weight: bold;">${params[0].axisValue}</p>`
+
+          params.forEach((item: any) => {
+            if (item.seriesName === '规模') {
+              html += `
+                <div style="display:flex;justify-content:space-between;min-width:180px">
+                  <span>
+                    ${item.marker}
+                    资产规模(亿元)
+                  </span>
+                  <b>${item.value}</b>
+                </div>
+              `
+            }
+
+            if (item.seriesName === '同比') {
+              const value = Number(item.value || 0)
+              const color = value >= 0 ? '#f5222d' : '#00a854'
+
+              html += `
+                <div style="display:flex;justify-content:space-between;min-width:180px">
+                  <span>
+                    ${item.marker}
+                    季度同比
+                  </span>
+                  <b style="color:${color}">
+                    ${value > 0 ? '+' : ''}${value}%
+                  </b>
+                </div>
+              `
+            }
+          })
+
+          return html
+        }
       },
       legend: {
-        show: false
+       left: 10,
+        top: 0,
+        icon: 'circle',
+        itemWidth: 6,
+        itemHeight: 6,
+        selectedMode: false, // 不让点击控制series
       },
       xAxis: {
         type: 'category',
@@ -243,10 +336,12 @@ const MarketDetailCurveGraph = (props: IMarketDetailCurveGraphProps): ReactEleme
         splitLine: { show: false }
       },
       yAxis: {
-        type: 'value'
+        type: 'value',
+        show: false
       },
       series: [
         {
+          name: '资产规模(亿元)',
           type: 'bar',
           barWidth: 30,
           barGap: '80%',
@@ -260,7 +355,22 @@ const MarketDetailCurveGraph = (props: IMarketDetailCurveGraphProps): ReactEleme
           emphasis: {
             focus: 'series'
           },
-          data: serieBarData || []
+          data: seriesBarData || []
+        },
+        {
+          name: '同比',
+          type: 'line',
+          smooth: false,
+          showSymbol: false,
+          showAllSymbol: false,
+          lineStyle: {
+            color: '#f5222d',
+            width: 1
+          },
+          itemStyle: {
+            color: '#f5222d'
+          },
+          data: seriesLineData
         }
       ]
     }

@@ -15,7 +15,6 @@ interface IMarketDetailTitleProps {
   name: string
   exchange: string
   code: string
-  tags: Array<Record<string, any>>
   tagList: Array<Record<string, any>>
   type: string
   basicInfo: Record<string, any>
@@ -28,6 +27,9 @@ const MarketDetailTitle = (props: IMarketDetailTitleProps): ReactElement => {
       return <div></div>
     }
 
+    const basicInfo = props.basicInfo || {}
+    const asset = basicInfo.asset || {}
+    const tags = basicInfo.tags || []
     const hasInCollect = props.hasInCollect ?? false
     return (
       <div className="fund-info mt-4 relative">
@@ -38,31 +40,30 @@ const MarketDetailTitle = (props: IMarketDetailTitleProps): ReactElement => {
           <div className="flex-align-center">
             <div className="flex-align-center">
               {/* logo */}
-              {!Utils.isBlank(props.basicInfo?.logo || '') && (
+              {!Utils.isBlank(asset.avatar || '') && (
                 <div className="logo mr-2">
-                  <img src={props.basicInfo?.logo || null} className="rounded-full w-14 h-14" />
+                  <img src={asset.avatar || null} className="rounded-full w-14 h-14" />
                 </div>
               )}
             </div>
 
             <div className="flex-direction-column flex-1">
               <div className="flex-align-center">
-                <p className="text-3xl font-bold">{props.name || ''}</p>
+                <p className="text-3xl font-bold">{asset.name || ''}</p>
 
                 {/* 信息披露 */}
-                {!Utils.isObjectNull(props.basicInfo?.financeReport || {}) &&
-                  !Utils.isBlank((props.basicInfo?.financeReport || {}).text || '') && (
-                    <div className="flex-align-center p-2 rounded-md notice-tag-theme ml-2 text-xs select-none">
-                      <img src={NoticePng} className="w-4 h-4 mr-1" />
-                      <p>{(props.basicInfo?.financeReport || {}).text || ''}</p>
-                    </div>
-                  )}
+                {!Utils.isBlank(asset.disclosure || '') && (
+                  <div className="flex-align-center p-2 rounded-md notice-tag-theme ml-2 text-xs select-none">
+                    <img src={NoticePng} className="w-4 h-4 mr-1" />
+                    <p>{asset.disclosure || ''}</p>
+                  </div>
+                )}
 
                 {/* 添加自选 */}
                 {!hasInCollect && (
                   <div
                     className="ml-4 tag rounded-md flex-align-center pt-1 pb-1 pl-2 pr-2 cursor-pointer"
-                    onClick={() => props.onAddSelection?.(props.name || '', props.basicInfo || {})}
+                    onClick={() => props.onAddSelection?.(asset.name || '', props.basicInfo || {})}
                   >
                     <svg
                       className="w-4 h-4 color-svg"
@@ -81,15 +82,15 @@ const MarketDetailTitle = (props: IMarketDetailTitleProps): ReactElement => {
               </div>
               <div className="flex-align-center mt-1">
                 <p className="bg-purple-500 rounded-md text-xs text-white pt-0.5 pb-0.5 pl-1 pr-1">
-                  {Utils.isBlank(props.exchange || '') ? props.basicInfo?.exchange || '' : props.exchange || ''}
+                  {props.exchange || ''}
                 </p>
                 <p className="ml-1 color-gray font-bold">{props.code || ''}</p>
                 {/* tags */}
                 <div className="tags ml-1 flex-align-center">
-                  {(props.tags || []).map((tag: Record<string, any> = {}, index: number) => {
+                  {(tags || []).map((tag: Record<string, any> = {}, index: number) => {
                     return (
                       <p className="bg-red-500 rounded-md text-xs text-white pt-0.5 pb-0.5 pl-1 pr-1 mr-1" key={index}>
-                        {tag.text || ''}
+                        {tag.name || ''}
                       </p>
                     )
                   })}
@@ -101,7 +102,9 @@ const MarketDetailTitle = (props: IMarketDetailTitleProps): ReactElement => {
                     {(props.tagList || []).map((t: Record<string, any> = {}, index: number) => {
                       return (
                         <div className="flex-align-center ml-1 cursor-pointer" key={index}>
-                          {!Utils.isBlank(t.imageUrl || '') && <img src={t.imageUrl || null} className="w-3 h-3 mr-1" />}
+                          {!Utils.isBlank(t.imageUrl || '') && (
+                            <img src={t.imageUrl || null} className="w-3 h-3 mr-1" />
+                          )}
                           <p>{t.desc || ''}</p>
                         </div>
                       )
@@ -139,24 +142,28 @@ const MarketDetailTitle = (props: IMarketDetailTitleProps): ReactElement => {
           {props.type === 'fund' && (
             <div className="mt-4 flex-align-center h-16">
               <div className="flex-direction-column flex-center">
-                <p className={`${getRateClassName(props.basicInfo?.railFallNewest?.value)} font-bold text-3xl h-9`}>
-                  {props.basicInfo?.railFallNewest?.value || '-'}
+                <p className={`${getRateClassName(basicInfo.latestChange || '-')} font-bold text-3xl h-9`}>
+                  {Utils.isBlank(basicInfo.latestChange || '')
+                    ? '-'
+                    : `${Number(basicInfo.latestChange || 0).toFixed(2)}%` || '-'}
                 </p>
-                <p className="mt-2">{props.basicInfo?.railFallNewest?.text || '-'}</p>
+                <p className="mt-2">{`日涨幅${basicInfo.latestNavDate || ''}` || '-'}</p>
               </div>
 
               <div className="ml-6 flex-direction-column flex-center">
-                <div className="font-bold text-xl h-9 flex-align-end">{props.basicInfo?.priceNewest?.value}</div>
-                <p className="mt-2">{props.basicInfo?.priceNewest?.text || '-'}</p>
+                <div className="font-bold text-xl h-9 flex-align-end">{basicInfo.latestNav}</div>
+                <p className="mt-2">净值</p>
               </div>
 
               <div className="ml-6 flex-direction-column flex-center">
                 <div
-                  className={`font-bold text-xl h-9 flex-align-end ${getRateClassName(props.basicInfo?.ratioNewest?.value)}`}
+                  className={`font-bold text-xl h-9 flex-align-end ${getRateClassName(basicInfo.oneYearPriceChange?.priceChange || '')}`}
                 >
-                  {props.basicInfo?.ratioNewest?.value}
+                  {Utils.isBlank(basicInfo.oneYearPriceChange?.priceChange || '')
+                    ? '-'
+                    : `${Number(basicInfo.oneYearPriceChange?.priceChange || 0).toFixed(2)}%`}
                 </div>
-                <p className="mt-2">{props.basicInfo?.ratioNewest?.text || '-'}</p>
+                <p className="mt-2">{basicInfo.oneYearPriceChange?.name || '-'}</p>
               </div>
             </div>
           )}

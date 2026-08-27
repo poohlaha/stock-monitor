@@ -494,12 +494,12 @@ const MarketCenter = (props: IMarketCenterProps): ReactElement => {
 
         <div className="flex-align-center mt-4">
           <div className="flex-align-center mr-4">
-            <div className="red w-2 h-2 rounded-full"></div>
+            <div className="bg-red w-2 h-2 rounded-full"></div>
             <div className="ml-1">净流入</div>
           </div>
 
           <div className="flex-align-center">
-            <div className="green w-2 h-2 rounded-full"></div>
+            <div className="bg-green w-2 h-2 rounded-full"></div>
             <div className="ml-2">净流出</div>
           </div>
         </div>
@@ -562,7 +562,9 @@ const MarketCenter = (props: IMarketCenterProps): ReactElement => {
           }}
         />
 
-        {activeTabIndex === items[0].key && <MarketCenterGlobal toDetailPage={(item: Record<any, any> = {}) => props.toDetailPage?.(item)} />}
+        {activeTabIndex === items[0].key && (
+          <MarketCenterGlobal toDetailPage={(item: Record<any, any> = {}) => props.toDetailPage?.(item)} />
+        )}
 
         {activeTabIndex === items[1].key && (
           <div className="flex-direction-column">

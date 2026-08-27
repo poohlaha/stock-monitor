@@ -11,6 +11,7 @@ use serde::{Deserialize, Serialize};
 use std::fmt::Display;
 
 pub mod detail;
+pub mod stock;
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub struct Args {
@@ -19,11 +20,12 @@ pub struct Args {
     #[serde(rename = "type")]
     pub _type: MarketType,
     #[serde(rename = "queryType")]
-    pub query_type: String, // 查询类型: minute, fiveday, kline
-    pub ktype: String, // day, week, month, quarter, year
+    pub query_type: Option<String>, // 查询类型: minute, fiveday, kline
+    pub ktype: Option<String>, // day, week, month, quarter, year
+    pub exchange: Option<String>,
 }
 
-// 市场类型
+// 类型
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 #[serde(rename_all = "lowercase")]
 pub enum MarketType {
@@ -50,15 +52,14 @@ pub enum HotStockType {
     Institution,
 }
 
-impl Display for MarketType {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let str = match self {
-            MarketType::Stock => "stock".to_string(),
-            MarketType::Etf => "etf".to_string(),
-            MarketType::Fund => "fund".to_string(),
-            MarketType::Unknown => "".to_string(),
-        };
-        write!(f, "{}", str)
+impl MarketType {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            MarketType::Stock => "stock",
+            MarketType::Etf => "etf",
+            MarketType::Fund => "fund",
+            MarketType::Unknown => "",
+        }
     }
 }
 
@@ -175,7 +176,10 @@ impl Market {
     pub async fn query_company_info(args: &Args) -> Result<HttpResponse, String> {
         let url = format!(
             "{}/vapi/v1/overviewwidget?market={}&code={}&financeType={}&modules=basicinfo&finClientType=pc",
-            BD_HTTP_URL_PREFIX, args.market, args.code, args._type
+            BD_HTTP_URL_PREFIX,
+            args.market,
+            args.code,
+            args._type.as_str()
         );
         Utils::get_time_response(&url).await
     }
@@ -185,7 +189,7 @@ impl Market {
       例: https://finance.pae.baidu.com/api/stockwidget?code=300502&market=ab&type=stock&widgetType=company&finClientType=pc
     */
     pub async fn query_company_profile(args: &Args) -> Result<HttpResponse, String> {
-        let url = format!("{}/api/stockwidget?market={}&code={}&type={}&widgetType=company&finClientType=pc", BD_HTTP_URL_PREFIX, args.market, args.code, args._type);
+        let url = format!("{}/api/stockwidget?market={}&code={}&type={}&widgetType=company&finClientType=pc", BD_HTTP_URL_PREFIX, args.market, args.code, args._type.as_str());
         Utils::get_time_response(&url).await
     }
 

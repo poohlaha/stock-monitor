@@ -126,15 +126,15 @@ class MarketStore extends BaseStore {
       this.loading = false
       const search = this.handleResult(result) || {}
       const searchList = search.list || []
-      const fundCodes = (searchList || []).map((item: Record<string, any> = {}) => item.code) || []
-      console.log('on search fund codes:', fundCodes)
-      if (fundCodes.length > 0) {
-        await this.onGetMyFundListByCodes(fundCodes, (list: Array<Record<string, any>> = []) => {
+      const codes = (searchList || []).map((item: Record<string, any> = {}) => item.code) || []
+      console.log('on search fund codes:', codes)
+      if (codes.length > 0) {
+        await this.onGetMyListByCodes(codes, (list: Array<Record<string, any>> = []) => {
           this.search.list = (searchList || []).map((item: Record<string, any> = {}) => {
             return {
               ...item,
               hasCollect: !Utils.isObjectNull(
-                (list || []).find((l: Record<string, any> = {}) => l.fundCode === item.code) || {}
+                (list || []).find((l: Record<string, any> = {}) => l.code === item.code) || {}
               )
             }
           })
@@ -154,10 +154,10 @@ class MarketStore extends BaseStore {
    * 根据基金代码批量查找基金列表
    */
   @action
-  async onGetMyFundListByCodes(fundCodes: Array<string>, callback?: Function) {
+  async onGetMyListByCodes(codes: Array<string>, callback?: Function) {
     try {
-      let result: { [K: string]: any } = await invoke('find_by_fund_codes', {
-        fundCodes: fundCodes || []
+      let result: { [K: string]: any } = await invoke('find_watch_list_by_codes', {
+        codes: codes || []
       })
 
       const list = this.handleResult(result) || []
@@ -173,10 +173,10 @@ class MarketStore extends BaseStore {
    * 根据基金代码查找基金列表
    */
   @action
-  async onGetMyFundListByCode(code: string, callback?: Function) {
+  async onGetMyListByCode(code: string, callback?: Function) {
     try {
-      let result: { [K: string]: any } = await invoke('find_by_fund_code', {
-        fundCode: code || ''
+      let result: { [K: string]: any } = await invoke('find_watch_list_by_code', {
+        code: code || ''
       })
 
       const obj = this.handleResult(result) || {}
@@ -192,15 +192,15 @@ class MarketStore extends BaseStore {
    * 添加到我的自选
    */
   @action
-  async onAddToMyFundWatchlist(item: Record<string, any> = {}, callback?: Function, groupIdList: Array<string> = []) {
+  async onAddToMyWatchlist(item: Record<string, any> = {}, callback?: Function, groupIdList: Array<string> = []) {
     try {
-      let result: { [K: string]: any } = await invoke('add_to_my_fund_watchlist', {
+      let result: { [K: string]: any } = await invoke('add_to_my_watchlist', {
         args: {
-          fundCode: item.code || item.CODE || '',
-          fundName: item.name || item.NAME || '',
+          code: item.code || item.CODE || '',
+          name: item.name || item.NAME || '',
           market: item.market || '',
           exchange: item.exchange || '',
-          fundType: item.type || '',
+          type: item.type || '',
           groupIdList
         }
       })
@@ -368,30 +368,31 @@ class MarketStore extends BaseStore {
   }
 
   /**
-   * 获取十大持仓等数据
+   * 获取基金的信息, 包括名称、标签、涨跌幅、基金经理、收益等
    */
-  async onGetOpenData(code: string = '', callback?: Function, type: string = '') {
+  async onGetFundInfoData(
+    code: string = '',
+    type: string = '',
+    market: string = '',
+    exchange: string = '',
+    callback?: Function
+  ) {
     try {
       let result: { [K: string]: any } =
-        (await invoke('query_open_data', {
-          code
+        (await invoke('query_fund_info', {
+          args: {
+            code,
+            market,
+            type,
+            exchange,
+            queryType: '',
+            ktype: ''
+          }
         })) || {}
-      let data = this.handleResult(result) || []
-      if (data.length > 0) {
-        this.openDataInfo = ((data[0] || {}).DisplayData || {}).resultData || {}
-      }
-      console.log('open data info: ', data)
-      const openDataInfo = this.getBasicData(this.openDataInfo || {})
-
-      let tabs = []
-      if (type === 'fund') {
-        tabs = openDataInfo.result?.tabs || []
-        if (tabs.length > 0) {
-          await this.onGetPNGraph(tabs[0].param || 'ai', code)
-        }
-      }
-
-      callback?.(openDataInfo, tabs)
+      this.openDataInfo = this.handleResult(result) || {}
+      console.log('open data info: ', this.openDataInfo)
+      this.performanceGraph = this.openDataInfo?.performance || []
+      callback?.()
       return result || {}
     } catch (e: any) {
       this.loading = false
@@ -445,14 +446,14 @@ class MarketStore extends BaseStore {
             hasAllInTrade = w.isTrade
           }
 
-          if (w.fundType !== 'fund') {
+          if (w.type !== 'fund') {
             // ETF、股票获取分时图数据
             let klineResult: { [K: string]: any } =
               (await invoke('get_time_data', {
                 args: {
-                  code: w.fundCode,
+                  code: w.code,
                   market: w.market,
-                  type: w.fundType,
+                  type: w.type,
                   queryType: 'minute',
                   ktype: ''
                 }
@@ -469,8 +470,15 @@ class MarketStore extends BaseStore {
           } else {
             // 基金
             let result: { [K: string]: any } =
-              (await invoke('query_open_data', {
-                code: w.fundCode || ''
+              (await invoke('query_fund_info', {
+                args: {
+                  code: w.code || '',
+                  assetType: w.type || '',
+                  market: w.market || '',
+                  queryType: '',
+                  ktype: '',
+                  exchange: w.exhange || ''
+                }
               })) || {}
             let data = this.handleResult(result) || []
             let openDataInfo: Record<string, any> = {}
@@ -541,9 +549,9 @@ class MarketStore extends BaseStore {
           let klineResult: { [K: string]: any } =
             (await invoke('get_time_data', {
               args: {
-                code: w.fundCode,
+                code: w.code,
                 market: w.market,
-                type: w.fundType,
+                type: w.type,
                 queryType: 'minute',
                 ktype: ''
               }
@@ -1023,66 +1031,20 @@ class MarketStore extends BaseStore {
   /**
    * 查询业绩走势和净值曲线
    */
-  async onGetPNGraph(name: string = '', code: string = '', type: number = 0, month: string = '12') {
+  async onGetPNGraph(name: string = '', code: string = '', month: string = '') {
     try {
       let result: { [K: string]: any } =
         (await invoke('query_fund_graph', {
           name,
           code,
-          month: Utils.isBlank(month || '') ? '12' : month
+          month
         })) || {}
       const data = this.handleResult(result) || []
-
-      this.performanceGraph = []
-      if (data.length === 0) {
-        return
-      }
-
-      const series = ((((data[0] || {}).DisplayData || {}).resultData || {}).tplData || {}).series || []
-      const newSeries = []
-
-      for (let s of series) {
-        const values = (s.value || '').split(';').filter(Boolean) || []
-
-        let newValues = []
-        if (type === 0) {
-          newValues = values.map((item: string = '') => {
-            const [date, value] = item.split(',')
-
-            return {
-              date,
-              value: Number(value.replace('%', ''))
-            }
-          })
-        } else {
-          newValues = values.map((item: string = '') => {
-            const [date, value1, value2, value3] = item.split(',')
-
-            return {
-              date,
-              value1: Number(value1.replace('%', '')),
-              value2: Number(value2.replace('%', '')),
-              value3: Number(value3.replace('%', ''))
-            }
-          })
-        }
-
-        newSeries.push({
-          name: (s.label || []).length > 0 ? s.label[0] || '' : '',
-          type: 'line',
-          smooth: false,
-          symbol: 'none',
-          data: newValues || []
-        })
-      }
-
-      if (type === 0) {
-        this.performanceGraph = newSeries || []
+      if (name === 'ai') {
+        this.performanceGraph = data || []
       } else {
-        this.networthGraph = newSeries || []
+        this.networthGraph = data || []
       }
-
-      console.log('newSeries: ', newSeries)
       return result || {}
     } catch (e: any) {
       this.loading = false
@@ -1533,14 +1495,14 @@ class MarketStore extends BaseStore {
             hasAllInTrade = w.isTrade
           }
 
-          if (w.fundType !== 'fund') {
+          if (w.type !== 'fund') {
             // ETF、股票获取分时图数据
             let klineResult: { [K: string]: any } =
               (await invoke('get_time_data', {
                 args: {
-                  code: w.fundCode,
+                  code: w.code,
                   market: w.market,
-                  type: w.fundType,
+                  type: w.type,
                   queryType: 'minute',
                   ktype: ''
                 }
@@ -1557,8 +1519,15 @@ class MarketStore extends BaseStore {
           } else {
             // 基金
             let result: { [K: string]: any } =
-              (await invoke('query_open_data', {
-                code: w.fundCode || ''
+              (await invoke('query_fund_info', {
+                args: {
+                  code: w.code || '',
+                  assetType: w.type || '',
+                  market: w.market || '',
+                  queryType: '',
+                  ktype: '',
+                  exchange: w.exhange || ''
+                }
               })) || {}
             let data = this.handleResult(result) || []
             let openDataInfo: Record<string, any> = {}
@@ -1614,6 +1583,42 @@ class MarketStore extends BaseStore {
       this.loading = false
       throw new Error(e)
     }
+  }
+
+  @action
+  reset() {
+    this.timelineList = []
+    this.fiveDayList = []
+    this.klineList = []
+    this.weekList = []
+    this.monthList = []
+    this.basicInfo = {}
+    this.marketInfo = {}
+    this.briefInfo = {}
+    this.openDataInfo = {}
+    this.pankouInfo = {}
+    this.tagList = []
+    this.positionDistributionInfo = {}
+    this.xLabels = []
+    this.incomeList = []
+    this.preClosePrice = 0
+    this.performanceGraph = []
+    this.networthGraph = []
+    this.industryFundFlow = {}
+    this.industryOtherFundFlow = {}
+    this.companyProfile = {}
+    this.executiveChanges = {}
+    this.shareholders = {}
+    this.holdShareInfo = {}
+    this.hotStock = {}
+    this.stockRfDistribution = {}
+    this.stockIndustryHot = []
+    this.popularSectionList = []
+    this.stockRankList = []
+    this.stockMainMoneyInList = []
+    this.floatStockCommentary = []
+    this.stockAnalysis = []
+    this.relatedTarget = {}
   }
 }
 

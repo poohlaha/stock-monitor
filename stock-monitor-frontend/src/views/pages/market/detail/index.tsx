@@ -22,7 +22,7 @@ import {
 } from 'echarts/components'
 
 import * as echarts from 'echarts/core'
-import { BarChart, PieChart, LineChart } from 'echarts/charts'
+import { BarChart, PieChart, LineChart, CustomChart } from 'echarts/charts'
 import { LabelLayout, UniversalTransition } from 'echarts/features'
 import { CanvasRenderer } from 'echarts/renderers'
 import RouterUrls from '@route/router.url.toml'
@@ -36,7 +36,7 @@ import MarketDetailFnCurveGraph from '@pages/market/detail/fnCurveGraph'
 import MarketDetailStock from '@pages/market/detail/stock'
 import Loading from '@views/components/loading/loading'
 import AddSelectionModal from '@pages/market/addSelection'
-import MarketDetailEtfBasicInfo from "@pages/market/detail/eftInfo";
+import MarketDetailEtfBasicInfo from '@pages/market/detail/eftInfo'
 
 echarts.use([
   LegendComponent,
@@ -50,7 +50,8 @@ echarts.use([
   LineChart,
   LabelLayout,
   UniversalTransition,
-  CanvasRenderer
+  CanvasRenderer,
+  CustomChart
 ])
 
 const MarketDetail = (): ReactElement => {
@@ -61,13 +62,10 @@ const MarketDetail = (): ReactElement => {
   const [type, setType] = useState('stock')
   const [market, setMarket] = useState('ab')
   const [exchange, setExchange] = useState('sh')
-  const [fundTabs, setFundTabs] = useState<Array<any>>([])
   const [hasInCollect, setHasInCollect] = useState<boolean>(false)
   const [onOpenSelection, setOnOpenSelection] = useState<boolean>(false)
 
   const [size, setSize] = useState({ width: 0, height: 0 })
-
-  const [openDataInfo, setOpenDataInfo] = useState<Record<string, any>>({})
 
   const timerRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined)
   const tradeStatusTimerRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined)
@@ -88,11 +86,14 @@ const MarketDetail = (): ReactElement => {
     const e = ADDRESS.getAddressQueryString('exchange') || ''
     setExchange(e)
 
+    console.log(`code: ${c}, type: ${t}, market: ${m}, exchange: ${m}`)
+
     resetSize(t)
+
     onInit(c, m, t)
 
     return () => {
-      marketStore.basicInfo = {}
+      marketStore.reset()
     }
   }, [location.search])
 
@@ -117,7 +118,6 @@ const MarketDetail = (): ReactElement => {
   }
 
   const onInit = async (c: string = '', m: string = '', t: string = '') => {
-    console.log(`code: ${code}, type: ${t}, market: ${market}, exchange: ${exchange}`)
 
     const queue = []
     /*
@@ -138,31 +138,26 @@ const MarketDetail = (): ReactElement => {
 
     queue.push(
       new Promise(async resolve => {
-        const res = marketStore.onGetMyFundListByCode(c, (obj: Array<Record<string, any>> = []) => {
+        const res = await marketStore.onGetMyListByCode(c, (obj: Array<Record<string, any>> = []) => {
           setHasInCollect(obj.length > 0)
         })
         resolve(res)
       })
     )
 
-    queue.push(
-      new Promise(async resolve => {
-        const res = marketStore.onGetOpenData(
-          c,
-          (openDataInfo: Record<string, any> = {}, tabs: Array<any> = []) => {
-            setOpenDataInfo(openDataInfo || {})
-            setFundTabs(tabs)
-          },
-          t
-        )
-        resolve(res)
-      })
-    )
+    if (t === 'fund') {
+      queue.push(
+        new Promise(async resolve => {
+          const res = await marketStore.onGetFundInfoData(c, t, m, exchange)
+          resolve(res)
+        })
+      )
+    }
 
     if (t !== 'fund') {
       queue.push(
         new Promise(async resolve => {
-          const res = marketStore.onJudgeIsTrade(m)
+          const res = await marketStore.onJudgeIsTrade(m)
           resolve(res)
         })
       )
@@ -170,43 +165,43 @@ const MarketDetail = (): ReactElement => {
       if (t === 'etf') {
         queue.push(
           new Promise(async resolve => {
-            const res = marketStore.onGetIncome(c, m, t)
+            const res = await marketStore.onGetIncome(c, m, t)
             resolve(res)
           })
         )
 
         queue.push(
-            new Promise(async resolve => {
-              const res = marketStore.onGetBrief(c, m, t)
-              resolve(res)
-            })
+          new Promise(async resolve => {
+            const res = await marketStore.onGetBrief(c, m, t)
+            resolve(res)
+          })
         )
       }
 
       queue.push(
         new Promise(async resolve => {
-          const res = marketStore.getTimelineData(c, m, t)
+          const res = await marketStore.getTimelineData(c, m, t)
           resolve(res)
         })
       )
 
       queue.push(
         new Promise(async resolve => {
-          const res = marketStore.onGetOtherTimelineData(c, m, t, 'kline', 'day')
+          const res = await marketStore.onGetOtherTimelineData(c, m, t, 'kline', 'day')
           resolve(res)
         })
       )
 
       queue.push(
         new Promise(async resolve => {
-          const res = marketStore.onGetOtherTimelineData(c, m, t, 'kline', 'week')
+          const res = await marketStore.onGetOtherTimelineData(c, m, t, 'kline', 'week')
           resolve(res)
         })
       )
 
       queue.push(
         new Promise(async resolve => {
-          const res = marketStore.onGetOtherTimelineData(c, m, t, 'kline', 'month')
+          const res = await marketStore.onGetOtherTimelineData(c, m, t, 'kline', 'month')
           resolve(res)
         })
       )
@@ -215,7 +210,7 @@ const MarketDetail = (): ReactElement => {
     if (t === 'stock') {
       queue.push(
         new Promise(async resolve => {
-          const res = marketStore.onGetIndustryFundFlow(c, m)
+          const res = await marketStore.onGetIndustryFundFlow(c, m)
           resolve(res)
         })
       )
@@ -318,31 +313,29 @@ const MarketDetail = (): ReactElement => {
     }
   }, [])
 
-  // 获取净值等信息
-  const getBasicIInfo = () => {
-    if (!Utils.isObjectNull(marketStore.basicInfo || {})) {
-      return marketStore.basicInfo || {}
+  const getBasicInfo = (priceChange: Array<Record<string, any>> = []) => {
+    const fundInfo = marketStore.openDataInfo?.fundInfo || {} // 基金信息
+    let basicInfo: Record<string, any> = {
+      ...(marketStore.openDataInfo?.basicInfo || {}),
+      latestChange: fundInfo.latestChange || '',
+      latestNav: fundInfo.latestNav || '',
+      latestNavDate: fundInfo.latestNavDate || ''
+    } // 基础信息: 资产和标签等
+
+    if (priceChange.length > 0) {
+      const obj = (priceChange || []).find((c: Record<string, any> = {}) => c.period === '1year') || {}
+      basicInfo.oneYearPriceChange = obj || {}
     }
 
-    const newest = openDataInfo.newest || []
-    if (newest.length === 0) {
-      return {}
-    }
-
-    const railFallNewest = newest[0] || {}
-    const priceNewest = newest.length > 1 ? newest[1] || {} : {}
-    const ratioNewest = newest.length > 2 ? newest[2] || {} : {}
-    return {
-      railFallNewest,
-      priceNewest,
-      ratioNewest
-    }
+    return basicInfo
   }
 
   const render = () => {
-    const basicInfo = getBasicIInfo() || {}
-    const ex = Utils.isBlank(exchange || '') ? basicInfo?.exchange || '' : exchange || ''
-    const name = marketStore.basicInfo?.name || openDataInfo.name || ''
+    const priceChange: Array<Record<string, any>> = marketStore.openDataInfo?.priceChange || [] // 涨跌幅
+    let basicInfo: Record<string, any> = getBasicInfo(priceChange || [])
+
+    const asset = basicInfo.asset || {} // 资产信息
+    const ex = Utils.isBlank(exchange || '') ? asset.exchange || '' : exchange || ''
     return (
       <Page
         contentClassName="market-detail-page overflow-y-auto flex-direction-column pt-4 pb-4 no-scrollbar"
@@ -355,10 +348,9 @@ const MarketDetail = (): ReactElement => {
             {/* 信息 */}
             <MarketDetailTitle
               hasInCollect={hasInCollect}
-              name={name}
-              code={marketStore.basicInfo?.code || openDataInfo.brief?.code || ''}
+              name={asset.name || ''}
+              code={asset.code || ''}
               exchange={ex}
-              tags={openDataInfo.tags || []}
               tagList={marketStore.tagList || []}
               type={type}
               basicInfo={basicInfo}
@@ -378,9 +370,8 @@ const MarketDetail = (): ReactElement => {
                   size={size}
                   performanceGraph={marketStore.performanceGraph || []}
                   networthGraph={marketStore.networthGraph || []}
-                  tabs={fundTabs}
-                  onTabChange={async (_: string = '', tab: string, index: number, month: string = '') => {
-                    await marketStore.onGetPNGraph(tab, code, index, month)
+                  onTabChange={async (tabIndex: string = '', month: string = '') => {
+                    await marketStore.onGetPNGraph(tabIndex, code, month)
                   }}
                 />
               ) : (
@@ -409,7 +400,7 @@ const MarketDetail = (): ReactElement => {
               {/* 股票持仓 */}
               {type !== 'stock' && (
                 <MarketDetailPosition
-                  position={openDataInfo.position || {}}
+                  holding={marketStore.openDataInfo?.holding || []}
                   onStockClick={(item: Record<string, any> = {}) => {
                     const type = 'stock' // 类型: etf | fund | stock
                     const market = item.market || '' // 市场: ab | hk | us | sg
@@ -429,33 +420,37 @@ const MarketDetail = (): ReactElement => {
             {/* 涨跌幅 */}
             {type !== 'stock' && (
               <div className="mt-4 bg-[#f7f7f7] flex-align-center h-20 p-4 round-md">
-                {(openDataInfo.recent || []).map((item: Record<string, any> = {}, index: number) => {
+                {(priceChange || []).map((item: Record<string, any> = {}, index: number) => {
                   return (
                     <div className="flex-1 flex-direction-column" key={index}>
-                      <p>{item.text || ''}</p>
-                      <p className={`${getRateClassName(item.value)} text-xl font-bold`}>{item.value || '-'}</p>
+                      <p>{item.name || ''}</p>
+                      <p className={`${getRateClassName(item.priceChange || '0')} text-xl font-bold`}>
+                        {Number(item.priceChange || '0').toFixed(2)}%
+                      </p>
                     </div>
                   )
                 })}
               </div>
             )}
 
-            {
-                type === 'etf' && (
-                    <MarketDetailEtfBasicInfo info={marketStore.briefInfo || {}}/>
-                )
-            }
+            {type === 'etf' && <MarketDetailEtfBasicInfo info={marketStore.briefInfo || {}} />}
 
             {/* 基金信息 */}
             {type === 'fund' && (
-              <MarketDetailFundInfo fundManager={openDataInfo.fundManager || {}} brief={openDataInfo.brief || {}} />
+              <MarketDetailFundInfo
+                fundManagerList={marketStore.openDataInfo?.manager || []}
+                fundInfo={marketStore.openDataInfo?.fundInfo || {}}
+              />
             )}
 
             {/* 持仓分布 | 收益 */}
             {type !== 'stock' && (
               <MarketDetailCurveGraph
-                position={openDataInfo.position || {}}
-                incomeList={marketStore.incomeList || []}
+                position={{}}
+                allocationList={marketStore.openDataInfo?.allocation || []}
+                industryList={marketStore.openDataInfo?.industry || []}
+                historyList={marketStore.openDataInfo?.history || []}
+                incomeList={[]}
                 resetSize={resetSize}
                 needIncomeGraph={type !== 'fund'}
               />
@@ -468,13 +463,13 @@ const MarketDetail = (): ReactElement => {
 
         <AddSelectionModal
           open={onOpenSelection}
-          name={name}
+          name={asset.name || ''}
           code={code}
           market={market}
           type={type}
           exchange={ex}
           onOk={async () => {
-            await marketStore.onGetMyFundListByCode(code, (obj: Array<Record<string, any>> = []) => {
+            await marketStore.onGetMyListByCode(code, (obj: Array<Record<string, any>> = []) => {
               TOAST.show({ message: '添加自选成功', type: 2 })
               setHasInCollect(obj.length > 0)
               setOnOpenSelection(false)

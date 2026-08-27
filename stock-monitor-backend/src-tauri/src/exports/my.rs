@@ -6,7 +6,7 @@ use crate::prepare::HttpResponse;
 
 /// 添加到我的自选列表
 #[tauri::command]
-pub async fn add_to_my_fund_watchlist(args: crate::my::watch::Args) -> Result<HttpResponse, String> {
+pub async fn add_to_my_watchlist(args: crate::my::watch::Args) -> Result<HttpResponse, String> {
     MyWatchList::add(&args).await
 }
 
@@ -18,14 +18,14 @@ pub async fn query_watchlist() -> Result<HttpResponse, String> {
 
 /// 根据基金代码查找基金
 #[tauri::command]
-pub async fn find_by_fund_code(fund_code: &str) -> Result<HttpResponse, String> {
-    MyWatchList::find_by_fund_code(fund_code).await
+pub async fn find_watch_list_by_code(code: &str) -> Result<HttpResponse, String> {
+    MyWatchList::find_by_code(code).await
 }
 
 /// 根据基金代码批量查找基金
 #[tauri::command]
-pub async fn find_by_fund_codes(fund_codes: Vec<String>) -> Result<HttpResponse, String> {
-    MyWatchList::find_by_fund_codes(&fund_codes).await
+pub async fn find_watch_list_by_codes(codes: Vec<String>) -> Result<HttpResponse, String> {
+    MyWatchList::find_by_codes(&codes).await
 }
 
 /// 根据 groupId 查找
