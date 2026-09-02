@@ -620,19 +620,21 @@ class MarketStore extends BaseStore {
     try {
       this.xLabels = []
       let result: { [K: string]: any } =
-          (await invoke('query_stock_info_data', {
-            args: {
-              code,
-              market,
-              marketType: type,
-              queryType: 'minute',
-              klineType: ''
-            }
-          })) || {}
+        (await invoke('query_stock_info_data', {
+          args: {
+            code,
+            market,
+            marketType: type,
+            queryType: 'minute',
+            klineType: ''
+          }
+        })) || {}
       this.openDataInfo = this.handleResult(result) || {}
       this.timelineList = this.onGetTimeData(this.openDataInfo?.realInfo?.marketData || {})
       let panKou = this.openDataInfo?.realInfo?.panKou || []
-      this.preClosePrice = Number((panKou.find((l: Record<string, any> = {}) => l.ename === 'preClose') || {}).originValue || '0') // 昨收
+      this.preClosePrice = Number(
+        (panKou.find((l: Record<string, any> = {}) => l.ename === 'preClose') || {}).originValue || '0'
+      ) // 昨收
       return result || {}
     } catch (e: any) {
       this.loading = false
@@ -878,34 +880,34 @@ class MarketStore extends BaseStore {
     }
 
     let list = str
-        .split(';')
-        .map((item: string = '') => {
-          const arr = item.split(',') || []
-          if (arr.length === 0) {
-            return {}
-          }
+      .split(';')
+      .map((item: string = '') => {
+        const arr = item.split(',') || []
+        if (arr.length === 0) {
+          return {}
+        }
 
-          return {
-            timestamp: Number(arr[0]) * 1000, // 接口是秒，需要转毫秒
-            price: Number(arr[2]), // 当前价格
-            volume: Number(arr[6]), // 成交量
-            turnover: Number(arr[7]), // 成交额
-            riseFall: arr[4], // 涨跌额
-            amplitude: Number(arr[5]) // 涨跌幅
-          }
-        })
-        .filter((item: any) => {
-          if (!item.timestamp) {
-            return false
-          }
+        return {
+          timestamp: Number(arr[0]) * 1000, // 接口是秒，需要转毫秒
+          price: Number(arr[2]), // 当前价格
+          volume: Number(arr[6]), // 成交量
+          turnover: Number(arr[7]), // 成交额
+          riseFall: arr[4], // 涨跌额
+          amplitude: Number(arr[5]) // 涨跌幅
+        }
+      })
+      .filter((item: any) => {
+        if (!item.timestamp) {
+          return false
+        }
 
-          const date = new Date(item.timestamp)
-          const hour = date.getHours()
-          const minute = date.getMinutes()
+        const date = new Date(item.timestamp)
+        const hour = date.getHours()
+        const minute = date.getMinutes()
 
-          // 只保留 09:30 - 15:00
-          return hour < 15 || (hour === 15 && minute === 0)
-        })
+        // 只保留 09:30 - 15:00
+        return hour < 15 || (hour === 15 && minute === 0)
+      })
 
     return list.filter((l: Record<string, any> = {}) => !Utils.isObjectNull(l || {})) || []
   }
@@ -919,7 +921,7 @@ class MarketStore extends BaseStore {
     }
 
     let list = []
-    for(let kline of klineList) {
+    for (let kline of klineList) {
       list.push({
         timestamp: Number(kline.timestamp || 0) * 1000,
         price: Number(kline.price || 0), // 当前价格
@@ -942,7 +944,7 @@ class MarketStore extends BaseStore {
     }
 
     let list = []
-    for(let kline of klineList) {
+    for (let kline of klineList) {
       list.push({
         timestamp: Number(kline.timestamp || 0) * 1000,
         open: Number(kline.open || 0), // 开盘价

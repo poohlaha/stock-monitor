@@ -321,12 +321,12 @@ const MarketDetailCurveGraph = (props: IMarketDetailCurveGraphProps): ReactEleme
         }
       },
       legend: {
-       left: 10,
+        left: 10,
         top: 0,
         icon: 'circle',
         itemWidth: 6,
         itemHeight: 6,
-        selectedMode: false, // 不让点击控制series
+        selectedMode: false // 不让点击控制series
       },
       xAxis: {
         type: 'category',

@@ -92,9 +92,7 @@ const MarketDetailTitle = (props: IMarketDetailTitleProps): ReactElement => {
                     {(tags || []).map((t: Record<string, any> = {}, index: number) => {
                       return (
                         <div className="flex-align-center ml-1 cursor-pointer" key={index}>
-                          {!Utils.isBlank(t.img || '') && (
-                            <img src={t.img || null} className="w-3 h-3 mr-1" />
-                          )}
+                          {!Utils.isBlank(t.img || '') && <img src={t.img || null} className="w-3 h-3 mr-1" />}
                           <p>{t.name || ''}</p>
                         </div>
                       )

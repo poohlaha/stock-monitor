@@ -70,9 +70,9 @@ const MarketDetailFnCurveGraph = (props: IMarketDetailFnCurveGraphProps): ReactE
 
     const last = data[data.length - 1] || {}
     const legendMap: Record<string, any> = {
-      '单位净值': Number(last?.unitNav || 0),
-      '日涨幅': Number(last?.dayChange || 0),
-      '累计净值': Number(last?.accumulatedNav || 0)
+      单位净值: Number(last?.unitNav || 0),
+      日涨幅: Number(last?.dayChange || 0),
+      累计净值: Number(last?.accumulatedNav || 0)
     }
 
     const series = [
@@ -193,7 +193,7 @@ const MarketDetailFnCurveGraph = (props: IMarketDetailFnCurveGraphProps): ReactE
           {
             name: '累计净值'
           }
-        ],
+        ]
       },
       formatter(name: string) {
         const value = legendMap[name] || 0
@@ -405,11 +405,7 @@ const MarketDetailFnCurveGraph = (props: IMarketDetailFnCurveGraphProps): ReactE
         icon: 'circle',
         itemWidth: 6,
         itemHeight: 6,
-        data: [
-          '本基金',
-          '同类平均',
-          '沪深300'
-        ],
+        data: ['本基金', '同类平均', '沪深300'],
         selectedMode: false, // 不让点击控制series
         formatter: legendFormatter
       },

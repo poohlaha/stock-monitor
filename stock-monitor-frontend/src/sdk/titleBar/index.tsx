@@ -3,7 +3,7 @@
  * @date 2023-08-28
  * @author poohlaha
  */
-import React, {ReactElement, useRef, useState} from 'react'
+import React, { ReactElement, useRef, useState } from 'react'
 import { observer } from 'mobx-react-lite'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 import { useStore } from '@views/stores'
@@ -53,11 +53,15 @@ const TitleBar = (): ReactElement => {
     return (
       <div className="title-bar relative bg-transparent z-999 left-0 w-full top-0 h-10 pt-1 pb-1 pl-2 pr-2 select-none flex-jsc-end flex flex-shrink-0 items-center gap-4">
         {/* 拖拽区域 */}
-        <div className="absolute left-0 top-0 z-0 h-full w-full" data-tauri-drag-region onDoubleClick={async (e) => {
-          e.preventDefault()
-          e.stopPropagation()
-          await onMaximized()
-        }} />
+        <div
+          className="absolute left-0 top-0 z-0 h-full w-full"
+          data-tauri-drag-region
+          onDoubleClick={async e => {
+            e.preventDefault()
+            e.stopPropagation()
+            await onMaximized()
+          }}
+        />
 
         {/* LOGO
         <div className="z-1 flex items-center pl-2 cursor-pointer" onClick={props.onHome}>

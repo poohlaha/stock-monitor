@@ -56,7 +56,7 @@ const MarketDetailFundInfo = (props: IMarketDetailFundManagerProps): ReactElemen
   }
 
   const getTabsItems = (currentList: Array<Record<string, any>> = [], historyList: Array<Record<string, any>> = []) => {
-    const currentItem =  {
+    const currentItem = {
       key: '1',
       label: '在管基金',
       children: getFundList(currentList || [])
@@ -187,16 +187,11 @@ const MarketDetailFundInfo = (props: IMarketDetailFundManagerProps): ReactElemen
                   </div>
                 </div>
 
-                {
-                  tabsItems.length > 0 && (
-                        <div className="pb-4 pl-4 pr-4 flex-1">
-                          <Tabs
-                              className="m-ant-tabs"
-                              items={tabsItems}
-                          />
-                        </div>
-                    )
-                }
+                {tabsItems.length > 0 && (
+                  <div className="pb-4 pl-4 pr-4 flex-1">
+                    <Tabs className="m-ant-tabs" items={tabsItems} />
+                  </div>
+                )}
               </div>
             </div>
           )

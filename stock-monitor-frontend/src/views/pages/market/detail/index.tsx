@@ -118,7 +118,6 @@ const MarketDetail = (): ReactElement => {
   }
 
   const onInit = async (c: string = '', m: string = '', t: string = '') => {
-
     const queue = []
     /*
          queue.push(
@@ -334,7 +333,7 @@ const MarketDetail = (): ReactElement => {
 
   const getCurrency = () => {
     const currency = marketStore.openDataInfo?.realInfo?.currency || {}
-    const update =  marketStore.openDataInfo?.realInfo?.update || {}
+    const update = marketStore.openDataInfo?.realInfo?.update || {}
     return {
       ...currency,
       ...update
@@ -401,7 +400,7 @@ const MarketDetail = (): ReactElement => {
                   fiveInfo={{
                     buyInfoList: marketStore.openDataInfo?.realInfo?.buyList || [],
                     askInfoList: marketStore.openDataInfo?.realInfo?.askList || [],
-                    detailInfoList: marketStore.openDataInfo?.realInfo?.detailList || [],
+                    detailInfoList: marketStore.openDataInfo?.realInfo?.detailList || []
                   }}
                   resetSize={resetSize}
                   onTabChange={async value => {
