@@ -1,5 +1,5 @@
 /*!
-基金信息
+  基金信息
 */
 
 pub mod allocation;
@@ -28,18 +28,16 @@ use crate::fund::info::{FundInfo, FundInfoArgs};
 use crate::fund::manager::{FundManager, FundManagerArgs, FundManagerRelationArgs};
 use crate::fund::price::{FundPriceChange, FundPriceChangeArgs};
 use crate::fund::rate::{FundRate, FundRateArgs, FundRateDetailArgs};
-use crate::fund::record::{AssetSyncRecord, AssetSyncRecordArgs, AssetSyncType};
+use crate::fund::record::{AssetSyncRecord, AssetSyncType};
 use crate::fund::stage::{FundStagePerformance, FundStagePerformanceArgs};
 use crate::market::detail::MarketDetailInfo;
-use crate::market::Args;
 use crate::prepare::{get_success_response, HttpResponse};
+use crate::stock::variable::Args;
+use crate::utils::handler::Handler;
 use crate::utils::json::JsonUtils;
 use crate::utils::Utils;
-use crate::{BD_HTTP_URL_PREFIX2, LOGGER_PREFIX};
+use crate::BD_HTTP_URL_PREFIX2;
 use chrono::NaiveDate;
-use futures::future::ok;
-use log::info;
-use mysql::binlog::TransactionPayloadCompressionType::NONE;
 use rust_decimal::prelude::{FromPrimitive, ToPrimitive, Zero};
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
@@ -86,78 +84,46 @@ impl Fund {
      例: https://finance.baidu.com/opendata?query=021528&resource_id=5803&finClientType=pc
     */
     pub async fn query_info(args: &Args) -> Result<HttpResponse, String> {
-        if args.code.is_empty() {
-            return Ok(crate::prepare::get_error_response("`code` is empty !"));
-        }
-
-        if args.code.is_empty() {
-            return Ok(crate::prepare::get_error_response("`code` is empty !"));
-        }
-
-        // 1. 查询资产信息
-        let asset = Asset::get_by_code_type(&args.code, args._type.as_str()).await?;
-
-        // 2. 如果已存在, 判断是否需要同步
-        if let Some(asset) = asset {
-            let asset_id = asset.id.unwrap_or_default();
-            let need_sync = Self::check_need_sync(&asset_id, args._type.as_str()).await?;
-
-            if !need_sync {
-                info!("{} query info not need sync ...", LOGGER_PREFIX);
-                // 查询业绩走势
-                let data = Self::query_fund_info(&asset_id).await?;
-                return Ok(data);
-            }
-        }
-
-        // 3. 不存在则同步, 请求百度接口
         let url = format!("{}opendata?query={}&resource_id=5803&finClientType=pc", BD_HTTP_URL_PREFIX2, args.code);
-        let response = Utils::get_response(&url).await;
-        match response {
-            Ok(data) => {
-                // 资产信息, 从 tplData -> result 中取
-                let list = JsonUtils::get_array_index(&data, 0);
-                let result = JsonUtils::get_path(&list, &["DisplayData", "resultData", "tplData", "result"]).unwrap_or(&Value::Null);
-                if JsonUtils::is_empty(result) {
-                    return Ok(get_success_response(Some(data)));
-                }
-
-                // 插入资产
-                let asset_id = Self::insert_asset_data(args, result).await?;
-
-                if !asset_id.is_empty() {
-                    // 插入涨跌幅
-                    let _ = Self::insert_price_change(&asset_id, result).await?;
-
-                    // 插入因子数据
-                    let _ = Self::insert_factor(&asset_id, result).await?;
-
-                    // 插入基金阶段表现
-                    let _ = Self::insert_stage(&asset_id, result).await?;
-
-                    // 插入基金规模历史、持仓明细
-                    let _ = Self::insert_allocation_history_holding(&asset_id, result).await?;
-
-                    // 插入基金经理
-                    let _ = Self::insert_manager(&asset_id, result).await?;
-
-                    // 插入费率
-                    let _ = Self::insert_rate(&asset_id, result).await?;
-                }
-
-                // 插入成功后更新`同步记录表`
-                AssetSyncRecord::update(&asset_id, AssetSyncType::Fund.as_str()).await?;
-
-                // 插入业绩走势曲线
-                let _ = MarketDetailInfo::query_fund_graph(&args.code, "ai", "").await;
-
-                // 组装数据
-                let data = Self::query_fund_info(&asset_id).await?;
-
-                Ok(data)
-            }
-            Err(err) => Ok(crate::prepare::get_error_response(&err)),
+        let data = Utils::get_response(&url).await?;
+        // 资产信息, 从 tplData -> result 中取
+        let list = JsonUtils::get_array_index(&data, 0);
+        let result = JsonUtils::get_path(&list, &["DisplayData", "resultData", "tplData", "result"]).unwrap_or(&Value::Null);
+        if JsonUtils::is_empty(result) {
+            return Ok(get_success_response(None));
         }
+
+        // 插入资产
+        let asset_id = Self::insert_asset_data(args, result).await?;
+
+        if !asset_id.is_empty() {
+            // 插入涨跌幅
+            let _ = Self::insert_price_change(&asset_id, result).await?;
+
+            // 插入因子数据
+            let _ = Self::insert_factor(&asset_id, result).await?;
+
+            // 插入基金阶段表现
+            let _ = Self::insert_stage(&asset_id, result).await?;
+
+            // 插入基金规模历史、持仓明细
+            let _ = Self::insert_allocation_history_holding(&asset_id, result).await?;
+
+            // 插入基金经理
+            let _ = Self::insert_manager(&asset_id, result).await?;
+
+            // 插入费率
+            let _ = Self::insert_rate(&asset_id, result).await?;
+        }
+
+        // 插入成功后更新`同步记录表`
+        AssetSyncRecord::update(&asset_id, AssetSyncType::Fund.as_str()).await?;
+
+        // 插入业绩走势曲线
+        let _ = MarketDetailInfo::query_fund_graph(&args.code, "ai", "").await;
+
+        // 组装数据
+        Self::query_fund_info(&asset_id).await
     }
 
     // 插入资产信息
@@ -174,7 +140,7 @@ impl Fund {
             id: None,
             code: args.code.to_string(),
             name: JsonUtils::get_string(result, "title"),
-            asset_type: args._type.as_str().to_string(),
+            asset_type: args.market_type.as_str().to_string(),
             market: args.market.to_string(),
             exchange: exchange.to_string(),
             disclosure: None,
@@ -319,9 +285,9 @@ impl Fund {
             }
 
             let period_name = array[0].as_str().unwrap_or("").to_string();
-            let price_change = array[1].as_str().map(Self::parse_percent).unwrap_or_default();
+            let price_change = array[1].as_str().map(Handler::parse_percent).unwrap_or_default();
 
-            let average_change = array[2].as_str().map(Self::parse_percent).unwrap_or_default();
+            let average_change = array[2].as_str().map(Handler::parse_percent).unwrap_or_default();
 
             let rank_text = array[3].as_str().unwrap_or("");
 
@@ -553,7 +519,7 @@ impl Fund {
             }
 
             let target_name = array[0].as_str().unwrap_or("").to_string();
-            let proportion = Self::parse_percent(array[1].as_str().unwrap_or(""));
+            let proportion = Handler::parse_percent(array[1].as_str().unwrap_or(""));
 
             args_list.push(FundHoldingArgs {
                 id: None,
@@ -600,8 +566,8 @@ impl Fund {
             let name = obj.get("name").and_then(|v| v.as_str()).unwrap_or("").to_string();
             let code = obj.get("code").and_then(|v| v.as_str()).unwrap_or("").to_string();
             let market = obj.get("market").and_then(|v| v.as_str()).unwrap_or("").to_string();
-            let price_change = Self::parse_percent(obj.get("proportionRatio").and_then(|v| v.as_str()).unwrap_or(""));
-            let proportion = Self::parse_percent(obj.get("positionProportion").and_then(|v| v.as_str()).unwrap_or(""));
+            let price_change = Handler::parse_percent(obj.get("proportionRatio").and_then(|v| v.as_str()).unwrap_or(""));
+            let proportion = Handler::parse_percent(obj.get("positionProportion").and_then(|v| v.as_str()).unwrap_or(""));
 
             args_list.push(FundHoldingArgs {
                 id: None,
@@ -646,7 +612,7 @@ impl Fund {
             };
 
             let industry_name = obj.get("text").and_then(|v| v.as_str()).unwrap_or("").to_string();
-            let proportion = Self::parse_percent(obj.get("value").and_then(|v| v.as_str()).unwrap_or(""));
+            let proportion = Handler::parse_percent(obj.get("value").and_then(|v| v.as_str()).unwrap_or(""));
 
             args_list.push(FundIndustryAllocationArgs {
                 id: None,
@@ -798,12 +764,12 @@ impl Fund {
                 company: obj.get("corpName").and_then(|v| v.as_str()).unwrap_or("").to_string(),
                 description: obj.get("description").and_then(|v| v.as_str()).unwrap_or("").to_string(),
                 resume: obj.get("managerResume").and_then(|v| v.as_str()).unwrap_or("").to_string(),
-                working_years: Self::parse_decimal(obj.get("workingYears").and_then(|v| v.as_str()).unwrap_or("")),
-                manage_scale: Self::parse_decimal(obj.get("manageScale").and_then(|v| v.as_str()).unwrap_or("")),
-                earning_rate: Self::parse_decimal(obj.get("earningRate").and_then(|v| v.as_str()).unwrap_or("")),
-                average_return: Self::parse_decimal(obj.get("aveAnn").and_then(|v| v.as_str()).unwrap_or("")),
-                max_drawdown: Self::parse_decimal(obj.get("maxDrawdown").and_then(|v| v.as_str()).unwrap_or("")),
-                top_report: Self::parse_decimal(obj.get("topReport").and_then(|v| v.as_str()).unwrap_or("")),
+                working_years: Handler::parse_decimal(obj.get("workingYears").and_then(|v| v.as_str()).unwrap_or("")),
+                manage_scale: Handler::parse_decimal(obj.get("manageScale").and_then(|v| v.as_str()).unwrap_or("")),
+                earning_rate: Handler::parse_decimal(obj.get("earningRate").and_then(|v| v.as_str()).unwrap_or("")),
+                average_return: Handler::parse_decimal(obj.get("aveAnn").and_then(|v| v.as_str()).unwrap_or("")),
+                max_drawdown: Handler::parse_decimal(obj.get("maxDrawdown").and_then(|v| v.as_str()).unwrap_or("")),
+                top_report: Handler::parse_decimal(obj.get("topReport").and_then(|v| v.as_str()).unwrap_or("")),
                 create_time: Some(time.clone()),
                 update_time: None,
             });
@@ -885,7 +851,7 @@ impl Fund {
                         id: Some(Uuid::new_v4().to_string()),
                         rate_id: rate_id.clone(),
                         rate_measure: sub["rateMeasure"].as_str().unwrap_or("").to_string(),
-                        unit_rate: Self::parse_decimal(sub["unitRate"].as_str().unwrap_or("")),
+                        unit_rate: Handler::parse_decimal(sub["unitRate"].as_str().unwrap_or("")),
                         description: sub["desc"].as_str().unwrap_or("").to_string(),
                         create_time: Some(time.clone()),
                         update_time: None,
@@ -958,7 +924,7 @@ impl Fund {
                     asset_id: asset_id.to_string(),
                     series_type: series_type.to_string(),
                     report_date,
-                    value: Self::parse_decimal(&value),
+                    value: Handler::parse_decimal(&value),
                     create_time: None,
                     update_time: None,
                 });
@@ -1018,15 +984,6 @@ impl Fund {
         }
 
         FundCurve::batch_nav_add(asset_id, args_list).await
-    }
-
-    fn parse_percent(value: &str) -> Decimal {
-        value.trim_end_matches('%').parse::<Decimal>().unwrap_or(Decimal::ZERO)
-    }
-
-    fn parse_decimal(value: &str) -> Decimal {
-        let value = value.replace("%/年", "").replace("%年", "").replace("%", "").replace("亿", "").replace("年", "").replace("+", "");
-        Decimal::from_str(&value).unwrap_or_default()
     }
 
     fn build_manager_relation(manager_id: &str, asset_id: &str, fund: &Value, manage_type: i8, time: &str) -> FundManagerRelationArgs {
@@ -1090,20 +1047,6 @@ impl Fund {
         (start, end_date)
     }
 
-    // 判断是否需要同步
-    async fn check_need_sync(asset_id: &str, sync_type: &str) -> Result<bool, String> {
-        let record = AssetSyncRecord::get(asset_id, sync_type).await?;
-        match record {
-            // 第一次同步
-            None => Ok(true),
-            Some(record) => {
-                let today_start = chrono::Local::now().date_naive().and_hms_opt(0, 0, 0).unwrap();
-                // 最后同步时间早于今天开始，需要同步
-                Ok(record.sync_time < today_start)
-            }
-        }
-    }
-
     // 统一转成亿元
     fn parse_cn_amount(value: &str) -> Option<Decimal> {
         let value = value.trim();
@@ -1131,7 +1074,7 @@ impl Fund {
     }
 
     // 查询所有信息
-    async fn query_fund_info(asset_id: &str) -> Result<HttpResponse, String> {
+    pub async fn query_fund_info(asset_id: &str) -> Result<HttpResponse, String> {
         if asset_id.is_empty() {
             return Err(Error::Error(String::from("`asset_id` is empty!")).to_string());
         }

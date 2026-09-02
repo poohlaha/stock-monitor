@@ -5,7 +5,7 @@
  */
 import React, { ReactElement, useState } from 'react'
 import { observer } from 'mobx-react-lite'
-import { ShareLine } from 'time-k-line'
+import { ShareLine } from '../../../time-k-line'
 import Utils from '@utils/utils'
 import { getColor } from '@pages/utils'
 
@@ -33,6 +33,7 @@ const MarketDetailTimeline = (props: IMarketDetailTimelineProps): ReactElement =
   const [weekEndIndex, setWeekEndIndex] = useState(count)
   const [monthEndIndex, setMonthEndIndex] = useState(count)
   const [isCollapse, setIsCollapse] = useState(false)
+  const [tabActiveIndex, setTabActiveIndex] = useState(0)
 
   // 获取盘口信息
   const getPankouInfo = () => {
@@ -275,6 +276,10 @@ const MarketDetailTimeline = (props: IMarketDetailTimelineProps): ReactElement =
       return 0
     }
 
+    if (tabActiveIndex !== 0) {
+      return props.size?.width
+    }
+
     if (isCollapse) {
       return props.size?.width - 20
     }
@@ -293,7 +298,8 @@ const MarketDetailTimeline = (props: IMarketDetailTimelineProps): ReactElement =
             style={{ width: getWidth(), height: props.size?.height || 0, background: 'white' }}
           >
             <div className="flex-align-center h100" style={{ width: getWidth() }}>
-              {getFloatStockCommentary()}
+              {tabActiveIndex === 0 && getFloatStockCommentary()}
+
               {props.timelineList.length > 0 && (
                 <ShareLine
                   width={getWidth()}
@@ -333,9 +339,11 @@ const MarketDetailTimeline = (props: IMarketDetailTimelineProps): ReactElement =
                     onGetMoreData: onWeekGetMonthData
                   }}
                   tabs={{
-                    activeIndex: 0,
+                    activeIndex: tabActiveIndex,
                     onTabClick: async (index: number, item: { [K: string]: any }) => {
                       console.log('On Tab Click, index: ', index, ', item: ', item)
+                      setTabActiveIndex(index)
+                      props.resetSize?.()
                       props.onTabChange?.(item.value)
                     }
                   }}
@@ -364,7 +372,7 @@ const MarketDetailTimeline = (props: IMarketDetailTimelineProps): ReactElement =
               )}
             </div>
 
-            {getFiveBuySale()}
+            {tabActiveIndex === 0 && getFiveBuySale()}
           </div>
         </div>
       </div>

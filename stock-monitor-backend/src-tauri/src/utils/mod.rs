@@ -13,6 +13,7 @@ use std::sync::OnceLock;
 pub mod baidu;
 pub(crate) mod cache;
 pub mod file;
+pub mod handler;
 pub mod json;
 
 pub struct Utils;
@@ -87,7 +88,7 @@ impl Utils {
                     }
                 };
 
-                info!("{} response : {:#?}", LOGGER_PREFIX, body);
+                // info!("{} response : {:#?}", LOGGER_PREFIX, body);
 
                 let data = match body.get("Result") {
                     Some(value) => value.clone(),

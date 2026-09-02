@@ -180,33 +180,34 @@ const MarketDetail = (): ReactElement => {
 
       queue.push(
         new Promise(async resolve => {
-          const res = await marketStore.getTimelineData(c, m, t)
+          const res = await marketStore.getStockInfo(c, m, t)
           resolve(res)
         })
       )
 
       queue.push(
         new Promise(async resolve => {
-          const res = await marketStore.onGetOtherTimelineData(c, m, t, 'kline', 'day')
+          const res = await marketStore.onGetKLineData(c, m, t, 'kline', 'day')
           resolve(res)
         })
       )
 
       queue.push(
         new Promise(async resolve => {
-          const res = await marketStore.onGetOtherTimelineData(c, m, t, 'kline', 'week')
+          const res = await marketStore.onGetKLineData(c, m, t, 'kline', 'week')
           resolve(res)
         })
       )
 
       queue.push(
         new Promise(async resolve => {
-          const res = await marketStore.onGetOtherTimelineData(c, m, t, 'kline', 'month')
+          const res = await marketStore.onGetKLineData(c, m, t, 'kline', 'month')
           resolve(res)
         })
       )
     }
 
+    /*
     if (t === 'stock') {
       queue.push(
         new Promise(async resolve => {
@@ -215,6 +216,7 @@ const MarketDetail = (): ReactElement => {
         })
       )
     }
+     */
 
     await marketStore.batchSend(queue)
 
@@ -293,7 +295,7 @@ const MarketDetail = (): ReactElement => {
 
   useEffect(() => {
     if (marketStore.isTrade && type !== 'fund') {
-      startTimelineTimer(code, market, type)
+      // startTimelineTimer(code, market, type)
     }
 
     return () => {
@@ -330,9 +332,19 @@ const MarketDetail = (): ReactElement => {
     return basicInfo
   }
 
+  const getCurrency = () => {
+    const currency = marketStore.openDataInfo?.realInfo?.currency || {}
+    const update =  marketStore.openDataInfo?.realInfo?.update || {}
+    return {
+      ...currency,
+      ...update
+    }
+  }
+
   const render = () => {
     const priceChange: Array<Record<string, any>> = marketStore.openDataInfo?.priceChange || [] // 涨跌幅
-    let basicInfo: Record<string, any> = getBasicInfo(priceChange || [])
+    const basicInfo: Record<string, any> = getBasicInfo(priceChange || [])
+    const currency = getCurrency()
 
     const asset = basicInfo.asset || {} // 资产信息
     const ex = Utils.isBlank(exchange || '') ? asset.exchange || '' : exchange || ''
@@ -351,9 +363,9 @@ const MarketDetail = (): ReactElement => {
               name={asset.name || ''}
               code={asset.code || ''}
               exchange={ex}
-              tagList={marketStore.tagList || []}
               type={type}
               basicInfo={basicInfo}
+              currency={currency}
               onAddSelection={async () => {
                 await marketStore.onGetWatchGroupList(() => {
                   setOnOpenSelection(true)
@@ -376,7 +388,7 @@ const MarketDetail = (): ReactElement => {
                 />
               ) : (
                 <MarketDetailTimeline
-                  pankouInfo={marketStore.pankouInfo || {}}
+                  pankouInfo={marketStore.openDataInfo?.realInfo?.panKou || {}}
                   size={size}
                   timelineList={marketStore.timelineList || []}
                   fiveDayList={marketStore.fiveDayList || []}
@@ -386,13 +398,36 @@ const MarketDetail = (): ReactElement => {
                   xLabels={marketStore.xLabels || []}
                   preClosePrice={marketStore.preClosePrice || 0}
                   floatStockCommentary={marketStore.floatStockCommentary || []}
-                  fiveInfo={marketStore.pankouInfo?.fiveInfo || {}}
+                  fiveInfo={{
+                    buyInfoList: marketStore.openDataInfo?.realInfo?.buyList || [],
+                    askInfoList: marketStore.openDataInfo?.realInfo?.askList || [],
+                    detailInfoList: marketStore.openDataInfo?.realInfo?.detailList || [],
+                  }}
                   resetSize={resetSize}
                   onTabChange={async value => {
                     console.log('timelineList: ', marketStore.timelineList)
-                    if (value === 'five') {
-                      await marketStore.onGetOtherTimelineData(code, market, type, 'fiveday')
+                    if (value === 'time') {
+                      await marketStore.getStockInfo(code, market, type)
+                      return
                     }
+
+                    if (value === 'five') {
+                      await marketStore.onGetKLineData(code, market, type, 'fiveday', '')
+                      return
+                    }
+
+                    /*
+                    let klineType = value || ''
+                    if (value === 'dailyK') {
+                      klineType = 'day'
+                    } else if (value === 'weekK') {
+                      klineType = 'week'
+                    } else if (value === 'monthK') {
+                      klineType = 'month'
+                    }
+
+                    await marketStore.onGetKLineData(code, market, type, 'kline', klineType)
+                     */
                   }}
                 />
               )}

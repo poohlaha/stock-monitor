@@ -711,7 +711,7 @@ const MarketDetailStock = (props: IMarketDetailStockProps): ReactElement => {
                     </span>
           
                     <span style="color:${color}">
-                      ${value.toFixed(2)}
+                      ${(value || 0).toFixed(2)}
                     </span>
                   </div>
                 `

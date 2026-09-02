@@ -7,7 +7,7 @@ use crate::database::helper::DBHelper;
 use crate::error::Error;
 use crate::fund::info::FundInfo;
 use crate::LOGGER_PREFIX;
-use chrono::{Datelike, Local, Months, NaiveDate};
+use chrono::{Datelike, Local, NaiveDate};
 use log::info;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};

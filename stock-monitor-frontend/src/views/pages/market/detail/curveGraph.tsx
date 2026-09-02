@@ -148,7 +148,7 @@ const MarketDetailCurveGraph = (props: IMarketDetailCurveGraphProps): ReactEleme
                 {
                   type: 'text',
                   style: {
-                    text: `${value.toFixed(2)}%`,
+                    text: `${(value || 0).toFixed(2)}%`,
                     x: coord[0] + width + 8,
                     y: coord[1] + 10,
                     textVerticalAlign: 'middle'
@@ -276,7 +276,7 @@ const MarketDetailCurveGraph = (props: IMarketDetailCurveGraphProps): ReactEleme
         yoy = ((Number(item.scale) - Number(lastYearItem.scale)) / Number(item.scale)) * 100
       }
 
-      return Number(yoy.toFixed(2))
+      return Number((yoy || 0).toFixed(2))
     })
 
     const chart = echarts.init(scaleBarChartRef.current)

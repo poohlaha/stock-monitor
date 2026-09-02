@@ -5,7 +5,7 @@
 use crate::asset::tag::{AssetTag, AssetTagArgs};
 use crate::database::helper::DBHelper;
 use crate::error::Error;
-use crate::prepare::HttpResponse;
+use crate::fund::record::AssetSyncRecord;
 use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, MySql};
 use uuid::Uuid;
@@ -88,7 +88,40 @@ impl Asset {
 
                 id
             }
-            Some(asset) => asset.id.unwrap_or_default(),
+            Some(asset) => {
+                let id = asset.id.unwrap_or_default();
+                let logo = asset_args.logo.as_deref().unwrap_or("");
+                let disclosure = asset_args.disclosure.as_deref().unwrap_or("");
+
+                let asset_query = sqlx::query::<MySql>(
+                    r#"
+                        UPDATE asset
+                        SET
+                            code = ?,
+                            name = ?,
+                            asset_type = ?,
+                            market = ?,
+                            exchange = ?,
+                            logo = ?,
+                            disclosure = ?,
+                            update_time = ?
+                        WHERE id = ?
+                    "#,
+                )
+                .bind(&asset_args.code)
+                .bind(&asset_args.name)
+                .bind(&asset_args.asset_type)
+                .bind(&asset_args.market)
+                .bind(&asset_args.exchange)
+                .bind(logo)
+                .bind(disclosure)
+                .bind(&create_time)
+                .bind(id.clone());
+
+                query_list.push(asset_query);
+
+                id
+            }
         };
 
         let delete_query = sqlx::query::<MySql>(
@@ -225,5 +258,19 @@ impl Asset {
 
         let tags = AssetTag::get_by_asset_id(asset_id).await?;
         Ok(Some(AssetDetailArgs { asset, tags }))
+    }
+
+    // 判断是否需要同步
+    pub async fn check_need_sync(asset_id: &str, sync_type: &str) -> Result<bool, String> {
+        let record = AssetSyncRecord::get(asset_id, sync_type).await?;
+        match record {
+            // 第一次同步
+            None => Ok(true),
+            Some(record) => {
+                let today_start = chrono::Local::now().date_naive().and_hms_opt(0, 0, 0).unwrap();
+                // 最后同步时间早于今天开始，需要同步
+                Ok(record.sync_time < today_start)
+            }
+        }
     }
 }

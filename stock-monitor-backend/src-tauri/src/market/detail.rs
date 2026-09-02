@@ -7,8 +7,9 @@ use crate::error::Error;
 use crate::fund::curve::{FundCurve, NavPeriod};
 use crate::fund::record::AssetSyncType;
 use crate::fund::Fund;
-use crate::market::{Args, MarketType};
 use crate::prepare::{get_success_response, HttpResponse};
+use crate::stock::variable::{Args, MarketType};
+use crate::stock::Stock;
 use crate::utils::json::JsonUtils;
 use crate::utils::Utils;
 use crate::{BD_HTTP_URL_PREFIX, BD_HTTP_URL_PREFIX2, LOGGER_PREFIX};
@@ -18,15 +19,57 @@ use serde_json::Value;
 pub struct MarketDetailInfo {}
 
 impl MarketDetailInfo {
+    // 查询资产信息
+    pub async fn query_info(args: &Args) -> Result<HttpResponse, String> {
+        if args.code.is_empty() {
+            return Ok(crate::prepare::get_error_response("`code` is empty !"));
+        }
+
+        if args.market_type.as_str().is_empty() {
+            return Ok(crate::prepare::get_error_response("`type` is empty !"));
+        }
+
+        // 1. 查询资产信息
+        let asset = Asset::get_by_code_type(&args.code, args.market_type.as_str()).await?;
+
+        // 2. 如果已存在, 判断是否需要同步
+        if let Some(asset) = asset {
+            let asset_id = asset.id.unwrap_or_default();
+            let need_sync = Asset::check_need_sync(&asset_id, args.market_type.as_str()).await?;
+
+            if !need_sync {
+                info!("{} query info not need sync ...", LOGGER_PREFIX);
+                // 查询业绩走势
+                let data = Self::query_asset_info(&asset_id, args).await?;
+                return Ok(data);
+            }
+        }
+
+        // 3. 不存在或都需要同步
+        match args.market_type {
+            MarketType::Fund => Fund::query_info(args).await,
+            MarketType::Stock | MarketType::Etf => Stock::query_info(args).await,
+            MarketType::Unknown => Err(Error::Error(String::from("unknow asset type")).to_string()),
+        }
+    }
+
+    async fn query_asset_info(asset_id: &str, args: &Args) -> Result<HttpResponse, String> {
+        match args.market_type {
+            MarketType::Fund => Fund::query_fund_info(asset_id).await,
+            MarketType::Stock | MarketType::Etf => Stock::query_stock_info(asset_id, args, None).await,
+            MarketType::Unknown => Err(Error::Error(String::from("unknow asset type")).to_string()),
+        }
+    }
+
     // 查询持仓分布
     pub async fn query_position_distribution(args: &Args) -> Result<HttpResponse, String> {
         let mut url = String::new();
-        if args._type == MarketType::Etf {
+        if args.market_type == MarketType::Etf {
             url = format!(
                 "{}sapi/v1/constituents?code={}&financeType={}&market={}&bizType=etfDistribution&finClientType=pc",
                 BD_HTTP_URL_PREFIX,
                 args.code,
-                args._type.as_str(),
+                args.market_type.as_str(),
                 args.market
             );
         }
@@ -38,8 +81,8 @@ impl MarketDetailInfo {
     // 获取简况(基本信息, 成立日期等)
     pub async fn query_brief(args: &Args) -> Result<HttpResponse, String> {
         let mut url = String::new();
-        if args._type == MarketType::Etf {
-            url = format!("{}sapi/v1/basicinfo?code={}&financeType={}&market={}&finClientType=pc", BD_HTTP_URL_PREFIX, args.code, args._type.as_str(), args.market);
+        if args.market_type == MarketType::Etf {
+            url = format!("{}sapi/v1/basicinfo?code={}&financeType={}&market={}&finClientType=pc", BD_HTTP_URL_PREFIX, args.code, args.market_type.as_str(), args.market);
         }
 
         // info!("{} query brief url {}", LOGGER_PREFIX.cyan().bold(), url);
@@ -49,8 +92,14 @@ impl MarketDetailInfo {
     // 获取收益
     pub async fn query_income(args: &Args) -> Result<HttpResponse, String> {
         let mut url = String::new();
-        if args._type == MarketType::Etf {
-            url = format!("{}sapi/v1/rating?code={}&financeType={}&market={}&bizType=all&finClientType=pc", BD_HTTP_URL_PREFIX, args.code, args._type.as_str(), args.market);
+        if args.market_type == MarketType::Etf {
+            url = format!(
+                "{}sapi/v1/rating?code={}&financeType={}&market={}&bizType=all&finClientType=pc",
+                BD_HTTP_URL_PREFIX,
+                args.code,
+                args.market_type.as_str(),
+                args.market
+            );
         }
 
         // info!("{} query income url {}", LOGGER_PREFIX.cyan().bold(), url);

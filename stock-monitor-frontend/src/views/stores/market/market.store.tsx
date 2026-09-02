@@ -19,9 +19,8 @@ class MarketStore extends BaseStore {
 
   @observable basicInfo: Record<string, any> = {} // 基本信息
   @observable marketInfo: Record<string, any> = {}
-  @observable briefInfo: Record<string, any> = {} // 间况
-  @observable openDataInfo: Record<string, any> = {} // 间况
-  @observable pankouInfo: Record<string, any> = {} // 盘口信息
+  @observable briefInfo: Record<string, any> = {} // 简况
+  @observable openDataInfo: Record<string, any> = {} // 简况
   @observable tagList: Array<Record<string, any>> = [] // 行业标签
   @observable positionDistributionInfo: Record<string, any> = {} // 持仓信息
   @observable xLabels: Array<string> = [] // x 轴标签
@@ -465,7 +464,7 @@ class MarketStore extends BaseStore {
               ...(klineData.cur || {}),
               ...(klineData.update || {})
             }
-            w.data = this.getTimeData(klineData.newMarketData || {})
+            w.data = this.onGetTimeData(klineData.newMarketData || {})
             w.prices = w.data.map((item: Record<string, any> = {}) => Number(item.price))
           } else {
             // 基金
@@ -563,7 +562,7 @@ class MarketStore extends BaseStore {
             ...(klineData.cur || {}),
             ...(klineData.update || {})
           }
-          w.data = this.getTimeData(klineData.newMarketData || {})
+          w.data = this.onGetTimeData(klineData.newMarketData || {})
           w.prices = w.data.map((item: Record<string, any> = {}) => Number(item.price))
         }
       }
@@ -607,12 +606,42 @@ class MarketStore extends BaseStore {
     } else {
       return m.tradeStatus === 'TRADE' || f.tradeStatus === 'TRADE'
     }
-
-    return m.tradeStatus === 'TRADE'
   }
 
   /**
-   * 获取行情数据
+   * 获取股票/ETF详情
+   */
+  @action
+  async getStockInfo(code: string = '', market: string = '', type: string = '') {
+    if (Utils.isBlank(code || '')) {
+      return
+    }
+
+    try {
+      this.xLabels = []
+      let result: { [K: string]: any } =
+          (await invoke('query_stock_info_data', {
+            args: {
+              code,
+              market,
+              marketType: type,
+              queryType: 'minute',
+              klineType: ''
+            }
+          })) || {}
+      this.openDataInfo = this.handleResult(result) || {}
+      this.timelineList = this.onGetTimeData(this.openDataInfo?.realInfo?.marketData || {})
+      let panKou = this.openDataInfo?.realInfo?.panKou || []
+      this.preClosePrice = Number((panKou.find((l: Record<string, any> = {}) => l.ename === 'preClose') || {}).originValue || '0') // 昨收
+      return result || {}
+    } catch (e: any) {
+      this.loading = false
+      throw new Error(e)
+    }
+  }
+
+  /**
+   * 获取分时图数据
    */
   @action
   async getTimelineData(code: string = '', market: string = '', type: string = '') {
@@ -622,13 +651,13 @@ class MarketStore extends BaseStore {
 
     try {
       let result: { [K: string]: any } =
-        (await invoke('get_time_data', {
+        (await invoke('query_time_division', {
           args: {
             code,
             market,
-            type,
+            marketType: type,
             queryType: 'minute',
-            ktype: ''
+            klineType: ''
           }
         })) || {}
       let data = this.handleResult(result) || {}
@@ -649,7 +678,7 @@ class MarketStore extends BaseStore {
 
       // 盘口信息
       const pankouList = (data.pankouinfos || {}).list || []
-      this.pankouInfo = {
+      let pankouInfo = {
         open: pankouList.find((l: Record<string, any> = {}) => l.ename === 'open') || {}, // 今开
         high: pankouList.find((l: Record<string, any> = {}) => l.ename === 'high') || {}, // 最高
         volume: pankouList.find((l: Record<string, any> = {}) => l.ename === 'volume') || {}, // 成交量
@@ -679,8 +708,8 @@ class MarketStore extends BaseStore {
 
       // 分时图数据
       this.xLabels = []
-      this.timelineList = this.getTimeData(data.newMarketData || {})
-      this.preClosePrice = Number((this.pankouInfo?.preClose || {}).value || '0')
+      this.timelineList = this.onGetTimeData(data.newMarketData || {})
+      this.preClosePrice = Number((pankouInfo?.preClose || {}).value || '0')
       this.loading = false
       return result || {}
     } catch (e: any) {
@@ -690,61 +719,60 @@ class MarketStore extends BaseStore {
   }
 
   /**
-   * 获取其他分时图数据
+   * 获取五日/日K/周K/月K/季K/年K等数据
    */
-  async onGetOtherTimelineData(
+  async onGetKLineData(
     code: string = '',
     market: string = '',
     type: string = '',
     queryType: string = '',
-    ktype: string = ''
+    klineType: string = ''
   ) {
     if (Utils.isBlank(code || '')) {
       return
     }
 
     try {
+      this.xLabels = []
       let result: { [K: string]: any } =
-        (await invoke('get_time_data', {
+        (await invoke('query_kline_data', {
           args: {
             code,
             market,
-            type,
+            marketType: type,
             queryType,
-            ktype
+            klineType
           }
         })) || {}
       let data = this.handleResult(result) || {}
 
       // 五日数据
       if (queryType === 'fiveday') {
-        this.onGetFiveData(data.newMarketData || {})
+        this.onGetFiveData(data.kline || {})
       }
 
-      // 日K数据
+      // 日K/周K/月K等数据
       if (queryType === 'kline') {
-        let list = []
-        if (ktype === 'day') {
+        let list: Array<Record<string, any>> = this.onGetKLineResult(data.kline?.list || [])
+        if (klineType === 'day') {
           // @ts-ignore
-          this.klineList = this.onGetKlineData(data.newMarketData || {})
-          list = Utils.deepCopy(this.klineList || [])
+          this.klineList = list || []
+          console.log('klineList: ', this.klineList)
           this.klineList = (this.klineList || []).slice().reverse()
         }
 
-        if (ktype === 'week') {
+        if (klineType === 'week') {
           // @ts-ignore
-          this.weekList = this.onGetKlineData(data.newMarketData || {})
-          list = this.weekList || []
+          this.weekList = list || []
         }
 
-        if (ktype === 'month') {
+        if (klineType === 'month') {
           // @ts-ignore
-          this.monthList = this.onGetKlineData(data.newMarketData || {})
-          list = this.monthList || []
+          this.monthList = list || []
         }
 
         if (list.length > 0) {
-          this.preClosePrice = list[list.length - 1].close || 0
+          this.preClosePrice = Number(list[list.length - 1].close || 0)
         }
       }
 
@@ -759,7 +787,8 @@ class MarketStore extends BaseStore {
   /**
    * 获取分时图数据
    */
-  getTimeData(data: Record<string, any> = {}) {
+  onGetTimeData(data: Record<string, any> = {}) {
+    this.xLabels = data.cx || []
     if (Utils.isObjectNull(data || {})) {
       return []
     }
@@ -775,7 +804,7 @@ class MarketStore extends BaseStore {
     }
 
     // @ts-ignore
-    return this.onGetTimeResult(str) || []
+    return this.onParseTimeResult(str) || []
   }
 
   /**
@@ -786,18 +815,13 @@ class MarketStore extends BaseStore {
       return
     }
 
-    const marketData = data.marketData || []
-    if (marketData.length === 0) {
+    this.xLabels = data.xLabels || []
+    const klineList = data.list || []
+    if (klineList.length === 0) {
       return
     }
 
-    this.xLabels = data.cx || []
-
-    let list: Array<any> = []
-    for (let m of marketData) {
-      list = list.concat(this.onGetTimeResult(m.p || '') || [])
-    }
-
+    let list: Array<any> = this.onGetTimeResult(klineList)
     this.fiveDayList = list || []
     if (list.length > 0) {
       this.preClosePrice = list[list.length - 1].price || 0
@@ -808,11 +832,10 @@ class MarketStore extends BaseStore {
    * 获取日K数据
    */
   onGetKlineData(data: Record<string, any> = {}) {
+    this.xLabels = []
     if (Utils.isObjectNull(data || {})) {
       return []
     }
-
-    this.xLabels = []
 
     return this.onGetKlineResult(data.marketData || '') || []
   }
@@ -847,44 +870,94 @@ class MarketStore extends BaseStore {
   }
 
   /**
-   * 获取时间数据
+   * 解析时间数据
    */
-  onGetTimeResult(str: string = '') {
+  onParseTimeResult(str: string = '') {
     if (Utils.isBlank(str || '')) {
       return []
     }
 
     let list = str
-      .split(';')
-      .map((item: string = '') => {
-        const arr = item.split(',') || []
-        if (arr.length === 0) {
-          return {}
-        }
+        .split(';')
+        .map((item: string = '') => {
+          const arr = item.split(',') || []
+          if (arr.length === 0) {
+            return {}
+          }
 
-        return {
-          timestamp: Number(arr[0]) * 1000, // 接口是秒，需要转毫秒
-          price: Number(arr[2]), // 当前价格
-          volume: Number(arr[6]), // 成交量
-          turnover: Number(arr[7]), // 成交额
-          riseFall: arr[4], // 涨跌额
-          amplitude: Number(arr[5]) // 涨跌幅
-        }
-      })
-      .filter((item: any) => {
-        if (!item.timestamp) {
-          return false
-        }
+          return {
+            timestamp: Number(arr[0]) * 1000, // 接口是秒，需要转毫秒
+            price: Number(arr[2]), // 当前价格
+            volume: Number(arr[6]), // 成交量
+            turnover: Number(arr[7]), // 成交额
+            riseFall: arr[4], // 涨跌额
+            amplitude: Number(arr[5]) // 涨跌幅
+          }
+        })
+        .filter((item: any) => {
+          if (!item.timestamp) {
+            return false
+          }
 
-        const date = new Date(item.timestamp)
-        const hour = date.getHours()
-        const minute = date.getMinutes()
+          const date = new Date(item.timestamp)
+          const hour = date.getHours()
+          const minute = date.getMinutes()
 
-        // 只保留 09:30 - 15:00
-        return hour < 15 || (hour === 15 && minute === 0)
-      })
+          // 只保留 09:30 - 15:00
+          return hour < 15 || (hour === 15 && minute === 0)
+        })
 
     return list.filter((l: Record<string, any> = {}) => !Utils.isObjectNull(l || {})) || []
+  }
+
+  /**
+   * 获取时间数据
+   */
+  onGetTimeResult(klineList: Array<Record<any, any>> = []) {
+    if (klineList.length === 0) {
+      return []
+    }
+
+    let list = []
+    for(let kline of klineList) {
+      list.push({
+        timestamp: Number(kline.timestamp || 0) * 1000,
+        price: Number(kline.price || 0), // 当前价格
+        volume: Number(kline.volume || 0), // 成交量
+        turnover: Number(kline.amount || 0), // 成交额
+        riseFall: Number(kline.range || 0), // 涨跌额
+        amplitude: Number(kline.ratio || 0) // 涨跌幅
+      })
+    }
+
+    return list || []
+  }
+
+  /**
+   * 获取数据
+   */
+  onGetKLineResult(klineList: Array<Record<any, any>> = []) {
+    if (klineList.length === 0) {
+      return []
+    }
+
+    let list = []
+    for(let kline of klineList) {
+      list.push({
+        timestamp: Number(kline.timestamp || 0) * 1000,
+        open: Number(kline.open || 0), // 开盘价
+        high: Number(kline.high || 0), // 最高价
+        low: Number(kline.low || 0), // 最低价
+        close: Number(kline.close || 0), // 收盘价
+        price: Number(kline.price || 0), // 当前价格
+        volume: Number(kline.volume || 0), // 成交量
+        turnover: Number(kline.amount || 0), // 成交额
+        riseFall: Number(kline.range || 0), // 涨跌额
+        amplitude: Number(kline.ratio || 0) // 涨跌幅
+      })
+    }
+
+    return list || []
   }
 
   /**
@@ -1063,9 +1136,9 @@ class MarketStore extends BaseStore {
           args: {
             code,
             market,
-            type: 'stock',
+            marketType: 'stock',
             queryType: '',
-            ktype: ''
+            klineType: ''
           },
           flowType
         })) || {}
@@ -1093,9 +1166,9 @@ class MarketStore extends BaseStore {
           args: {
             code,
             market,
-            type: 'stock',
+            marketType: 'stock',
             queryType: '',
-            ktype: ''
+            klineType: ''
           }
         })) || {}
       const data = this.handleResult(result) || []
@@ -1121,9 +1194,9 @@ class MarketStore extends BaseStore {
           args: {
             code,
             market,
-            type: 'stock',
+            marketType: 'stock',
             queryType: '',
-            ktype: ''
+            klineType: ''
           }
         })) || {}
       const data = this.handleResult(result) || {}
@@ -1197,9 +1270,9 @@ class MarketStore extends BaseStore {
           args: {
             code,
             market,
-            type: 'stock',
+            marketType: 'stock',
             queryType: '',
-            ktype: ''
+            klineType: ''
           },
           companyCode,
           innerCode,
@@ -1380,9 +1453,9 @@ class MarketStore extends BaseStore {
           args: {
             code,
             market,
-            type: 'stock',
+            marketType: 'stock',
             queryType: '',
-            ktype: ''
+            klineType: ''
           }
         })) || {}
       const data = this.handleResult(result) || []
@@ -1405,9 +1478,9 @@ class MarketStore extends BaseStore {
           args: {
             code,
             market,
-            type: 'stock',
+            marketType: 'stock',
             queryType: '',
-            ktype: ''
+            klineType: ''
           }
         })) || {}
       const data = this.handleResult(result) || []
@@ -1430,9 +1503,9 @@ class MarketStore extends BaseStore {
           args: {
             code,
             market,
-            type: 'stock',
+            marketType: 'stock',
             queryType: '',
-            ktype: ''
+            klineType: ''
           }
         })) || {}
       const data = this.handleResult(result) || {}
@@ -1502,9 +1575,9 @@ class MarketStore extends BaseStore {
                 args: {
                   code: w.code,
                   market: w.market,
-                  type: w.type,
+                  marketType: w.type,
                   queryType: 'minute',
-                  ktype: ''
+                  klineType: ''
                 }
               })) || {}
 
@@ -1514,7 +1587,7 @@ class MarketStore extends BaseStore {
               ...(klineData.cur || {}),
               ...(klineData.update || {})
             }
-            w.data = this.getTimeData(klineData.newMarketData || {})
+            w.data = this.onGetTimeData(klineData.newMarketData || {})
             w.prices = w.data.map((item: Record<string, any> = {}) => Number(item.price))
           } else {
             // 基金
@@ -1522,10 +1595,10 @@ class MarketStore extends BaseStore {
               (await invoke('query_fund_info', {
                 args: {
                   code: w.code || '',
-                  assetType: w.type || '',
+                  marketType: w.type || '',
                   market: w.market || '',
                   queryType: '',
-                  ktype: '',
+                  klineType: '',
                   exchange: w.exhange || ''
                 }
               })) || {}
@@ -1596,7 +1669,6 @@ class MarketStore extends BaseStore {
     this.marketInfo = {}
     this.briefInfo = {}
     this.openDataInfo = {}
-    this.pankouInfo = {}
     this.tagList = []
     this.positionDistributionInfo = {}
     this.xLabels = []

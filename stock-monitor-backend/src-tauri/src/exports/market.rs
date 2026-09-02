@@ -2,22 +2,28 @@
 市场
 */
 
-use crate::fund::Fund;
 use crate::market::detail::MarketDetailInfo;
-use crate::market::stock::Stock;
-use crate::market::{Args, HotStockType, Market};
+use crate::market::Market;
 use crate::prepare::HttpResponse;
+use crate::stock::variable::{Args, HotStockType};
+use crate::stock::Stock;
 
 /// 获取分时图数据
 #[tauri::command]
-pub async fn get_time_data(args: Args) -> Result<HttpResponse, String> {
-    Stock::get_time_data(&args).await
+pub async fn query_time_division(args: Args) -> Result<HttpResponse, String> {
+    Stock::query_time_division(&args).await
+}
+
+/// 获取五日/日K/周K/月K/季K/年K等数据
+#[tauri::command]
+pub async fn query_kline_data(args: Args) -> Result<HttpResponse, String> {
+    Stock::query_kline_data(&args).await
 }
 
 /// 获取股票/Etf信息
 #[tauri::command]
-pub async fn query_eft_stock_info_data(args: Args) -> Result<HttpResponse, String> {
-    Stock::query_info(&args).await
+pub async fn query_stock_info_data(args: Args) -> Result<HttpResponse, String> {
+    MarketDetailInfo::query_info(&args).await
 }
 
 /// 查询市场情况, 交易中/交易结束
@@ -47,7 +53,7 @@ pub async fn query_income(args: Args) -> Result<HttpResponse, String> {
 /// 获取基金的信息
 #[tauri::command]
 pub async fn query_fund_info(args: Args) -> Result<HttpResponse, String> {
-    Fund::query_info(&args).await
+    MarketDetailInfo::query_info(&args).await
 }
 
 ///  查询基金曲线

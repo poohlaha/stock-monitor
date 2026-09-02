@@ -15,9 +15,9 @@ interface IMarketDetailTitleProps {
   name: string
   exchange: string
   code: string
-  tagList: Array<Record<string, any>>
   type: string
   basicInfo: Record<string, any>
+  currency: Record<string, any>
   onAddSelection: (name: string, item: Record<string, any>) => void
 }
 
@@ -85,27 +85,17 @@ const MarketDetailTitle = (props: IMarketDetailTitleProps): ReactElement => {
                   {props.exchange || ''}
                 </p>
                 <p className="ml-1 color-gray font-bold">{props.code || ''}</p>
-                {/* tags */}
-                <div className="tags ml-1 flex-align-center">
-                  {(tags || []).map((tag: Record<string, any> = {}, index: number) => {
-                    return (
-                      <p className="bg-red-500 rounded-md text-xs text-white pt-0.5 pb-0.5 pl-1 pr-1 mr-1" key={index}>
-                        {tag.name || ''}
-                      </p>
-                    )
-                  })}
-                </div>
 
                 {/* 行业等标签 */}
-                {(props.tagList || []).length > 0 && (
+                {(tags || []).length > 0 && (
                   <div className="flex-align-center">
-                    {(props.tagList || []).map((t: Record<string, any> = {}, index: number) => {
+                    {(tags || []).map((t: Record<string, any> = {}, index: number) => {
                       return (
                         <div className="flex-align-center ml-1 cursor-pointer" key={index}>
-                          {!Utils.isBlank(t.imageUrl || '') && (
-                            <img src={t.imageUrl || null} className="w-3 h-3 mr-1" />
+                          {!Utils.isBlank(t.img || '') && (
+                            <img src={t.img || null} className="w-3 h-3 mr-1" />
                           )}
-                          <p>{t.desc || ''}</p>
+                          <p>{t.name || ''}</p>
                         </div>
                       )
                     })}
@@ -119,22 +109,22 @@ const MarketDetailTitle = (props: IMarketDetailTitleProps): ReactElement => {
           {props.type !== 'fund' && (
             <div className="mt-4 flex-direction-column">
               <div className="flex-align-end">
-                <p className={`text-4xl font-bold ${getRateClassName(props.basicInfo?.ratio)}`}>
-                  {props.basicInfo?.price || 0}
+                <p className={`text-4xl font-bold ${getRateClassName(props.currency?.ratio)}`}>
+                  {props.currency?.price || 0}
                 </p>
-                <p className={`ml-1 ${getRateClassName(props.basicInfo?.ratio)}`}>元</p>
-                <p className={`ml-2 font-bold ${getRateClassName(props.basicInfo?.increase)}`}>
-                  {props.basicInfo?.increase || 0}
+                <p className={`ml-1 ${getRateClassName(props.currency?.ratio)}`}>元</p>
+                <p className={`ml-2 font-bold ${getRateClassName(props.currency?.increase)}`}>
+                  {props.currency?.increase || 0}
                 </p>
-                <p className={`ml-2 font-bold ${getRateClassName(props.basicInfo?.ratio)}`}>
-                  {props.basicInfo?.ratio || 0}
+                <p className={`ml-2 font-bold ${getRateClassName(props.currency?.ratio)}`}>
+                  {props.currency?.ratio || 0}
                 </p>
               </div>
 
               <div className="flex-align-center mt-2">
-                <p className="text-purple-500">{props.basicInfo?.tradeStatusCN || ''}</p>
-                <p className="ml-1">{Utils.formatDate(new Date())}</p>
-                <p className="ml-1">{props.basicInfo?.timezone || ''}</p>
+                <p className="text-purple-500">{props.currency?.tradeStatusCN || ''}</p>
+                <p className="ml-1">{props.currency?.text || Utils.formatDate(new Date())}</p>
+                <p className="ml-1">{props.currency?.timezone || ''}</p>
               </div>
             </div>
           )}

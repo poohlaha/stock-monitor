@@ -18,6 +18,7 @@ mod helper;
 mod market;
 mod my;
 mod search;
+pub mod stock;
 
 use lazy_static::lazy_static;
 use rayon::ThreadPoolBuilder;
@@ -26,9 +27,9 @@ use crate::database::Database;
 use crate::system::tray::Tray;
 use crate::utils::baidu::{BaiduAuth, BaiduToken, BAIDU_REFRESHING, BAIDU_TOKEN, BAIDU_TOKEN_NOTIFY};
 use exports::market::{
-    get_time_data, query_breaking_news, query_brief, query_by_url, query_company_info, query_company_profile, query_economic_indicators, query_eft_stock_info_data, query_executive_changes, query_financial_calendar, query_float_stock_commentary,
-    query_fund_graph, query_fund_info, query_hot_indicators, query_hot_stock_list, query_income, query_industrial_chain, query_industry_fund_flow, query_industry_hot, query_main_money_in, query_market_status, query_news, query_popular_section,
-    query_position_distribution, query_related_targets, query_stock_analysis, query_stock_rank, query_stock_rf_distribution, query_worldwide, query_worldwide_market_center,
+    query_breaking_news, query_brief, query_by_url, query_company_info, query_company_profile, query_economic_indicators, query_executive_changes, query_financial_calendar, query_float_stock_commentary, query_fund_graph, query_fund_info,
+    query_hot_indicators, query_hot_stock_list, query_income, query_industrial_chain, query_industry_fund_flow, query_industry_hot, query_kline_data, query_main_money_in, query_market_status, query_news, query_popular_section,
+    query_position_distribution, query_related_targets, query_stock_analysis, query_stock_info_data, query_stock_rank, query_stock_rf_distribution, query_time_division, query_worldwide, query_worldwide_market_center,
 };
 use exports::my::{add_to_my_watchlist, find_watch_list_by_code, find_watch_list_by_codes, get_my_group_list, get_my_group_watch_list, my_group_add, my_group_delete, my_group_update, query_my_watch_list_by_group_id, query_watchlist};
 use exports::search::search;
@@ -185,7 +186,7 @@ async fn main() {
             add_to_my_watchlist,
             find_watch_list_by_code,
             find_watch_list_by_codes,
-            get_time_data,
+            query_time_division,
             query_market_status,
             query_position_distribution,
             query_income,
@@ -221,7 +222,8 @@ async fn main() {
             my_group_delete,
             get_my_group_watch_list,
             query_my_watch_list_by_group_id,
-            query_eft_stock_info_data
+            query_stock_info_data,
+            query_kline_data
         ])
         .build(tauri::generate_context!())
         .expect("error while running tauri application");

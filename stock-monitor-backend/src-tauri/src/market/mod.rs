@@ -3,65 +3,14 @@
 */
 
 use crate::prepare::HttpResponse;
+use crate::stock::variable::{Args, HotStockType};
 use crate::utils::Utils;
 use crate::{BD_HTTP_URL_PREFIX, LOGGER_PREFIX};
 use colored::Colorize;
 use log::info;
 use serde::{Deserialize, Serialize};
-use std::fmt::Display;
 
 pub mod detail;
-pub mod stock;
-
-#[derive(Default, Debug, Clone, Serialize, Deserialize)]
-pub struct Args {
-    pub market: String,
-    pub code: String,
-    #[serde(rename = "type")]
-    pub _type: MarketType,
-    #[serde(rename = "queryType")]
-    pub query_type: Option<String>, // 查询类型: minute, fiveday, kline
-    pub ktype: Option<String>, // day, week, month, quarter, year
-    pub exchange: Option<String>,
-}
-
-// 类型
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
-#[serde(rename_all = "lowercase")]
-pub enum MarketType {
-    Stock,
-    Etf,
-    Fund,
-    #[default]
-    Unknown,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub enum HotStockType {
-    /// 热股
-    Stock,
-    /// 热搜
-    Search,
-    /// 版块
-    Plate,
-    /// 舆情
-    Sentiment,
-    /// 诊股
-    Analysis,
-    /// 机构
-    Institution,
-}
-
-impl MarketType {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            MarketType::Stock => "stock",
-            MarketType::Etf => "etf",
-            MarketType::Fund => "fund",
-            MarketType::Unknown => "",
-        }
-    }
-}
 
 pub struct Market {}
 
@@ -179,7 +128,7 @@ impl Market {
             BD_HTTP_URL_PREFIX,
             args.market,
             args.code,
-            args._type.as_str()
+            args.market_type.as_str()
         );
         Utils::get_time_response(&url).await
     }
@@ -189,7 +138,13 @@ impl Market {
       例: https://finance.pae.baidu.com/api/stockwidget?code=300502&market=ab&type=stock&widgetType=company&finClientType=pc
     */
     pub async fn query_company_profile(args: &Args) -> Result<HttpResponse, String> {
-        let url = format!("{}/api/stockwidget?market={}&code={}&type={}&widgetType=company&finClientType=pc", BD_HTTP_URL_PREFIX, args.market, args.code, args._type.as_str());
+        let url = format!(
+            "{}/api/stockwidget?market={}&code={}&type={}&widgetType=company&finClientType=pc",
+            BD_HTTP_URL_PREFIX,
+            args.market,
+            args.code,
+            args.market_type.as_str()
+        );
         Utils::get_time_response(&url).await
     }
 
