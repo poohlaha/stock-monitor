@@ -66,18 +66,23 @@ impl AssetSyncRecord {
     }
 
     pub async fn update(asset_id: &str, sync_type: &str) -> Result<bool, String> {
+        let time = handlers::utils::Utils::get_date(None);
+
         let query = sqlx::query::<MySql>(
             r#"
-                INSERT INTO asset_sync_record(id, asset_id, sync_type, sync_time, create_time)
-                VALUES (?, ?, ?, NOW(), NOW())
+                INSERT INTO asset_sync_record(id, asset_id, sync_type, sync_time, create_time, update_time)
+                VALUES (?, ?, ?, ?, ?, ?)
                 ON DUPLICATE KEY UPDATE
-                sync_time = NOW(),
-                update_time = NOW()
+                sync_time = VALUES(sync_time),
+                update_time = VALUES(update_time)
             "#,
         )
         .bind(Uuid::new_v4().to_string())
         .bind(asset_id)
-        .bind(sync_type);
+        .bind(sync_type)
+        .bind(time.clone())
+        .bind(time.clone())
+        .bind(time);
 
         DBHelper::execute_crud(query).await
     }

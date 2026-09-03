@@ -36,6 +36,8 @@ futures = "0.3.30"
 mysql = "25.0.1"
 sqlx = { version = "0.8.0", features = ["mysql", "runtime-async-std", "chrono", "rust_decimal"] }
 dotenvy = "0.15"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
 # 文件和系统
 cocoa = "0.26"

@@ -9,6 +9,7 @@ use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, MySql};
 use std::collections::HashMap;
+use futures::TryFutureExt;
 use uuid::Uuid;
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize, FromRow)]
@@ -139,17 +140,29 @@ impl FundManager {
             return Ok(false);
         }
 
+        let mut manager_id_map = HashMap::new();
         let mut query_list = Vec::new();
         let time = handlers::utils::Utils::get_date(None);
 
         // 1. 基金经理表
         for args in args_list {
+            let manager = Self::get_by_code(&args.manager_code).await?;
+            let old_id = args.id.clone().unwrap_or_default();
+            let manager_id = match manager {
+                None => {
+                    args.id.clone().unwrap_or_else(|| Uuid::new_v4().to_string())
+                }
+                Some(manager) => {
+                     manager.id.clone().unwrap_or_else(|| Uuid::new_v4().to_string())
+                }
+            };
+
             let query = sqlx::query::<MySql>(
                 r#"
                 INSERT INTO fund_manager(id, manager_code, name, avatar, company, description, resume, working_years, manage_scale, earning_rate, average_return, max_drawdown, top_report, create_time)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON DUPLICATE KEY UPDATE
-                name = VALUES(name),
+                `name` = VALUES(`name`),
                 avatar = VALUES(avatar),
                 company = VALUES(company),
                 description = VALUES(description),
@@ -163,8 +176,8 @@ impl FundManager {
                 update_time = NOW()
             "#,
             )
-            .bind(args.id)
-            .bind(args.manager_code)
+            .bind(manager_id.clone())
+            .bind(args.manager_code.clone())
             .bind(args.name)
             .bind(args.avatar)
             .bind(args.company)
@@ -178,6 +191,7 @@ impl FundManager {
             .bind(args.top_report)
             .bind(time.clone());
 
+            manager_id_map.insert(old_id, manager_id);
             query_list.push(query);
         }
 
@@ -194,7 +208,17 @@ impl FundManager {
 
         query_list.push(delete_relation_query);
 
+        let mut relation_query_list = Vec::new();
         for relation in relation_args_list {
+            let manager_id = match manager_id_map.get(&relation.manager_id) {
+                None => relation.manager_id.clone(),
+                Some(manager_id) => manager_id.clone(),
+            };
+
+            if manager_id.is_empty() {
+                continue;
+            }
+
             let query = sqlx::query::<MySql>(
                 r#"
                 INSERT INTO fund_manager_relation(id, asset_id, manager_id, fund_code, fund_name, fund_type, manage_type, start_date, end_date, manage_period, period_return, period_rank, manage_days, period_years, earning_rate, yearly_return, report_date, create_time)
@@ -203,7 +227,7 @@ impl FundManager {
             )
             .bind(Uuid::new_v4().to_string())
             .bind(relation.asset_id)
-            .bind(relation.manager_id)
+            .bind(manager_id)
             .bind(relation.fund_code)
             .bind(relation.fund_name)
             .bind(relation.fund_type)
@@ -220,9 +244,14 @@ impl FundManager {
             .bind(relation.report_date)
             .bind(time.clone());
 
-            query_list.push(query);
+            relation_query_list.push(query);
         }
 
+        if relation_query_list.is_empty() {
+            return Ok(false)
+        }
+
+       query_list.extend(relation_query_list);
         DBHelper::batch(query_list, "manager").await
     }
 
@@ -243,6 +272,26 @@ impl FundManager {
         "#;
 
         let query = sqlx::query_as::<_, FundManagerArgs>(sql).bind(manager_id);
+        DBHelper::execute_query_one(query).await
+    }
+
+    // 根据 manager_code 查询经理
+    pub async fn get_by_code(manager_code: &str) -> Result<Option<FundManagerArgs>, String> {
+        if manager_code.is_empty() {
+            return Err(Error::Error(String::from("`manager_code` is empty!")).to_string());
+        }
+
+        let sql = r#"
+            SELECT
+                *
+            FROM
+                fund_manager
+            WHERE
+                manager_code = ?
+            LIMIT 1
+        "#;
+
+        let query = sqlx::query_as::<_, FundManagerArgs>(sql).bind(manager_code);
         DBHelper::execute_query_one(query).await
     }
 

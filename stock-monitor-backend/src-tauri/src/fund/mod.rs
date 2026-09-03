@@ -96,28 +96,35 @@ impl Fund {
         // 插入资产
         let asset_id = Self::insert_asset_data(args, result).await?;
 
+        let mut need_update_sync = true;
         if !asset_id.is_empty() {
             // 插入涨跌幅
-            let _ = Self::insert_price_change(&asset_id, result).await?;
+            let price_change_ok = Self::insert_price_change(&asset_id, result).await?;
 
             // 插入因子数据
-            let _ = Self::insert_factor(&asset_id, result).await?;
+            let factor_ok = Self::insert_factor(&asset_id, result).await?;
 
             // 插入基金阶段表现
-            let _ = Self::insert_stage(&asset_id, result).await?;
+            let stage_ok = Self::insert_stage(&asset_id, result).await?;
 
             // 插入基金规模历史、持仓明细
-            let _ = Self::insert_allocation_history_holding(&asset_id, result).await?;
+            let holding_ok = Self::insert_allocation_history_holding(&asset_id, result).await?;
 
             // 插入基金经理
-            let _ = Self::insert_manager(&asset_id, result).await?;
+            let manager_ok = Self::insert_manager(&asset_id, result).await?;
 
             // 插入费率
-            let _ = Self::insert_rate(&asset_id, result).await?;
+            let rate_ok = Self::insert_rate(&asset_id, result).await?;
+
+            if !price_change_ok || !factor_ok || !stage_ok || !holding_ok || !manager_ok || !rate_ok {
+                need_update_sync = false;
+            }
         }
 
-        // 插入成功后更新`同步记录表`
-        AssetSyncRecord::update(&asset_id, AssetSyncType::Fund.as_str()).await?;
+        if need_update_sync {
+            // 插入成功后更新`同步记录表`
+            AssetSyncRecord::update(&asset_id, AssetSyncType::Fund.as_str()).await?;
+        }
 
         // 插入业绩走势曲线
         let _ = MarketDetailInfo::query_fund_graph(&args.code, "ai", "").await;

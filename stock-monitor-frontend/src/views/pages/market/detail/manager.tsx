@@ -148,7 +148,7 @@ const MarketDetailFundInfo = (props: IMarketDetailFundManagerProps): ReactElemen
                         <p className="color-gray">
                           {Utils.isBlank(manager.topReport || '')
                             ? '-'
-                            : `${Number(fundManager.topReport || '0').toFixed(2)}%`}
+                            : `${Number(manager.topReport || '0').toFixed(2)}%`}
                         </p>
                       </div>
                       <div className="flex-direction-column flex-1">
@@ -156,7 +156,7 @@ const MarketDetailFundInfo = (props: IMarketDetailFundManagerProps): ReactElemen
                         <p className="color-gray">
                           {Utils.isBlank(manager.averageReturn || '')
                             ? '-'
-                            : `${Number(fundManager.averageReturn || '0').toFixed(2)}%`}
+                            : `${Number(manager.averageReturn || '0').toFixed(2)}%`}
                         </p>
                       </div>
                     </div>

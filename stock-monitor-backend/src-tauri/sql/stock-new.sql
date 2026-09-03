@@ -11,7 +11,7 @@
  Target Server Version : 80039 (8.0.39)
  File Encoding         : 65001
 
- Date: 25/08/2026 18:03:49
+ Date: 03/09/2026 10:12:18
 */
 
 SET NAMES utf8mb4;
@@ -35,6 +35,21 @@ CREATE TABLE `asset` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_code_type` (`code`,`asset_type`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COMMENT='资产基础信息表，存储基金、股票、ETF等金融资产公共信息';
+
+-- ----------------------------
+-- Table structure for asset_industry
+-- ----------------------------
+DROP TABLE IF EXISTS `asset_industry`;
+CREATE TABLE `asset_industry` (
+  `id` varchar(255) NOT NULL COMMENT 'ID',
+  `asset_id` varchar(255) NOT NULL COMMENT '资产ID',
+  `industry_id` varchar(255) NOT NULL COMMENT '行业ID',
+  `create_time` varchar(255) DEFAULT NULL,
+  `update_time` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_asset_industry` (`asset_id`,`industry_id`),
+  KEY `idx_industry_id` (`industry_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COMMENT='资产行业关联表';
 
 -- ----------------------------
 -- Table structure for asset_sync_record
@@ -90,6 +105,7 @@ CREATE TABLE `fund_asset_allocation` (
   `id` varchar(36) NOT NULL COMMENT 'ID',
   `asset_id` varchar(36) NOT NULL COMMENT '基金资产ID',
   `asset_type` varchar(50) NOT NULL COMMENT '资产类型 stock/bond/cash',
+  `asset_type_name` varchar(255) DEFAULT NULL COMMENT '资产类型名称',
   `proportion` decimal(10,4) DEFAULT NULL COMMENT '占比',
   `report_date` varchar(20) DEFAULT NULL COMMENT '报告日期',
   `create_time` varchar(255) DEFAULT NULL,
@@ -132,8 +148,24 @@ CREATE TABLE `fund_holding` (
   `create_time` varchar(255) DEFAULT NULL,
   `update_time` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_asset_target_date` (`asset_id`,`target_code`,`report_date`)
+  UNIQUE KEY `uk_asset_target_date` (`asset_id`,`target_code`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COMMENT='基金持仓明细表，记录基金股票、债券等具体投资标的信息及占比';
+
+-- ----------------------------
+-- Table structure for fund_industry_allocation
+-- ----------------------------
+DROP TABLE IF EXISTS `fund_industry_allocation`;
+CREATE TABLE `fund_industry_allocation` (
+  `id` varchar(36) NOT NULL,
+  `asset_id` varchar(36) NOT NULL COMMENT '资产ID',
+  `industry_name` varchar(128) NOT NULL COMMENT '行业名称',
+  `proportion` decimal(10,4) DEFAULT '0.0000' COMMENT '占比',
+  `report_date` varchar(32) NOT NULL COMMENT '报告日期',
+  `create_time` varchar(255) NOT NULL,
+  `update_time` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_asset_industry_date` (`asset_id`,`industry_name`,`report_date`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COMMENT='基金行业持仓配置';
 
 -- ----------------------------
 -- Table structure for fund_info
@@ -211,7 +243,7 @@ CREATE TABLE `fund_manager_relation` (
   `create_time` varchar(255) DEFAULT NULL COMMENT '创建时间',
   `update_time` varchar(255) DEFAULT NULL COMMENT '更新时间',
   PRIMARY KEY (`id`) USING BTREE,
-  UNIQUE KEY `uk_asset_manager_type_start` (`asset_id`,`manager_id`,`manage_type`,`start_date`)
+  UNIQUE KEY `uk_manager_fund_type_start` (`asset_id`,`manager_id`,`fund_code`,`manage_type`,`start_date`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COMMENT='基金经理关系表，记录基金经理管理基金的历史关系，包括在管和离任基金';
 
 -- ----------------------------
@@ -219,14 +251,14 @@ CREATE TABLE `fund_manager_relation` (
 -- ----------------------------
 DROP TABLE IF EXISTS `fund_nav_curve`;
 CREATE TABLE `fund_nav_curve` (
-  `id` varchar(32) NOT NULL COMMENT 'ID',
-  `asset_id` varchar(32) NOT NULL COMMENT '资产ID',
+  `id` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL COMMENT 'ID',
+  `asset_id` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL COMMENT '资产ID',
   `report_date` date NOT NULL COMMENT '净值日期',
   `unit_nav` decimal(10,4) NOT NULL COMMENT '单位净值',
   `day_change` decimal(8,4) DEFAULT NULL COMMENT '日涨幅(%)',
   `accumulated_nav` decimal(10,4) DEFAULT NULL COMMENT '累计净值',
-  `create_time` datetime DEFAULT NULL COMMENT '创建时间',
-  `update_time` datetime DEFAULT NULL COMMENT '更新时间',
+  `create_time` varchar(255) DEFAULT NULL COMMENT '创建时间',
+  `update_time` varchar(255) DEFAULT NULL COMMENT '更新时间',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_asset_date` (`asset_id`,`report_date`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COMMENT='基金历史净值曲线表，记录基金每日单位净值及累计净值变化';
@@ -301,13 +333,15 @@ DROP TABLE IF EXISTS `fund_scale_history`;
 CREATE TABLE `fund_scale_history` (
   `id` varchar(36) NOT NULL,
   `asset_id` varchar(36) NOT NULL,
+  `name` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci DEFAULT NULL COMMENT '显示文字',
   `report_date` varchar(20) DEFAULT NULL COMMENT '报告日期',
   `scale` decimal(10,4) DEFAULT NULL COMMENT '基金规模(亿元)',
   `net_asset` decimal(10,4) DEFAULT NULL COMMENT '净资产规模(亿元)',
   `create_time` varchar(255) DEFAULT NULL,
   `update_time` varchar(255) DEFAULT NULL,
+  `period_sort` int NOT NULL DEFAULT '0' COMMENT '季度排序值',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_asset_date` (`asset_id`,`report_date`)
+  UNIQUE KEY `uk_asset_date` (`asset_id`,`name`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COMMENT='基金规模历史表，记录基金资产规模及净资产规模变化情况';
 
 -- ----------------------------
@@ -377,5 +411,115 @@ CREATE TABLE `my_watchlist` (
   UNIQUE KEY `uk_user_fund` (`user_id`,`code`),
   KEY `idx_user` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='用户自选资产表，记录用户关注的基金、股票等资产关系';
+
+-- ----------------------------
+-- Table structure for stock_industry
+-- ----------------------------
+DROP TABLE IF EXISTS `stock_industry`;
+CREATE TABLE `stock_industry` (
+  `id` varchar(255) NOT NULL COMMENT '行业ID',
+  `code` varchar(50) DEFAULT NULL COMMENT '行业代码',
+  `name` varchar(100) NOT NULL COMMENT '行业名称',
+  `source` varchar(50) DEFAULT NULL COMMENT '行业体系来源',
+  `create_time` varchar(255) DEFAULT NULL,
+  `update_time` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_source_code` (`source`,`code`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COMMENT='行业基础信息表';
+
+-- ----------------------------
+-- Table structure for stock_info
+-- ----------------------------
+DROP TABLE IF EXISTS `stock_info`;
+CREATE TABLE `stock_info` (
+  `id` varchar(255) NOT NULL COMMENT 'ID',
+  `asset_id` varchar(255) NOT NULL COMMENT '资产ID',
+  `stock_code` varchar(20) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci DEFAULT NULL COMMENT '公司代码',
+  `release_date` date DEFAULT NULL COMMENT '上市日期',
+  `issue_price` decimal(12,4) DEFAULT NULL COMMENT '发行价格',
+  `issue_number` decimal(20,4) DEFAULT NULL COMMENT '发行数量',
+  `region` varchar(100) DEFAULT NULL COMMENT '所属地区',
+  `main_business` text COMMENT '主营业务',
+  `create_time` varchar(255) DEFAULT NULL,
+  `update_time` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_asset_id` (`asset_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COMMENT='股票基本信息';
+
+-- ----------------------------
+-- Table structure for stock_kline
+-- ----------------------------
+DROP TABLE IF EXISTS `stock_kline`;
+CREATE TABLE `stock_kline` (
+  `id` varchar(255) NOT NULL COMMENT '主键ID，UUID字符串',
+  `asset_id` varchar(32) NOT NULL COMMENT '资产ID，关联asset.id',
+  `period` varchar(10) NOT NULL COMMENT 'K线周期，DAY=日K，WEEK=周K，MONTH=月K',
+  `trade_date` date NOT NULL COMMENT 'K线对应的交易日期；日K为交易日，周K为该周对应日期，月K为该月对应日期',
+  `timestamp` bigint NOT NULL COMMENT 'K线时间戳，Unix时间戳，单位由数据源定义',
+  `open` decimal(20,4) DEFAULT NULL COMMENT '开盘价',
+  `close` decimal(20,4) DEFAULT NULL COMMENT '收盘价',
+  `high` decimal(20,4) DEFAULT NULL COMMENT '最高价',
+  `low` decimal(20,4) DEFAULT NULL COMMENT '最低价',
+  `volume` decimal(30,4) DEFAULT NULL COMMENT '成交量，单位以数据源返回值为准',
+  `amount` decimal(30,4) DEFAULT NULL COMMENT '成交额，单位以数据源返回值为准',
+  `range` decimal(20,4) DEFAULT NULL COMMENT '涨跌额，相对于上一周期收盘价的价格变动',
+  `ratio` decimal(20,4) DEFAULT NULL COMMENT '涨跌幅，单位为百分比，例如-4.02表示下跌4.02%',
+  `turnover_ratio` decimal(20,4) DEFAULT NULL COMMENT '换手率，单位为百分比',
+  `pre_close` decimal(20,4) DEFAULT NULL COMMENT '上一交易日/上一K线周期收盘价',
+  `ma5_avg_price` decimal(20,4) DEFAULT NULL COMMENT '5周期均线价格',
+  `ma5_volume` decimal(30,4) DEFAULT NULL COMMENT '5周期平均成交量',
+  `ma10_avg_price` decimal(20,4) DEFAULT NULL COMMENT '10周期均线价格',
+  `ma10_volume` decimal(30,4) DEFAULT NULL COMMENT '10周期平均成交量',
+  `ma20_avg_price` decimal(20,4) DEFAULT NULL COMMENT '20周期均线价格',
+  `ma20_volume` decimal(30,4) DEFAULT NULL COMMENT '20周期平均成交量',
+  `create_time` varchar(255) DEFAULT NULL COMMENT '数据创建时间',
+  `update_time` varchar(255) DEFAULT NULL COMMENT '数据最后更新时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_asset_period_date` (`asset_id`,`period`,`trade_date`),
+  KEY `idx_asset_period_date` (`asset_id`,`period`,`trade_date`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COMMENT='资产K线行情数据表，存储股票、ETF等资产的日K、周K、月K等周期行情数据，包括开盘价、收盘价、最高价、最低价、成交量、成交额、涨跌幅、换手率及各周期均线数据';
+
+-- ----------------------------
+-- Table structure for stock_quote_daily
+-- ----------------------------
+DROP TABLE IF EXISTS `stock_quote_daily`;
+CREATE TABLE `stock_quote_daily` (
+  `id` varchar(255) NOT NULL COMMENT '主键ID，UUID',
+  `asset_id` varchar(255) NOT NULL COMMENT '资产ID，关联asset.id',
+  `trade_date` date NOT NULL COMMENT '交易日期',
+  `open` decimal(16,4) DEFAULT NULL COMMENT '今开价，单位：元',
+  `high` decimal(16,4) DEFAULT NULL COMMENT '当日最高价，单位：元',
+  `low` decimal(16,4) DEFAULT NULL COMMENT '当日最低价，单位：元',
+  `pre_close` decimal(16,4) DEFAULT NULL COMMENT '昨日收盘价，单位：元',
+  `avg_price` decimal(16,4) DEFAULT NULL COMMENT '当日成交均价，单位：元',
+  `limit_up` decimal(16,4) DEFAULT NULL COMMENT '当日涨停价，单位：元',
+  `limit_down` decimal(16,4) DEFAULT NULL COMMENT '当日跌停价，单位：元',
+  `price_change` decimal(16,4) DEFAULT NULL COMMENT '当日涨跌额，单位：元',
+  `price_change_ratio` decimal(10,4) DEFAULT NULL COMMENT '当日涨跌幅，单位：百分比，例如-0.99表示-0.99%',
+  `amplitude_ratio` decimal(10,4) DEFAULT NULL COMMENT '当日振幅，单位：百分比',
+  `volume` bigint unsigned DEFAULT NULL COMMENT '当日累计成交量，单位：股',
+  `amount` decimal(24,2) DEFAULT NULL COMMENT '当日累计成交额，单位：元',
+  `turnover_ratio` decimal(10,4) DEFAULT NULL COMMENT '换手率，单位：百分比',
+  `volume_ratio` decimal(10,4) DEFAULT NULL COMMENT '量比',
+  `inside` bigint unsigned DEFAULT NULL COMMENT '内盘成交量，单位：股',
+  `outside` bigint unsigned DEFAULT NULL COMMENT '外盘成交量，单位：股',
+  `weibi_ratio` decimal(10,4) DEFAULT NULL COMMENT '委比，单位：百分比',
+  `pe_ttm` decimal(16,4) DEFAULT NULL COMMENT '市盈率TTM，滚动市盈率',
+  `pe_lyr` decimal(16,4) DEFAULT NULL COMMENT '市盈率LYR，静态市盈率',
+  `pb` decimal(16,4) DEFAULT NULL COMMENT '市净率',
+  `ps` decimal(16,4) DEFAULT NULL COMMENT '市销率',
+  `market_cap` decimal(24,2) DEFAULT NULL COMMENT '总市值，单位：元',
+  `circulating_market_cap` decimal(24,2) DEFAULT NULL COMMENT '流通市值，单位：元',
+  `total_share_capital` bigint unsigned DEFAULT NULL COMMENT '总股本，单位：股',
+  `circulating_share_capital` bigint unsigned DEFAULT NULL COMMENT '流通股本，单位：股',
+  `week52_high` decimal(16,4) DEFAULT NULL COMMENT '52周最高价，单位：元',
+  `week52_low` decimal(16,4) DEFAULT NULL COMMENT '52周最低价，单位：元',
+  `create_time` varchar(255) DEFAULT NULL COMMENT '创建时间',
+  `update_time` varchar(255) DEFAULT NULL COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_asset_trade_date` (`asset_id`,`trade_date`),
+  KEY `idx_trade_date` (`trade_date`),
+  CONSTRAINT `fk_stock_quote_daily_asset` FOREIGN KEY (`asset_id`) REFERENCES `asset` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COMMENT='股票每日行情及盘口指标';
 
 SET FOREIGN_KEY_CHECKS = 1;

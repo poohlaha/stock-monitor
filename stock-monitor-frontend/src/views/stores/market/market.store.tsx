@@ -78,27 +78,9 @@ class MarketStore extends BaseStore {
   readonly checkTradeSchedule: Array<string> = ['09:30', '11:30', '13:11', '15:00']
 
   @observable isTrade: boolean = false
-  readonly SEARCH_OPTIONS = [
-    {
-      label: '基金',
-      value: '1',
-      placeholder: '请输入基金代码、名称或简拼'
-    },
-    {
-      label: '基金经理',
-      value: '7',
-      placeholder: '例: 请输入“王宁”或“wm”'
-    },
-    {
-      label: '基金公司',
-      value: '8',
-      placeholder: '例: 请输入“华夏”或“hx”'
-    }
-  ]
 
   @observable search: Record<string, any> = {
     placeholder: '请输入名称或代码',
-    selected: this.SEARCH_OPTIONS[0].value,
     name: '',
     list: []
   }
@@ -382,10 +364,10 @@ class MarketStore extends BaseStore {
           args: {
             code,
             market,
-            type,
+            marketType: type,
             exchange,
             queryType: '',
-            ktype: ''
+            klineType: ''
           }
         })) || {}
       this.openDataInfo = this.handleResult(result) || {}
@@ -472,10 +454,10 @@ class MarketStore extends BaseStore {
               (await invoke('query_fund_info', {
                 args: {
                   code: w.code || '',
-                  assetType: w.type || '',
+                  marketType: w.type || '',
                   market: w.market || '',
                   queryType: '',
-                  ktype: '',
+                  klineType: '',
                   exchange: w.exhange || ''
                 }
               })) || {}

@@ -4,6 +4,7 @@
   资产行业关联表(asset_industry)
 */
 
+use std::collections::HashMap;
 use crate::asset::asset::{Asset, AssetArgs};
 use crate::asset::tag::AssetTagArgs;
 use crate::database::helper::DBHelper;
@@ -96,7 +97,7 @@ impl StockIndustry {
         let mut query_list = Vec::new();
         let time = handlers::utils::Utils::get_date(None);
 
-        let mut industry_id_map = std::collections::HashMap::new();
+        let mut industry_id_map = HashMap::new();
 
         // 1. 行业基础信息
         for industry in industry_list {
@@ -150,16 +151,20 @@ impl StockIndustry {
         query_list.push(delete_asset_industry_query);
 
         // 3. 插入资产行业关系
+        let mut industry_query_list = Vec::new();
         for asset_industry in asset_industry_list {
             let id = asset_industry.id.unwrap_or_else(|| Uuid::new_v4().to_string());
             let create_time = asset_industry.create_time.unwrap_or_else(|| time.clone());
             let update_time = asset_industry.update_time.unwrap_or_else(|| time.clone());
 
-            // TODO
             let industry_id = match industry_id_map.get(&asset_industry.industry_id) {
                 None => Uuid::new_v4().to_string(),
                 Some(industry_id) => industry_id.clone(),
             };
+
+            if industry_id.is_empty() {
+                continue;
+            }
 
             let query = sqlx::query::<MySql>(
                 r#"
@@ -179,9 +184,14 @@ impl StockIndustry {
             .bind(create_time)
             .bind(update_time);
 
-            query_list.push(query);
+            industry_query_list.push(query);
         }
 
+        if industry_query_list.is_empty() {
+            return Ok(false);
+        }
+
+        query_list.extend(industry_query_list);
         DBHelper::batch(query_list, "info").await
     }
 
