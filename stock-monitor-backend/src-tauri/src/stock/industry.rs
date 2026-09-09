@@ -4,13 +4,13 @@
   资产行业关联表(asset_industry)
 */
 
-use std::collections::HashMap;
 use crate::asset::asset::{Asset, AssetArgs};
 use crate::asset::tag::AssetTagArgs;
 use crate::database::helper::DBHelper;
 use crate::error::Error;
 use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, MySql};
+use std::collections::HashMap;
 use uuid::Uuid;
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize, FromRow)]
@@ -157,34 +157,29 @@ impl StockIndustry {
             let create_time = asset_industry.create_time.unwrap_or_else(|| time.clone());
             let update_time = asset_industry.update_time.unwrap_or_else(|| time.clone());
 
-            let industry_id = match industry_id_map.get(&asset_industry.industry_id) {
-                None => Uuid::new_v4().to_string(),
-                Some(industry_id) => industry_id.clone(),
-            };
+            let industry_id = industry_id_map.get(&asset_industry.industry_id);
 
-            if industry_id.is_empty() {
-                continue;
-            }
-
-            let query = sqlx::query::<MySql>(
-                r#"
-                INSERT INTO asset_industry (
-                    id,
-                    asset_id,
-                    industry_id,
-                    create_time,
-                    update_time
+            if let Some(industry_id) = industry_id {
+                let query = sqlx::query::<MySql>(
+                    r#"
+                            INSERT INTO asset_industry (
+                                id,
+                                asset_id,
+                                industry_id,
+                                create_time,
+                                update_time
+                            )
+                            VALUES (?, ?, ?, ?, ?)
+                        "#,
                 )
-                VALUES (?, ?, ?, ?, ?)
-            "#,
-            )
-            .bind(id)
-            .bind(asset_id)
-            .bind(industry_id)
-            .bind(create_time)
-            .bind(update_time);
+                .bind(id)
+                .bind(asset_id)
+                .bind(industry_id)
+                .bind(create_time)
+                .bind(update_time);
 
-            industry_query_list.push(query);
+                industry_query_list.push(query);
+            }
         }
 
         if industry_query_list.is_empty() {

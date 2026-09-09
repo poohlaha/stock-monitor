@@ -5,11 +5,11 @@
 
 use crate::database::helper::DBHelper;
 use crate::error::Error;
+use futures::TryFutureExt;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, MySql};
 use std::collections::HashMap;
-use futures::TryFutureExt;
 use uuid::Uuid;
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize, FromRow)]
@@ -149,12 +149,8 @@ impl FundManager {
             let manager = Self::get_by_code(&args.manager_code).await?;
             let old_id = args.id.clone().unwrap_or_default();
             let manager_id = match manager {
-                None => {
-                    args.id.clone().unwrap_or_else(|| Uuid::new_v4().to_string())
-                }
-                Some(manager) => {
-                     manager.id.clone().unwrap_or_else(|| Uuid::new_v4().to_string())
-                }
+                None => args.id.clone().unwrap_or_else(|| Uuid::new_v4().to_string()),
+                Some(manager) => manager.id.clone().unwrap_or_else(|| Uuid::new_v4().to_string()),
             };
 
             let query = sqlx::query::<MySql>(
@@ -248,10 +244,10 @@ impl FundManager {
         }
 
         if relation_query_list.is_empty() {
-            return Ok(false)
+            return Ok(false);
         }
 
-       query_list.extend(relation_query_list);
+        query_list.extend(relation_query_list);
         DBHelper::batch(query_list, "manager").await
     }
 

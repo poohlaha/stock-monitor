@@ -52,7 +52,7 @@ thiserror = "1.0"
 rayon = "1.8"
 base64 = "0.21"
 colored = "2.0"
-reqwest = { version = "0.11", features = ["json", "multipart", "blocking"] }
+urlencoding = "2"
 
 # 远程工具（使用了 git 源）
 handlers = {git = "https://github.com/poohlaha/rust-tools", branch = "main", package = "handlers", version = "0.1.2"}

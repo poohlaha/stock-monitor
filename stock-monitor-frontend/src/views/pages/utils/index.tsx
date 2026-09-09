@@ -163,3 +163,17 @@ export function getTodayText() {
 
   return `${date.getFullYear()}年${String(date.getMonth() + 1).padStart(2, '0')}月${String(date.getDate()).padStart(2, '0')}日${week[date.getDay()]}`
 }
+
+/**
+ * 格式化成 万 / 亿
+ * @param num
+ */
+export function formatNumberUnit(num: number) {
+  if (Math.abs(num) >= 1e8) {
+    return `${(num / 1e8).toFixed(2).replace(/\.00$/, '')}亿`
+  } else if (Math.abs(num) >= 1e4) {
+    return `${(num / 1e4).toFixed(2).replace(/\.00$/, '')}万`
+  } else {
+    return num.toString()
+  }
+}

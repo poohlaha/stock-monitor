@@ -220,6 +220,11 @@ const MarketDetail = (): ReactElement => {
     await marketStore.batchSend(queue)
 
     if (t === 'stock') {
+      // 查询行业概念
+      setTimeout(async () => {
+        await marketStore.onGeStockConcept(c, m)
+      }, 500)
+
       setTimeout(async () => {
         await marketStore.onGetStockNews(c, m)
       }, 500)

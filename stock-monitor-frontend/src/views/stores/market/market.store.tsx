@@ -38,6 +38,7 @@ class MarketStore extends BaseStore {
   @observable industryFundFlow: Record<string, any> = {}
   @observable industryOtherFundFlow: Record<string, any> = {}
   @observable newsList: Array<Record<string, any>> = []
+  @observable stockConceptList: Array<Record<string, any>> = [] // 行业概念
   @observable companyProfile: Record<string, any> = {}
   @observable executiveChanges: Record<string, any> = {}
   @observable shareholders: Record<string, any> = {} // 股本股东
@@ -1141,6 +1142,31 @@ class MarketStore extends BaseStore {
     }
   }
 
+  // 查询行业概念
+  async onGeStockConcept(code: string = '', market: string = '') {
+    try {
+      let result: { [K: string]: any } =
+          (await invoke('query_concept', {
+            args: {
+              code,
+              market,
+              marketType: 'stock',
+              queryType: '',
+              klineType: ''
+            }
+          })) || {}
+      const data = this.handleResult(result) || []
+
+      this.stockConceptList = data || []
+      console.log('stock concept list: ', this.stockConceptList)
+      return result || {}
+    } catch (e: any) {
+      this.loading = false
+      throw new Error(e)
+    }
+
+  }
+
   // 查询股票新闻
   @action
   async onGetStockNews(code: string = '', market: string = '') {
@@ -1675,6 +1701,7 @@ class MarketStore extends BaseStore {
     this.floatStockCommentary = []
     this.stockAnalysis = []
     this.relatedTarget = {}
+    this.stockConceptList = []
   }
 }
 

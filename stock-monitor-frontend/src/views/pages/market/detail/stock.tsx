@@ -8,7 +8,15 @@ import { observer } from 'mobx-react-lite'
 import { Popover, Tabs } from 'antd'
 import { useStore } from '@views/stores'
 import Utils from '@utils/utils'
-import { formatTimestamp, getColor, getRateClassName, getWidth, isPositive, parseCNNumber } from '@pages/utils'
+import {
+  formatNumberUnit,
+  formatTimestamp,
+  getColor,
+  getRateClassName,
+  getWidth,
+  isPositive,
+  parseCNNumber
+} from '@pages/utils'
 import * as echarts from 'echarts/core'
 import { useNavigate } from 'react-router-dom'
 import RouterUrls from '@route/router.url.toml'
@@ -985,11 +993,11 @@ const MarketDetailStock = (props: IMarketDetailStockProps): ReactElement => {
   }
 
   const getCompanyProfile = () => {
-    const newCompany = (marketStore.companyProfile || {}).newCompany || {}
-    const basicInfo = newCompany.basicInfo || {}
-    const industry = basicInfo.industry || {}
-    const area = basicInfo.area || []
-    const concepts = basicInfo.concepts || []
+    const asset = marketStore.openDataInfo?.basicInfo?.asset || {}
+    const industryList = marketStore.openDataInfo?.basicInfo?.industry || []
+    const industryNames = industryList.map((item: Record<string, any> = {}) => item.industryName || '') || []
+    const stockInfo = marketStore.openDataInfo?.stockInfo || {}
+    const stockConceptList = marketStore.stockConceptList || []
     return (
       <div className="info flex-direction-column flex-1 border rounded-lg p-4 mt-8">
         <p className="font-bold text-xl">基本信息</p>
@@ -1004,49 +1012,49 @@ const MarketDetailStock = (props: IMarketDetailStockProps): ReactElement => {
               }}
               placement="bottomRight"
               arrow={false}
-              content={<p>{basicInfo.mainBusiness || ''}</p>}
+              content={<p>{stockInfo.mainBusiness || ''}</p>}
             >
-              <div className="overflow-hidden over-two-ellipsis ml-2">{basicInfo.mainBusiness || ''}</div>
+              <div className="overflow-hidden over-two-ellipsis ml-2">{stockInfo.mainBusiness || ''}</div>
             </Popover>
           </div>
 
           <div className="flex-align-center mt-2">
             <p className="font-bold shrink-0">公司名称: </p>
-            <div className="ml-2">{basicInfo.companyName || ''}</div>
+            <div className="ml-2">{asset.name || ''}</div>
           </div>
 
           <div className="flex-align-center mt-2">
             <p className="font-bold shrink-0">所属行业: </p>
-            <div className="ml-2">{industry.length > 0 ? industry[0].text || '' : '-'}</div>
+            <div className="ml-2">{industryNames.length > 0 ? industryNames.join('') : '-'}</div>
           </div>
 
           <div className="flex-align-center mt-2">
             <p className="font-bold shrink-0">上市日期: </p>
-            <div className="ml-2">{basicInfo.releaseDate || '-'}</div>
+            <div className="ml-2">{stockInfo.releaseDate || '-'}</div>
           </div>
 
           <div className="flex-align-center mt-2">
             <p className="font-bold shrink-0">发行数量: </p>
-            <div className="ml-2">{basicInfo.issueNumber || '-'}</div>
+            <div className="ml-2">{formatNumberUnit(Number(stockInfo.issueNumber || 0)) || '-'}</div>
           </div>
 
           <div className="flex-align-center mt-2">
             <p className="font-bold shrink-0">发行价格: </p>
-            <div className="ml-2">{basicInfo.issuePrice || '-'}</div>
+            <div className="ml-2">{Number(stockInfo.issuePrice || 0).toFixed(2)}</div>
           </div>
 
           <div className="flex-align-center mt-2">
             <p className="font-bold shrink-0">所在地区: </p>
-            <div className="ml-2">{area.length > 0 ? area[0].text || '' : '-'}</div>
+            <div className="ml-2">{stockInfo.region || '-'}</div>
           </div>
 
           <div className="flex-align-start mt-2">
             <p className="font-bold shrink-0">所属概念: </p>
             <div className="ml-2 flex-1 flex-align-center flex-wrap">
-              {concepts.map((concept: Record<string, any> = {}, index: number) => {
+              {stockConceptList.map((concept: Record<string, any> = {}, index: number) => {
                 return (
                   <p className="mr-2 mb-2 notice pt-1 pb-1 pl-2 pr-2 shrink-0" key={index}>
-                    {concept.text || ''}
+                    {concept.name || ''}
                   </p>
                 )
               })}

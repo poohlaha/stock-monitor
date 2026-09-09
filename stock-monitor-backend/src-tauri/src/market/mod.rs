@@ -139,7 +139,7 @@ impl Market {
     */
     pub async fn query_company_profile(args: &Args) -> Result<HttpResponse, String> {
         let url = format!(
-            "{}/api/stockwidget?market={}&code={}&type={}&widgetType=company&finClientType=pc",
+            "{}api/stockwidget?market={}&code={}&type={}&widgetType=company&finClientType=pc",
             BD_HTTP_URL_PREFIX,
             args.market,
             args.code,

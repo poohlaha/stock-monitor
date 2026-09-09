@@ -6,6 +6,7 @@ use crate::asset::asset::{Asset, AssetArgs};
 use crate::asset::tag::AssetTagArgs;
 use crate::error::Error;
 use crate::prepare::{get_success_response, get_success_response_by_value, HttpResponse};
+use crate::stock::concept::{StockConcept, StockConceptArgs, StockConceptRelationArgs, StockConceptWithRelationArgs};
 use crate::stock::industry::{AssetIndustryArgs, StockIndustry, StockIndustryArgs};
 use crate::stock::info::{StockInfo, StockInfoArgs};
 use crate::stock::kline::{FiveDayKlineArgs, Kline, KlineArgs};
@@ -22,6 +23,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use uuid::Uuid;
 
+pub mod concept;
 pub mod industry;
 pub mod info;
 pub mod kline;
@@ -92,6 +94,108 @@ impl Stock {
         // info!("{} request url: {}", LOGGER_PREFIX, url);
 
         Utils::get_response(&url).await
+    }
+
+    /**
+     查询行业概念
+    */
+    pub async fn query_concept(args: &Args) -> Result<HttpResponse, String> {
+        if args.code.is_empty() {
+            return Err(Error::Error(String::from("`code` is empty!")).to_string());
+        }
+
+        if args.market.is_empty() {
+            return Err(Error::Error(String::from("`market` is empty!")).to_string());
+        }
+
+        // 查询资产信息
+        let asset = Asset::get_id_by_code(&args.code).await?;
+        if asset.is_none() {
+            return Err(Error::Error(String::from("`asset` is not exists!")).to_string());
+        }
+
+        let asset = asset.unwrap_or_default();
+        let asset_id = asset.id.clone().unwrap_or_default();
+
+        let stock = serde_json::json!({
+            "market": args.market,
+            "type": "stock",
+            "code": args.code,
+        });
+
+        let url = format!("{}api/getrelatedblock?stock={}&finClientType=pc", BD_HTTP_URL_PREFIX, urlencoding::encode(&stock.to_string()));
+
+        info!("query connect url: {}", url);
+
+        let result = Utils::get_response(&url).await?;
+
+        if result.is_null() {
+            return Err(Error::Error(String::from("query concept error: `result` is empty!")).to_string());
+        }
+
+        let values = JsonUtils::get_array_by_key(&result, &args.code);
+        if values.is_empty() {
+            return Err(Error::Error(String::from("query concept error: no data!")).to_string());
+        }
+
+        let list = values.iter().find(|item| item["name"].as_str() == Some("概念")).and_then(|item| item["list"].as_array()).cloned().unwrap_or_default();
+
+        if list.is_empty() {
+            return get_success_response_by_value::<Vec<Value>>(list);
+        }
+
+        // 插入/更新数据
+        let mut args_list: Vec<StockConceptArgs> = Vec::new();
+        let mut relation_list: Vec<StockConceptRelationArgs> = Vec::new();
+
+        for l in list {
+            let concept_id = Uuid::new_v4().to_string();
+
+            // change rate
+            let ratio = JsonUtils::get_string(&l, "ratio");
+            let change_rate = Handler::parse_percent(&ratio);
+
+            // code
+            let xcx_query = JsonUtils::get_string(&l, "xcx_query");
+            let code = xcx_query
+                .split('&')
+                .find_map(|item| {
+                    let mut parts = item.splitn(2, '=');
+
+                    if parts.next() == Some("code") {
+                        parts.next().map(String::from)
+                    } else {
+                        None
+                    }
+                })
+                .unwrap_or_default();
+
+            args_list.push(StockConceptArgs {
+                id: Some(concept_id.clone()),
+                code,
+                name: JsonUtils::get_string(&l, "name"),
+                create_time: None,
+                update_time: None,
+            });
+
+            relation_list.push(StockConceptRelationArgs {
+                id: None,
+                asset_id: asset_id.clone(),
+                concept_id: concept_id.clone(),
+                change_rate,
+                create_time: None,
+                update_time: None,
+            })
+        }
+
+        let has_add = StockConcept::batch_add(&asset_id, args_list, relation_list).await?;
+        if !has_add {
+            return get_success_response_by_value::<Vec<StockConceptWithRelationArgs>>(Vec::new());
+        }
+
+        // 查询数据
+        let info = StockConcept::get_by_asset_id(&asset_id).await?;
+        get_success_response_by_value::<Vec<StockConceptWithRelationArgs>>(info)
     }
 
     /*
@@ -460,7 +564,7 @@ impl Stock {
         let result = json!({
             "basicInfo": asset,
             "stockInfo": stock_info,
-            "realInfo": real,
+            "realInfo": real
         });
 
         Ok(result)
