@@ -2,6 +2,8 @@
   股票/ETF信息
 */
 
+use std::ptr::null;
+use std::str::FromStr;
 use crate::asset::asset::{Asset, AssetArgs};
 use crate::asset::tag::AssetTagArgs;
 use crate::error::Error;
@@ -18,12 +20,14 @@ use crate::utils::Utils;
 use crate::{BD_HTTP_URL_PREFIX, LOGGER_PREFIX};
 use chrono::NaiveDate;
 use log::info;
+use mysql::binlog::TransactionPayloadCompressionType::NONE;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use uuid::Uuid;
 
 pub mod concept;
+pub mod flow;
 pub mod industry;
 pub mod info;
 pub mod kline;
@@ -230,16 +234,28 @@ impl Stock {
     // 插入股票信息
     pub async fn insert_stock(asset_id: &str, args: &Args) -> Result<bool, String> {
         // 基本信息
-        let result = Self::get_stock_info(args).await?;
+        let result: Value = Self::get_stock_info(args).await?;
+        let mut other_result = Value::Null;
+
+        // 除 A 股外, 其他股票需要查询额外信息
+        if args.market != "ab" {
+            other_result = Self::get_stock_other_info(args).await?;
+        }
+
         if result.is_null() {
             return Err(Error::Error(String::from("get stock info error, result is null !")).to_string());
         }
 
-        let basic_info = JsonUtils::get_path(&result, &["content", "newCompany", "basicInfo"]).unwrap_or(&Value::Null);
-        let code = JsonUtils::get_string(&result, "code");
+        let basic_info: &Value = JsonUtils::get_path(&result, &["content", "newCompany", "basicInfo"]).unwrap_or(&Value::Null);
+        let mut other_basic_info = Value::Null;
+        if args.market != "ab" {
+            other_basic_info = JsonUtils::get_path(&other_result, &["companyInfo"]).cloned().unwrap_or(Value::Null);
+        }
+
+        let code = &args.code;
 
         // 插入股票基本信息
-        let _ = Self::insert_stock_info(asset_id, &code, &basic_info).await?;
+        let _ = Self::insert_stock_info(asset_id, code, &basic_info, &other_basic_info).await?;
 
         // 插入股票行业关系
         let _ = Self::insert_stock_industry(asset_id, &basic_info).await?;
@@ -248,7 +264,7 @@ impl Stock {
     }
 
     // 插入股票基本信息
-    pub async fn insert_stock_info(asset_id: &str, code: &str, basic_info: &Value) -> Result<bool, String> {
+    pub async fn insert_stock_info(asset_id: &str, code: &str, basic_info: &Value, other_basic_info: &Value) -> Result<bool, String> {
         if code.is_empty() {
             return Err(Error::Error(String::from("insert stock info error: `code` is empty!")).to_string());
         }
@@ -257,25 +273,91 @@ impl Stock {
         let issue_price = JsonUtils::get_string(basic_info, "issuePrice"); // 发行价格
         let issue_number = JsonUtils::get_string(basic_info, "issueNumber"); // 发行数量
         let region = JsonUtils::get_string(basic_info, "region"); // 所属地区
-        let main_business = JsonUtils::get_string(basic_info, "mainBusiness"); // 主营业务
+        let mut main_business = JsonUtils::get_string(basic_info, "mainBusiness"); // 主营业务|公司介绍
 
-        let release_date = NaiveDate::parse_from_str(&release_date, "%Y-%m-%d").map_err(|e| e.to_string())?;
+        let mut date = None;
+        if !release_date.is_empty() {
+            date = Some(NaiveDate::parse_from_str(&release_date, "%Y-%m-%d").map_err(|e| e.to_string())?);
+        }
+
         // "20.000元" -> "20.000"
-        let issue_price = issue_price.trim_end_matches("元").trim().parse::<Decimal>().map_err(|e| e.to_string())?;
+        let mut price = Decimal::ZERO;
+        if !issue_price.is_empty() {
+            price = issue_price.trim_end_matches("元").trim().parse::<Decimal>().map_err(|e| e.to_string())?;
+        }
 
         // "1667万" -> 1667
-        let issue_number = issue_number.trim_end_matches("万").trim().parse::<Decimal>().map_err(|e| e.to_string())? * Decimal::from(10_000);
+        let mut number = Decimal::ZERO;
+        if !issue_number.is_empty() {
+            number = issue_number.trim_end_matches("万").trim().parse::<Decimal>().map_err(|e| e.to_string())? * Decimal::from(10_000);
+        }
+
+        let mut industry = String::new(); // 行业/板块
+        let mut chinese_name = String::new(); // 中文名
+        let mut english_name = String::new(); // 英文名
+        let mut exchange = String::new(); // 交易所
+        let mut circulating_shares = Decimal::ZERO; // 流通股本
+        let mut established_date = None; // 成立时间
+        let mut website = String::new(); // 公司网址
+        let mut company_phone = String::new(); // 公司电话
+        let mut company_address = String::new(); // 公司地址
+        let mut business_description = String::new(); // 业务描述
+
+        info!("other_basic_info: {:#?}", other_basic_info);
+        info!("basic_info: {:#?}", basic_info);
+
+        if !other_basic_info.is_null() {
+            industry = JsonUtils::get_string(other_basic_info, "industrySector"); // 行业/板块
+            chinese_name = JsonUtils::get_string(other_basic_info, "zhName"); // 中文名
+
+            if chinese_name.is_empty() {
+                chinese_name = JsonUtils::get_string(basic_info, "zhName"); // 中文名
+            }
+
+            english_name = JsonUtils::get_string(other_basic_info, "enName"); // 英文名
+            if english_name.is_empty() {
+                english_name = JsonUtils::get_string(basic_info, "enName"); // 中文名
+            }
+
+            exchange = JsonUtils::get_string(other_basic_info, "exchange"); // 交易所
+
+            // 流通股本
+            let shares = JsonUtils::get_string(other_basic_info, "shares");
+            circulating_shares = Decimal::from_str(&shares.replace(',', "").replace("股", "").trim()).unwrap_or(Decimal::ZERO);
+
+            // 成立时间
+            let mut found_date = JsonUtils::get_string(other_basic_info, "foundDate");
+            found_date = found_date.replace("年", "").trim().to_string();
+
+            established_date = NaiveDate::parse_from_str(&found_date, "%Y").ok();
+
+            website = JsonUtils::get_string(other_basic_info, "website"); // 公司网址
+            company_phone = JsonUtils::get_string(other_basic_info, "telephone"); // 公司电话
+            company_address = JsonUtils::get_string(other_basic_info, "address"); // 公司地址
+            business_description = JsonUtils::get_string(other_basic_info, "business"); // 业务描述
+            main_business = JsonUtils::get_string(other_basic_info, "profile"); // 公司简介
+        }
 
         let mut args_list = Vec::new();
         args_list.push(StockInfoArgs {
             id: None,
             asset_id: asset_id.to_string(),
             stock_code: code.to_string(),
-            release_date,
-            issue_price,
-            issue_number,
+            release_date: date,
+            issue_price: price,
+            issue_number: number,
             region,
             main_business,
+            industry,
+            chinese_name,
+            english_name,
+            exchange,
+            circulating_shares,
+            established_date,
+            website,
+            company_phone,
+            company_address,
+            business_description,
             create_time: None,
             update_time: None,
         });
@@ -343,6 +425,21 @@ impl Stock {
             args.market,
             args.code,
             args.market_type.as_str()
+        );
+        Utils::get_response(&url).await
+    }
+
+    /**
+      获取 Stock 简况(除 A 股外, 其他股票需要查询额外信息)
+      例: https://finance.pae.baidu.com/selfselect/openapi?srcid=5539&code=SNDK&name=%E9%97%AA%E8%BF%AA&market=us&fs_id=KK1T75-R&fs_s_id=QJ0BJ6-S&fs_e_id=116LTR-E&group=us_basic&finClientType=pc
+    */
+    pub async fn get_stock_other_info(args: &Args) -> Result<Value, String> {
+        let url = format!(
+            "{}/selfselect/openapi?srcid=5539&code={}&market={}&fs_id=KK1T75-R&fs_s_id=QJ0BJ6-S&fs_e_id=116LTR-E&group={}_basic&finClientType=pc",
+            BD_HTTP_URL_PREFIX,
+            args.code,
+            args.market,
+            args.market
         );
         Utils::get_response(&url).await
     }

@@ -22,10 +22,10 @@ pub struct FundHoldingArgs {
     #[serde(rename = "holdingType")]
     pub holding_type: String, // 资产类型 stock/bond
 
-    #[serde(rename = "targetCode")]
+    #[serde(rename = "code")]
     pub target_code: String, // 股票债券代码
 
-    #[serde(rename = "targetName")]
+    #[serde(rename = "name")]
     pub target_name: String, // 名称
 
     #[serde(rename = "market")]

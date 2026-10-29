@@ -86,7 +86,7 @@ impl Fund {
     pub async fn query_info(args: &Args) -> Result<HttpResponse, String> {
         let url = format!("{}opendata?query={}&resource_id=5803&finClientType=pc", BD_HTTP_URL_PREFIX2, args.code);
         let data = Utils::get_response(&url).await?;
-        // 资产信息, 从 tplData -> result 中取
+        // 资产信息, A 股 从 tplData -> result 中取
         let list = JsonUtils::get_array_index(&data, 0);
         let result = JsonUtils::get_path(&list, &["DisplayData", "resultData", "tplData", "result"]).unwrap_or(&Value::Null);
         if JsonUtils::is_empty(result) {
@@ -506,7 +506,8 @@ impl Fund {
             return Ok(false);
         }
 
-        let body = JsonUtils::get_array_by_key(heavy_bond, "body");
+        let body: Vec<Value> = JsonUtils::get_array_by_key(heavy_bond, "body");
+
         if body.is_empty() {
             return Ok(false);
         }
@@ -605,8 +606,9 @@ impl Fund {
         }
 
         let list = JsonUtils::get_array_by_key(industry_positon, "list");
+        // 允许为空, 美股基金 list 可能为空
         if list.is_empty() {
-            return Err(Error::Error(String::from("`list` is empty!")).to_string());
+            return Ok(false);
         }
 
         let report_date = JsonUtils::get_string(&fund_positon, "date");

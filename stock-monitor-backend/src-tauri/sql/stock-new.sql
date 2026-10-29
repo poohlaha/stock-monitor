@@ -11,7 +11,7 @@
  Target Server Version : 80039 (8.0.39)
  File Encoding         : 65001
 
- Date: 03/09/2026 10:12:18
+ Date: 22/09/2026 10:00:00
 */
 
 SET NAMES utf8mb4;
@@ -411,6 +411,58 @@ CREATE TABLE `my_watchlist` (
   UNIQUE KEY `uk_user_fund` (`user_id`,`code`),
   KEY `idx_user` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='用户自选资产表，记录用户关注的基金、股票等资产关系';
+
+-- ----------------------------
+-- Table structure for stock_concept
+-- ----------------------------
+DROP TABLE IF EXISTS `stock_concept`;
+CREATE TABLE `stock_concept` (
+  `id` varchar(255) NOT NULL COMMENT 'ID',
+  `code` varchar(50) NOT NULL COMMENT '概念代码',
+  `name` varchar(100) NOT NULL COMMENT '概念名称',
+  `create_time` varchar(255) DEFAULT NULL COMMENT '创建时间',
+  `update_time` varchar(255) DEFAULT NULL COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_code` (`code`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COMMENT='股票概念';
+
+-- ----------------------------
+-- Table structure for stock_concept_relation
+-- ----------------------------
+DROP TABLE IF EXISTS `stock_concept_relation`;
+CREATE TABLE `stock_concept_relation` (
+  `id` varchar(255) NOT NULL COMMENT 'ID',
+  `asset_id` varchar(255) NOT NULL COMMENT '资产ID',
+  `concept_id` varchar(255) NOT NULL COMMENT '概念ID',
+  `change_rate` decimal(10,4) DEFAULT NULL COMMENT '概念涨跌幅',
+  `create_time` varchar(255) DEFAULT NULL COMMENT '创建时间',
+  `update_time` varchar(255) DEFAULT NULL COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_asset_concept` (`asset_id`,`concept_id`),
+  KEY `idx_concept_id` (`concept_id`),
+  KEY `idx_asset_id` (`asset_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COMMENT='股票概念关联';
+
+-- ----------------------------
+-- Table structure for stock_fund_flow
+-- ----------------------------
+DROP TABLE IF EXISTS `stock_fund_flow`;
+CREATE TABLE `stock_fund_flow` (
+  `id` varchar(255) NOT NULL COMMENT 'ID',
+  `asset_id` varchar(255) NOT NULL COMMENT '资产ID',
+  `flow_type` varchar(20) NOT NULL COMMENT '周期类型：day/week/month',
+  `fund_type` varchar(20) NOT NULL COMMENT '资金类型：main/retail',
+  `close_px` decimal(20,4) DEFAULT NULL COMMENT '当日收盘价',
+  `date` date NOT NULL COMMENT '日期',
+  `net_turnover` decimal(20,4) DEFAULT NULL COMMENT '净流入金额',
+  `turnover_in` decimal(20,4) DEFAULT NULL COMMENT '流入金额',
+  `turnover_out` decimal(20,4) DEFAULT NULL COMMENT '流出金额',
+  `create_time` varchar(255) DEFAULT NULL COMMENT '创建时间',
+  `update_time` varchar(255) DEFAULT NULL COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_asset_flow_fund_date` (`asset_id`,`flow_type`,`fund_type`,`date`),
+  KEY `idx_asset_flow_type` (`asset_id`,`flow_type`,`date`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COMMENT='股票主力与散户资金流向数据(日/周/月)';
 
 -- ----------------------------
 -- Table structure for stock_industry

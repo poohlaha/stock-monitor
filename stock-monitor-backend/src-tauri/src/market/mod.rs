@@ -257,8 +257,10 @@ impl Market {
       查询排行
       例: https://finance.pae.baidu.com/sapi/v1/ranks?bizType=stock_rank&category=&market=ab&pn=0&rn=12&fieldsType=base&finClientType=pc
     */
-    pub async fn query_stock_rank(market: &str) -> Result<HttpResponse, String> {
-        let url = format!("{}sapi/v1/ranks?bizType=stock_rank&category=&market={}&pn=0&rn=12&fieldsType=base&finClientType=pc", BD_HTTP_URL_PREFIX, market);
+    pub async fn query_stock_rank(market: &str, category: Option<String>) -> Result<HttpResponse, String> {
+        let category = if category.is_some() { category.unwrap_or_default() } else { "全部".to_string() };
+        let url = format!("{}sapi/v1/ranks?bizType=stock_rank&category={}&market={}&pn=0&rn=12&fieldsType=base&finClientType=pc", BD_HTTP_URL_PREFIX, &category, market);
+        // info!("query stock rank url: `{}`", url);
         Utils::get_time_response(&url).await
     }
 
@@ -273,4 +275,5 @@ impl Market {
         }
         Utils::get_time_response(&url).await
     }
+
 }

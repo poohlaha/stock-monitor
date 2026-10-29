@@ -5,6 +5,7 @@
 use crate::market::detail::MarketDetailInfo;
 use crate::market::Market;
 use crate::prepare::HttpResponse;
+use crate::stock::flow::StockFundFlow;
 use crate::stock::variable::{Args, HotStockType};
 use crate::stock::Stock;
 
@@ -30,6 +31,12 @@ pub async fn query_stock_info_data(args: Args) -> Result<HttpResponse, String> {
 #[tauri::command]
 pub async fn query_concept(args: Args) -> Result<HttpResponse, String> {
     Stock::query_concept(&args).await
+}
+
+/// 查询资金分布
+#[tauri::command]
+pub async fn query_fund_distribution(args: Args, flow_type: Option<String>) -> Result<HttpResponse, String> {
+    StockFundFlow::query_fund_distribution(&args, flow_type).await
 }
 
 /// 查询市场情况, 交易中/交易结束
@@ -166,8 +173,8 @@ pub async fn query_industry_hot(market: &str, sort_key: &str) -> Result<HttpResp
 
 /// 查询排行
 #[tauri::command]
-pub async fn query_stock_rank(market: &str) -> Result<HttpResponse, String> {
-    Market::query_stock_rank(market).await
+pub async fn query_stock_rank(market: &str, category: Option<String>) -> Result<HttpResponse, String> {
+    Market::query_stock_rank(market, category).await
 }
 
 /// 7 * 24 快讯
