@@ -204,6 +204,13 @@ const MarketDetail = (): ReactElement => {
           resolve(res)
         })
       )
+
+      queue.push(
+          new Promise(async resolve => {
+            const res = await marketStore.onGetFundDistribution(c, m, t)
+            resolve(res)
+          })
+      )
     }
 
     /*
@@ -280,6 +287,8 @@ const MarketDetail = (): ReactElement => {
   const startTimelineTimer = (c: string = '', m: string = '', t: string = '') => {
     const loop = async () => {
       await marketStore.getTimelineData(c, m, t)
+      await marketStore.onGetFundDistribution(c, m, t)
+
       // @ts-ignore
       timerRef.current = setTimeout(loop, 5000)
     }

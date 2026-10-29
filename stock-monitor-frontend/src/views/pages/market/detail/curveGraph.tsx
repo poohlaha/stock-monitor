@@ -431,7 +431,11 @@ const MarketDetailCurveGraph = (props: IMarketDetailCurveGraphProps): ReactEleme
           <p className="text-2xl font-bold">持仓分布</p>
           <div className="mt-2 flex flex-nowrap gap-4 h-96">
             <div className="flex-1 min-w-0 aspect-square h-full border-right" ref={positionPieChartRef}></div>
-            <div className="flex-1 min-w-0 aspect-square h-full" ref={positionBarChartRef}></div>
+            {
+              (props.industryList || []).length > 0 && (
+                    <div className="flex-1 min-w-0 aspect-square h-full" ref={positionBarChartRef}></div>
+                )
+            }
           </div>
         </div>
 

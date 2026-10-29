@@ -241,7 +241,8 @@ const MarketDetailStock = (props: IMarketDetailStockProps): ReactElement => {
                   <p
                     className={`${l.value > 0 ? 'bg-red-600' : 'bg-emerald-700'} rounded-md max-w-[200px] h-4`}
                     style={{
-                      width: `${width}%`
+                      width: `${width}%`,
+                      minWidth: l.value !== 0 ? '4px' : '0'
                     }}
                   ></p>
                 )}
@@ -332,7 +333,7 @@ const MarketDetailStock = (props: IMarketDetailStockProps): ReactElement => {
 
   // 资金分布
   const getZJFBNode = () => {
-    const result = ((marketStore.industryFundFlow || {}).fundFlowSpread || {}).result || {}
+    const result = ((marketStore.fundDistribution || {}).fundFlowSpread || {}).result || {}
     const analysis = result.analysis || {}
 
     const superGrp = result.superGrp || {} // 特大单
@@ -488,7 +489,7 @@ const MarketDetailStock = (props: IMarketDetailStockProps): ReactElement => {
                       <div className="h-8 flex-align-center flex-jsc-between" key={index}>
                         <div className="flex-align-center pr-2">
                           <div
-                            className="rounded-md p-0.5 text-white"
+                            className="rounded-md pt-0.5 pb-0.5 pl-1 pr-1 text-white"
                             style={{ background: item.backgroundColor || '' }}
                           >
                             {item.label || ''}
@@ -511,7 +512,7 @@ const MarketDetailStock = (props: IMarketDetailStockProps): ReactElement => {
                       <div className="h-8 flex-align-center flex-jsc-between" key={index}>
                         <div className="flex-align-center pr-2">
                           <div
-                            className="rounded-md p-0.5 text-white"
+                            className="rounded-md pt-0.5 pb-0.5 pl-1 pr-1 text-white"
                             style={{ background: item.backgroundColor || '' }}
                           >
                             {item.label || ''}
@@ -536,7 +537,7 @@ const MarketDetailStock = (props: IMarketDetailStockProps): ReactElement => {
 
   // 今日主力流向
   const getTodayZLLXNode = () => {
-    const result = ((marketStore.industryFundFlow || {}).fundFlowSpread || {}).result || {}
+    const result = ((marketStore.fundDistribution || {}).fundFlowSpread || {}).result || {}
     const todayMainFlow = result.todayMainFlow || {}
     return (
       <div className="flex-direction-column flex-1  border rounded-lg p-4">
@@ -614,7 +615,7 @@ const MarketDetailStock = (props: IMarketDetailStockProps): ReactElement => {
 
   // 资金流向-实时
   const onGetZjlxMinuteLineChart = () => {
-    const result = (marketStore.industryFundFlow || {}).fundFlowMinute || {}
+    const result = (marketStore.fundDistribution || {}).fundFlowMinute || {}
     if (!zjlxMinuteLineChartRef.current || Utils.isObjectNull(result || {})) {
       return
     }
@@ -960,18 +961,18 @@ const MarketDetailStock = (props: IMarketDetailStockProps): ReactElement => {
               flowType = 'month'
             }
 
-            await marketStore.onGetIndustryFundFlow(
+            await marketStore.onGetFundDistribution(
               props.code || '',
               props.market || '',
+              '',
               flowType || '',
-              tabIndex || '1'
             )
           }}
         />
 
         {zjlxActiveTabIndex === '1' && (
           <div
-            className="flex-1 h100 min-w-0 aspect-square border-right performance-line"
+            className="flex-1 h100 min-w-0 aspect-square performance-line"
             style={{
               height: 500
             }}
@@ -1018,48 +1019,111 @@ const MarketDetailStock = (props: IMarketDetailStockProps): ReactElement => {
             </Popover>
           </div>
 
-          <div className="flex-align-center mt-2">
-            <p className="font-bold shrink-0">公司名称: </p>
-            <div className="ml-2">{asset.name || ''}</div>
-          </div>
+          {
+            props.market === 'ab' && (
+                <>
+                  <div className="flex-align-center mt-2">
+                    <p className="font-bold shrink-0">公司名称: </p>
+                    <div className="ml-2">{asset.name || ''}</div>
+                  </div>
 
-          <div className="flex-align-center mt-2">
-            <p className="font-bold shrink-0">所属行业: </p>
-            <div className="ml-2">{industryNames.length > 0 ? industryNames.join('') : '-'}</div>
-          </div>
+                  <div className="flex-align-center mt-2">
+                    <p className="font-bold shrink-0">所属行业: </p>
+                    <div className="ml-2">{industryNames.length > 0 ? industryNames.join('') : '-'}</div>
+                  </div>
 
-          <div className="flex-align-center mt-2">
-            <p className="font-bold shrink-0">上市日期: </p>
-            <div className="ml-2">{stockInfo.releaseDate || '-'}</div>
-          </div>
+                  <div className="flex-align-center mt-2">
+                    <p className="font-bold shrink-0">上市日期: </p>
+                    <div className="ml-2">{stockInfo.releaseDate || '-'}</div>
+                  </div>
 
-          <div className="flex-align-center mt-2">
-            <p className="font-bold shrink-0">发行数量: </p>
-            <div className="ml-2">{formatNumberUnit(Number(stockInfo.issueNumber || 0)) || '-'}</div>
-          </div>
+                  <div className="flex-align-center mt-2">
+                    <p className="font-bold shrink-0">发行数量: </p>
+                    <div className="ml-2">{formatNumberUnit(Number(stockInfo.issueNumber || 0)) || '-'}</div>
+                  </div>
 
-          <div className="flex-align-center mt-2">
-            <p className="font-bold shrink-0">发行价格: </p>
-            <div className="ml-2">{Number(stockInfo.issuePrice || 0).toFixed(2)}</div>
-          </div>
+                  <div className="flex-align-center mt-2">
+                    <p className="font-bold shrink-0">发行价格: </p>
+                    <div className="ml-2">{Number(stockInfo.issuePrice || 0).toFixed(2)}</div>
+                  </div>
 
-          <div className="flex-align-center mt-2">
-            <p className="font-bold shrink-0">所在地区: </p>
-            <div className="ml-2">{stockInfo.region || '-'}</div>
-          </div>
+                  <div className="flex-align-center mt-2">
+                    <p className="font-bold shrink-0">所在地区: </p>
+                    <div className="ml-2">{stockInfo.region || '-'}</div>
+                  </div>
 
-          <div className="flex-align-start mt-2">
-            <p className="font-bold shrink-0">所属概念: </p>
-            <div className="ml-2 flex-1 flex-align-center flex-wrap">
-              {stockConceptList.map((concept: Record<string, any> = {}, index: number) => {
-                return (
-                  <p className="mr-2 mb-2 notice pt-1 pb-1 pl-2 pr-2 shrink-0" key={index}>
-                    {concept.name || ''}
-                  </p>
-                )
-              })}
-            </div>
-          </div>
+                  <div className="flex-align-start mt-2">
+                    <p className="font-bold shrink-0">所属概念: </p>
+                    <div className="ml-2 flex-1 flex-align-center flex-wrap">
+                      {stockConceptList.map((concept: Record<string, any> = {}, index: number) => {
+                        return (
+                            <p className="mr-2 mb-2 notice pt-1 pb-1 pl-2 pr-2 shrink-0" key={index}>
+                              {concept.name || ''}
+                            </p>
+                        )
+                      })}
+                    </div>
+                  </div>
+                </>
+              )
+          }
+
+          {
+            props.market !== 'ab' && (
+                  <>
+                    <div className="flex-align-center mt-2">
+                      <p className="font-bold shrink-0">行业/板块: </p>
+                      <div className="ml-2">{stockInfo.industry || ''}</div>
+                    </div>
+
+                    <div className="flex-align-center mt-2">
+                      <p className="font-bold shrink-0">中文名称: </p>
+                      <div className="ml-2">{stockInfo.chineseName || ''}</div>
+                    </div>
+
+                    <div className="flex-align-center mt-2">
+                      <p className="font-bold shrink-0">英文名称: </p>
+                      <div className="ml-2">{stockInfo.englishName || ''}</div>
+                    </div>
+
+                    <div className="flex-align-center mt-2">
+                      <p className="font-bold shrink-0">交易所: </p>
+                      <div className="ml-2">{stockInfo.exchange || ''}</div>
+                    </div>
+
+                    <div className="flex-align-center mt-2">
+                      <p className="font-bold shrink-0">流通股本: </p>
+                      <div className="ml-2">{Utils.formatPrice(stockInfo.circulatingShares || '0')}</div>
+                    </div>
+
+                    <div className="flex-align-center mt-2">
+                      <p className="font-bold shrink-0">成立时间: </p>
+                      <div className="ml-2">{stockInfo.established_date || ''}</div>
+                    </div>
+
+                    <div className="flex-align-center mt-2">
+                      <p className="font-bold shrink-0">网址: </p>
+                      <div className="ml-2">{stockInfo.website || ''}</div>
+                    </div>
+
+                    <div className="flex-align-center mt-2">
+                      <p className="font-bold shrink-0">公司电话: </p>
+                      <div className="ml-2">{stockInfo.companyPhone || ''}</div>
+                    </div>
+
+                    <div className="flex-align-center mt-2">
+                      <p className="font-bold shrink-0">公司地址: </p>
+                      <div className="ml-2">{stockInfo.companyAddress || ''}</div>
+                    </div>
+
+                    <div className="flex-align-center mt-2">
+                      <p className="font-bold shrink-0">业务描述: </p>
+                      <div className="ml-2">{stockInfo.businessDescription || ''}</div>
+                    </div>
+                  </>
+              )
+          }
+
         </div>
       </div>
     )

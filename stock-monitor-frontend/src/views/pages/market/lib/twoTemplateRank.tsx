@@ -12,15 +12,17 @@ import { getRateClassName } from '@pages/utils'
 
 interface ITwoTemplateRankProps {
   type: number // 1, 2, 3: A股, 美股等, 4: 排行
+  gridCols?: number
   list: Array<Record<string, any>>
   onAddSelection?: (item: Record<string, any>) => void // 加自选
 }
 
 const TwoTemplateRank = (props: ITwoTemplateRankProps): ReactElement => {
   const render = () => {
+    const gridCols = (props.gridCols || 0) === 1 ? 1 : 2
     return (
       <div className="two-template-rank flex-direction-column">
-        <div className="grid grid-cols-2 gap-x-5">
+        <div className={`grid grid-cols-${gridCols} gap-x-5`}>
           {/* 左侧表头 */}
           <div className="flex-align-center color-gray h-8 min-h-8">
             <p className="w-16 text-c pl-2">排名</p>
@@ -49,25 +51,29 @@ const TwoTemplateRank = (props: ITwoTemplateRankProps): ReactElement => {
           </div>
 
           {/* 右侧表头 */}
-          <div className="flex-align-center color-gray">
-            <p className="w-16 text-c pl-2">排名</p>
-            <p className="flex-2 text-l">名称/代码</p>
-            {props.type === 4 && (
-              <>
-                <p className="flex-1 text-r">最新价</p>
-                <p className="flex-1 text-r">涨跌幅</p>
-                <p className="flex-1 text-r pr-2">加自选</p>
-              </>
-            )}
-            {props.type === 1 && (
-              <>
-                <p className="flex-1 text-r">涨跌幅</p>
-                <p className="flex-1 text-r pr-2">热度</p>
-              </>
-            )}
+          {
+            gridCols === 2 && (
+                  <div className="flex-align-center color-gray">
+                    <p className="w-16 text-c pl-2">排名</p>
+                    <p className="flex-2 text-l">名称/代码</p>
+                    {props.type === 4 && (
+                        <>
+                          <p className="flex-1 text-r">最新价</p>
+                          <p className="flex-1 text-r">涨跌幅</p>
+                          <p className="flex-1 text-r pr-2">加自选</p>
+                        </>
+                    )}
+                    {props.type === 1 && (
+                        <>
+                          <p className="flex-1 text-r">涨跌幅</p>
+                          <p className="flex-1 text-r pr-2">热度</p>
+                        </>
+                    )}
 
-            {props.type === 2 && <p className="flex-1 text-r pr-2">综合评分</p>}
-          </div>
+                    {props.type === 2 && <p className="flex-1 text-r pr-2">综合评分</p>}
+                  </div>
+              )
+          }
 
           {(props.list || []).map((l: Record<string, any> = {}, index: number) => {
             const rankDiff = l.rankDiff
@@ -77,7 +83,7 @@ const TwoTemplateRank = (props: ITwoTemplateRankProps): ReactElement => {
             }
             return (
               <div
-                className="flex-1 h-16 border-bottom bg-line-hover flex-align-center min-h-16 hover:rounded-md"
+                className="flex-1 border-bottom bg-line-hover flex-align-center min-h-16 pt-2 pb-2 hover:rounded-md"
                 key={index}
               >
                 <div className="flex-direction-column w-16 pl-2">
@@ -111,6 +117,17 @@ const TwoTemplateRank = (props: ITwoTemplateRankProps): ReactElement => {
                   {!Utils.isBlank(logo || '') && (
                     <img src={logo || null} className="w-10 h-10 mr-2 rounded-full border" />
                   )}
+                  {
+                    Utils.isBlank(logo || '') && (
+                          <div
+                              className="default-logo text-xs w-10 h-10 mr-2 rounded-full border flex-center"
+                              style={{
+                                backgroundColor: 'rgb(234, 239, 253)',
+                                color: 'rgb(47, 95, 237)',
+                              }}
+                            >AI</div>
+                    )
+                  }
                   <div className="flex-direction-column">
                     <p className="font-bold">{l.name || ''}</p>
                     <div className="mt-1 flex-align-center text-xs">

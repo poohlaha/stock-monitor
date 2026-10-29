@@ -35,7 +35,7 @@ class MarketStore extends BaseStore {
   @observable watchList: Array<Record<string, any>> = [] // 我的自选列表
   @observable performanceGraph: Array<Record<string, any>> = []
   @observable networthGraph: Array<Record<string, any>> = []
-  @observable industryFundFlow: Record<string, any> = {}
+  @observable industryFundFlow: Record<string, any> = {} // TODO delete
   @observable industryOtherFundFlow: Record<string, any> = {}
   @observable newsList: Array<Record<string, any>> = []
   @observable stockConceptList: Array<Record<string, any>> = [] // 行业概念
@@ -48,7 +48,7 @@ class MarketStore extends BaseStore {
   @observable stockRfDistribution: Record<string, any> = {} // 涨跌分布
   @observable stockIndustryHot: Array<Record<string, any>> = [] // 热力图
   @observable popularSectionList: Array<Record<string, any>> = [] // 热门板块
-  @observable stockRankList: Array<Record<string, any>> = [] // 排行
+  @observable stockRank: Record<string, any> = {} // 排行
   @observable breakingNews: Record<string, any> = {} // 7 * 24 快讯
   @observable stockMainMoneyInList: Array<Record<string, any>> = [] // 查询A|港|美股主力净流入
   @observable floatStockCommentary: Array<Record<string, any>> = [] // 股评(浮动)
@@ -56,6 +56,7 @@ class MarketStore extends BaseStore {
   @observable relatedTarget: Record<string, any> = {} // 股票关联标的
   @observable watchGroupList: Array<any> = [] // 分组列表
   @observable groupWatchList: Array<any> = [] // 分组下的列表
+  @observable fundDistribution: Record<string, any> = [] // 资金分布、流向等
 
   readonly ADD_GROUP_FORM_DEFAULT: Record<string, any> = {
     name: ''
@@ -701,6 +702,46 @@ class MarketStore extends BaseStore {
       this.loading = false
       throw new Error(e)
     }
+  }
+
+  /**
+   * 查询资金分布(实时)
+   */
+  async onGetFundDistribution(
+      code: string = '',
+      market: string = '',
+      type: string = '',
+      flowType: string = ''
+  ) {
+    if (Utils.isBlank(code || '')) {
+      return
+    }
+
+    if (Utils.isBlank(market || '')) {
+      return
+    }
+
+    try {
+      let result: { [K: string]: any } =
+          (await invoke('query_fund_distribution', {
+            args: {
+              code,
+              market,
+              marketType: type,
+              queryType: '',
+              klineType: ''
+            },
+            flowType
+          })) || {}
+      let data = this.handleResult(result) || {}
+      this.fundDistribution = data.content || {}
+      console.log('get fund distribution: ', this.fundDistribution)
+      return result || {}
+    } catch (e: any) {
+      this.loading = false
+      throw new Error(e)
+    }
+
   }
 
   /**
@@ -1407,13 +1448,14 @@ class MarketStore extends BaseStore {
 
   // 查询排行
   @action
-  async onGetStockRank(market: string = '') {
+  async onGetStockRank(market: string = '', category: string = '') {
     try {
-      let result: { [K: string]: any } = (await invoke('query_stock_rank', { market })) || {}
+      let result: { [K: string]: any } = (await invoke('query_stock_rank', { market, category })) || {}
       const data = this.handleResult(result) || []
-      this.stockRankList = []
-      this.stockRankList = (data.list || {}).body || []
-      console.log('stock rank list: ', this.stockRankList)
+      this.stockRank = {}
+      this.stockRank.list = (data.list || {}).body || []
+      this.stockRank.tabs = data.tabs || []
+      console.log('stock rank: ', this.stockRank)
       return result || {}
     } catch (e: any) {
       this.loading = false
@@ -1696,7 +1738,7 @@ class MarketStore extends BaseStore {
     this.stockRfDistribution = {}
     this.stockIndustryHot = []
     this.popularSectionList = []
-    this.stockRankList = []
+    this.stockRank = {}
     this.stockMainMoneyInList = []
     this.floatStockCommentary = []
     this.stockAnalysis = []

@@ -44,7 +44,7 @@ const MarketDetailPosition = (props: IMarketDetailPositionProps): ReactElement =
             return (
               <div className="flex-align-center min-h-8 pt-2 pb-2 w100 bg-line-hover pl-4 pr-4 rounded-md" key={index}>
                 <p className="flex-1 text-center theme-hover cursor-pointer" onClick={() => props.onStockClick?.(b)}>
-                  {b.targetName || '-'}
+                  {b.targetName || b.name || '-'}
                 </p>
                 <p className={`flex-1 text-center ${getRateClassName(b.priceChange || '-')}`}>
                   {Number(b.priceChange || '0').toFixed(2)}%
@@ -71,7 +71,7 @@ const MarketDetailPosition = (props: IMarketDetailPositionProps): ReactElement =
                     className="flex-align-center min-h-8 pt-2 pb-2 w100 bg-line-hover pl-4 pr-4 rounded-md"
                     key={index}
                   >
-                    <p className="flex-1 text-center">{b.targetName || '-'}</p>
+                    <p className="flex-1 text-center">{b.targetName || b.name || '-'}</p>
                     <p className="flex-1 text-center">{Number(b.proportion || '0').toFixed(2)}%</p>
                   </div>
                 )

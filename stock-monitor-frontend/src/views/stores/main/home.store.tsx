@@ -77,7 +77,7 @@ class HomeStore extends BaseStore {
 
   @observable breadcrumbItems: Array<{ [K: string]: any }> = [] // 面包屑
 
-  @observable selectedMenu: string = this.MENU_LIST[0].key
+  @observable selectedMenu: string = this.MENU_LIST[1].key
 
   constructor() {
     super()

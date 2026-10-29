@@ -41,6 +41,7 @@ const MarketCenter = (props: IMarketCenterProps): ReactElement => {
   const [industryHotActiveTabIndex, setIndustryHotActiveTabIndex] = useState(industryHotItems[0].key || '')
   const [popularSectionActiveTabIndex, setPopularSectionActiveTabIndex] = useState(0)
   const [mainInActiveTabIndex, setMainInActiveTabIndex] = useState('HY')
+  const [rankActiveTabIndex, setRankActiveTabIndex] = useState(0)
 
   const industryHotTreeChartRef = useRef(null)
   const industryHotChartRef = useRef<echarts.ECharts | null>(null)
@@ -371,8 +372,9 @@ const MarketCenter = (props: IMarketCenterProps): ReactElement => {
     )
   }
 
-  // A 股热门板块
-  const getAPopularSection = () => {
+  // 热门板块
+  const getPopularSection = () => {
+    const item = items.find((t: Record<string, any> = {}) => t.key === activeTabIndex) || {}
     const popularSectionList = marketStore.popularSectionList || []
     const tabs = popularSectionList.map((p: Record<string, any> = {}) => p.name || '') || []
     const list = popularSectionList.flatMap((p: Record<string, any> = {}, i: number) => {
@@ -384,25 +386,29 @@ const MarketCenter = (props: IMarketCenterProps): ReactElement => {
     })
 
     return (
-      <GroupTemplate title="A股热门板块" className="flex-1 flex-direction-column mt-8" titleSizeClassName="text-xl">
-        <div className="flex-align-center flex-wrap gap-2.5">
-          {(tabs || []).map((t: string, index: number) => {
-            const active = popularSectionActiveTabIndex === index
-            return (
-              <div
-                className={`${active ? 'hot-active active' : ''} menu-item pl-2 pr-2 pt-1 pb-1 rounded-lg mr-2 change-color cursor-pointer`}
-                key={index}
-                onClick={async () => {
-                  setPopularSectionActiveTabIndex(index)
-                }}
-              >
-                <p className="whitespace-nowrap">{t || ''}</p>
-              </div>
+      <GroupTemplate title={`${item.label || ''}热门板块`} className="flex-1 flex-direction-column mt-8" titleSizeClassName="text-xl">
+        {
+          item.key === items[1].key && (
+                <div className="flex-align-center flex-wrap gap-2.5">
+                  {(tabs || []).map((t: string, index: number) => {
+                    const active = popularSectionActiveTabIndex === index
+                    return (
+                        <div
+                            className={`${active ? 'hot-active active' : ''} menu-item pl-2 pr-2 pt-1 pb-1 rounded-lg mr-2 change-color cursor-pointer`}
+                            key={index}
+                            onClick={async () => {
+                              setPopularSectionActiveTabIndex(index)
+                            }}
+                        >
+                          <p className="whitespace-nowrap">{t || ''}</p>
+                        </div>
+                    )
+                  })}
+                </div>
             )
-          })}
-        </div>
+        }
 
-        <div className="mt-4 flex-wrap gap-4">
+        <div className={`${item.key === items[1].key ? 'mt-4' : ''} flex-wrap gap-4`}>
           {(list || []).map((l: Record<string, any> = {}, index: number) => {
             const firstList = l.rise_first || []
             const first = firstList.length > 0 ? firstList[0] || {} : {}
@@ -410,7 +416,7 @@ const MarketCenter = (props: IMarketCenterProps): ReactElement => {
             let color = getColor(first.ratio?.value || '-')
             return (
               <div
-                className="border rounded-lg p-4 flex-align-center w-64 h-24 bg-line-hover hover:shadow-md"
+                className="border rounded-lg p-4 flex-align-center w-72 h-24 bg-line-hover hover:shadow-md"
                 key={index}
               >
                 <div className="flex-1 pr-2 flex-direction-column">
@@ -448,11 +454,34 @@ const MarketCenter = (props: IMarketCenterProps): ReactElement => {
     )
   }
 
-  // A 股排行
-  const getARank = () => {
+  // 排行
+  const getRank = () => {
+    const item = items.find((t: Record<string, any> = {}) => t.key === activeTabIndex) || {}
+
+    let list = marketStore.stockRank.list || []
+    let tabs = marketStore.stockRank.tabs || []
+
     return (
-      <GroupTemplate title="A股排行" className="flex-1 flex-direction-column mt-8" titleSizeClassName="text-xl">
-        <TwoTemplateRank type={4} list={marketStore.stockRankList || []} onAddSelection={() => {}} />
+      <GroupTemplate title={`${item.label || ''}排行`} className="flex-1 flex-direction-column mt-8" titleSizeClassName="text-xl">
+        <div className="flex-align-center flex-wrap gap-2.5 mb-4">
+          {(tabs || []).map((t: string = "", index: number) => {
+            const active = index === rankActiveTabIndex
+            return (
+                <div
+                    className={`${active ? 'hot-active active' : ''} menu-item pl-2 pr-2 pt-1 pb-1 rounded-lg mr-2 change-color cursor-pointer`}
+                    key={index}
+                    onClick={async () => {
+                      setRankActiveTabIndex(index)
+                      await marketStore.onGetStockRank(item.value || '', t)
+                    }}
+                >
+                  <p className="whitespace-nowrap">{t || ''}</p>
+                </div>
+            )
+          })}
+        </div>
+
+        <TwoTemplateRank type={4} list={list || []} gridCols={1} onAddSelection={() => {}} />
       </GroupTemplate>
     )
   }
@@ -475,22 +504,26 @@ const MarketCenter = (props: IMarketCenterProps): ReactElement => {
       Math.max(...(data || []).map((d: Record<any, any> = {}) => Math.abs(parseCNNumber(d.mainNetTurnover)))) || 0
     return (
       <GroupTemplate title={`${item.label}主力净流入`} className="mt-8">
-        <div className="flex-align-center flex-wrap gap-2.5">
-          {(tabs || []).map((t: Record<string, any> = {}, index: number) => {
-            const active = mainInActiveTabIndex === t.blockType
-            return (
-              <div
-                className={`${active ? 'hot-active active' : ''} menu-item pl-2 pr-2 pt-1 pb-1 rounded-lg mr-2 change-color cursor-pointer`}
-                key={index}
-                onClick={async () => {
-                  setMainInActiveTabIndex(t.blockType)
-                }}
-              >
-                <p className="whitespace-nowrap">{t.blockTypeName || ''}</p>
-              </div>
-            )
-          })}
-        </div>
+        {
+          (activeTabIndex === items[1].key) && (
+                <div className="flex-align-center flex-wrap gap-2.5">
+                  {(tabs || []).map((t: Record<string, any> = {}, index: number) => {
+                    const active = mainInActiveTabIndex === t.blockType
+                    return (
+                        <div
+                            className={`${active ? 'hot-active active' : ''} menu-item pl-2 pr-2 pt-1 pb-1 rounded-lg mr-2 change-color cursor-pointer`}
+                            key={index}
+                            onClick={async () => {
+                              setMainInActiveTabIndex(t.blockType)
+                            }}
+                        >
+                          <p className="whitespace-nowrap">{t.blockTypeName || ''}</p>
+                        </div>
+                    )
+                  })}
+                </div>
+          )
+        }
 
         <div className="flex-align-center mt-4">
           <div className="flex-align-center mr-4">
@@ -551,13 +584,21 @@ const MarketCenter = (props: IMarketCenterProps): ReactElement => {
               await marketStore.onGetWorldwideMarketCenter()
             }
 
-            if (tabIndex === items[1].key || tabIndex === items[2].key || tabIndex === items[3].key) {
+            setIndustryHotActiveTabIndex(industryHotItems[0].key || '')
+            await marketStore.onGetStockRfDistribution(tabIndex)
+            await marketStore.onGetStockIndustryHot(tabIndex, industryHotItems[0].key || '')
+
+            if (tabIndex === items[1].key || tabIndex === items[2].key) {
               // await marketStore.onGetOtherMarketCenter(tabIndex)
-              await marketStore.onGetStockRfDistribution(tabIndex)
-              await marketStore.onGetStockIndustryHot(tabIndex, industryHotActiveTabIndex)
-              await marketStore.onGetPopularSection('ab')
-              await marketStore.onGetStockRank('ab')
-              await marketStore.onGetMainMoneyIn('ab')
+              await marketStore.onGetPopularSection(items[1].value)
+              await marketStore.onGetStockRank(items[1].value)
+              await marketStore.onGetMainMoneyIn(items[1].value)
+            }
+
+            if (tabIndex === items[3].key) {
+              await marketStore.onGetPopularSection(items[3].value)
+              await marketStore.onGetStockRank(items[3].value)
+              await marketStore.onGetMainMoneyIn(items[3].value)
             }
           }}
         />
@@ -566,7 +607,7 @@ const MarketCenter = (props: IMarketCenterProps): ReactElement => {
           <MarketCenterGlobal toDetailPage={(item: Record<any, any> = {}) => props.toDetailPage?.(item)} />
         )}
 
-        {activeTabIndex === items[1].key && (
+        {(activeTabIndex === items[1].key || activeTabIndex === items[3].key) && (
           <div className="flex-direction-column">
             {/* 涨跌分布 | 热力图 */}
             {getRfDistribution()}
@@ -574,11 +615,11 @@ const MarketCenter = (props: IMarketCenterProps): ReactElement => {
             {/* 主力净流入 */}
             {getMainIn()}
 
-            {/* A 股热门板块 */}
-            {getAPopularSection()}
+            {/* 热门板块 */}
+            {getPopularSection()}
 
-            {/* A 股排行 */}
-            {getARank()}
+            {/* 排行 */}
+            {getRank()}
           </div>
         )}
       </GroupTemplate>
