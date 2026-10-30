@@ -2,8 +2,6 @@
   股票/ETF信息
 */
 
-use std::ptr::null;
-use std::str::FromStr;
 use crate::asset::asset::{Asset, AssetArgs};
 use crate::asset::tag::AssetTagArgs;
 use crate::error::Error;
@@ -24,6 +22,8 @@ use mysql::binlog::TransactionPayloadCompressionType::NONE;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
+use std::ptr::null;
+use std::str::FromStr;
 use uuid::Uuid;
 
 pub mod concept;
@@ -54,6 +54,21 @@ pub struct StockInfoResult {
     #[serde(rename = "currency")]
     currency: Value,
 
+    #[serde(rename = "chartTabs")]
+    chart_tabs: Value, // 盘前、盘中、盘后、夜盘、全天
+
+    #[serde(rename = "nightMarketInfo")]
+    night_market_info: Value, // 夜盘行情
+
+    #[serde(rename = "preMarketInfo")]
+    pre_market_info: Value, // 盘前行情
+
+    #[serde(rename = "postMarketInfo")]
+    post_market_info: Value, // 盘后行情
+
+    #[serde(rename = "outMarketInfo")]
+    out_market_info: Value, // 盘外行情, 通常指非正常交易时段的行情，这里对应盘后
+
     #[serde(rename = "update")]
     update: Value,
 }
@@ -63,7 +78,8 @@ pub struct Stock {}
 impl Stock {
     /*
       查询股票信息, 包括分时图等
-      例: https://finance.pae.baidu.com/vapi/v1/getquotation?srcid=5353&pointType=string&group=quotation_minute_ab&query=588710&code=588710&market_type=ab&newFormat=1&name=%E5%8D%8E%E6%B3%B0%E6%9F%8F%E7%91%9E%E4%B8%8A%E8%AF%81%E7%A7%91%E5%88%9B%E6%9D%BF%E5%8D%8A%E5%AF%BC%E4%BD%93%E6%9D%90%E6%96%99%E8%AE%BE%E5%A4%87%E4%B8%BB%E9%A2%98ETF&is_kc=1&finClientType=pc&financeType=etf&finClientType=pc
+      例: A股:   https://finance.pae.baidu.com/vapi/v1/getquotation?srcid=5353&pointType=string&group=quotation_minute_ab&query=588710&code=588710&market_type=ab&newFormat=1&name=%E5%8D%8E%E6%B3%B0%E6%9F%8F%E7%91%9E%E4%B8%8A%E8%AF%81%E7%A7%91%E5%88%9B%E6%9D%BF%E5%8D%8A%E5%AF%BC%E4%BD%93%E6%9D%90%E6%96%99%E8%AE%BE%E5%A4%87%E4%B8%BB%E9%A2%98ETF&is_kc=1&finClientType=pc&financeType=etf&finClientType=pc
+         其他股: https://finance.pae.baidu.com/vapi/v1/getquotation?srcid=5353&all=1&code=SNDK&query=SNDK&eprop=min&financeType=stock&group=quotation_minute_us&stock_type=us&chartType=minute&finClientType=pc
     */
     pub async fn query(args: &Args) -> Result<Value, String> {
         if args.code.is_empty() {
@@ -80,23 +96,34 @@ impl Stock {
         }
 
         let k_line_type = args.k_line_type.as_str();
-        let mut url = format!(
-            "{}vapi/v1/getquotation?pointType=string&group=quotation_{}_{}&query={}&code={}&market_type={}&newFormat=1&is_kc=1&financeType={}&finClientType=pc",
-            BD_HTTP_URL_PREFIX,
-            query_type,
-            args.market,
-            args.code,
-            args.code,
-            args.market,
-            args.market_type.as_str(),
-        );
+        let mut url = String::new();
+        if args.market == "ab" {
+            url = format!(
+                "{}vapi/v1/getquotation?pointType=string&group=quotation_{}_{}&query={}&code={}&market_type={}&newFormat=1&is_kc=1&financeType={}&finClientType=pc",
+                BD_HTTP_URL_PREFIX,
+                query_type,
+                args.market,
+                args.code,
+                args.code,
+                args.market,
+                args.market_type.as_str(),
+            );
 
-        if args.query_type == QueryType::Kline {
-            url = format!("{}&ktype={}", url, k_line_type);
+            if args.query_type == QueryType::Kline {
+                url = format!("{}&ktype={}", url, k_line_type);
+            }
+        } else {
+            url = format!(
+                "{}vapi/v1/getquotation?srcid=5353&pointType=string&group=quotation_{}_us&query={}&code={}&market_type={}&newFormat=1&is_kc=0&finClientType=pc&finClientType=pc",
+                BD_HTTP_URL_PREFIX, query_type, args.code, args.code, args.market,
+            );
+
+            if args.query_type == QueryType::Kline {
+                url = format!("{}&ktype={}", url, k_line_type);
+            }
         }
 
-        // info!("{} request url: {}", LOGGER_PREFIX, url);
-
+        info!("{} request url: {}", LOGGER_PREFIX, url);
         Utils::get_response(&url).await
     }
 
@@ -207,6 +234,8 @@ impl Stock {
     */
     pub async fn query_info(args: &Args) -> Result<HttpResponse, String> {
         let result = Self::query(args).await?;
+        info!("result: {:#?}", result);
+
         if JsonUtils::is_empty(&result) {
             return Ok(get_success_response(None));
         }
@@ -436,10 +465,7 @@ impl Stock {
     pub async fn get_stock_other_info(args: &Args) -> Result<Value, String> {
         let url = format!(
             "{}/selfselect/openapi?srcid=5539&code={}&market={}&fs_id=KK1T75-R&fs_s_id=QJ0BJ6-S&fs_e_id=116LTR-E&group={}_basic&finClientType=pc",
-            BD_HTTP_URL_PREFIX,
-            args.code,
-            args.market,
-            args.market
+            BD_HTTP_URL_PREFIX, args.code, args.market, args.market
         );
         Utils::get_response(&url).await
     }
@@ -627,6 +653,21 @@ impl Stock {
         // 6. 当前交易状态、时间、时区
         let update = JsonUtils::get_path(&result, &["update"]).unwrap_or(&Value::Null);
 
+        // 7. 分时图上的额外 tab(盘前、盘中、盘后、夜盘、全天
+        let chart_tabs = JsonUtils::get_path(&result, &["chartTabs"]).unwrap_or(&Value::Null);
+
+        // 8. 夜盘行情
+        let night_market_info = JsonUtils::get_path(&result, &["nightMarketInfo"]).unwrap_or(&Value::Null);
+
+        // 9. 盘前行情
+        let pre_market_info = JsonUtils::get_path(&result, &["preMarketInfo"]).unwrap_or(&Value::Null);
+
+        // 10. 盘后行情
+        let post_market_info = JsonUtils::get_path(&result, &["postMarketInfo"]).unwrap_or(&Value::Null);
+
+        // 11. 盘外行情, 通常指非正常交易时段的行情，这里对应盘后
+        let out_market_info = JsonUtils::get_path(&result, &["outMarketInfo"]).unwrap_or(&Value::Null);
+
         Ok(StockInfoResult {
             pan_kou,
             ask_list: ask_list.clone(),
@@ -635,6 +676,11 @@ impl Stock {
             market_data: market_data.clone(),
             currency: currency.clone(),
             update: update.clone(),
+            chart_tabs: chart_tabs.clone(),
+            night_market_info: night_market_info.clone(),
+            pre_market_info: pre_market_info.clone(),
+            post_market_info: post_market_info.clone(),
+            out_market_info: out_market_info.clone(),
         })
     }
 
@@ -761,6 +807,7 @@ impl Stock {
 
         // 通过接口查询
         let result = Self::query(args).await?;
+        info!("result: {:#?}", result);
         let market_data = JsonUtils::get_path(&result, &["newMarketData"]).unwrap_or(&Value::Null);
 
         // 五日直接取 newMarketData -> marketData(数组, 需要解析数据中的 p)

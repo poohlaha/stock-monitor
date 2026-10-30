@@ -275,5 +275,4 @@ impl Market {
         }
         Utils::get_time_response(&url).await
     }
-
 }

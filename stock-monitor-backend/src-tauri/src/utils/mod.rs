@@ -76,7 +76,7 @@ impl Utils {
         match response {
             Ok((status, _, body)) => {
                 if !status.is_success() {
-                    error!("status is not success");
+                    error!("status is not success: {:#?}", status);
                     return Err(Error::Error(String::from("get data error!")).to_string());
                 }
 
