@@ -386,27 +386,29 @@ const MarketCenter = (props: IMarketCenterProps): ReactElement => {
     })
 
     return (
-      <GroupTemplate title={`${item.label || ''}热门板块`} className="flex-1 flex-direction-column mt-8" titleSizeClassName="text-xl">
-        {
-          item.key === items[1].key && (
-                <div className="flex-align-center flex-wrap gap-2.5">
-                  {(tabs || []).map((t: string, index: number) => {
-                    const active = popularSectionActiveTabIndex === index
-                    return (
-                        <div
-                            className={`${active ? 'hot-active active' : ''} menu-item pl-2 pr-2 pt-1 pb-1 rounded-lg mr-2 change-color cursor-pointer`}
-                            key={index}
-                            onClick={async () => {
-                              setPopularSectionActiveTabIndex(index)
-                            }}
-                        >
-                          <p className="whitespace-nowrap">{t || ''}</p>
-                        </div>
-                    )
-                  })}
+      <GroupTemplate
+        title={`${item.label || ''}热门板块`}
+        className="flex-1 flex-direction-column mt-8"
+        titleSizeClassName="text-xl"
+      >
+        {item.key === items[1].key && (
+          <div className="flex-align-center flex-wrap gap-2.5">
+            {(tabs || []).map((t: string, index: number) => {
+              const active = popularSectionActiveTabIndex === index
+              return (
+                <div
+                  className={`${active ? 'hot-active active' : ''} menu-item pl-2 pr-2 pt-1 pb-1 rounded-lg mr-2 change-color cursor-pointer`}
+                  key={index}
+                  onClick={async () => {
+                    setPopularSectionActiveTabIndex(index)
+                  }}
+                >
+                  <p className="whitespace-nowrap">{t || ''}</p>
                 </div>
-            )
-        }
+              )
+            })}
+          </div>
+        )}
 
         <div className={`${item.key === items[1].key ? 'mt-4' : ''} flex-wrap gap-4`}>
           {(list || []).map((l: Record<string, any> = {}, index: number) => {
@@ -462,21 +464,25 @@ const MarketCenter = (props: IMarketCenterProps): ReactElement => {
     let tabs = marketStore.stockRank.tabs || []
 
     return (
-      <GroupTemplate title={`${item.label || ''}排行`} className="flex-1 flex-direction-column mt-8" titleSizeClassName="text-xl">
+      <GroupTemplate
+        title={`${item.label || ''}排行`}
+        className="flex-1 flex-direction-column mt-8"
+        titleSizeClassName="text-xl"
+      >
         <div className="flex-align-center flex-wrap gap-2.5 mb-4">
-          {(tabs || []).map((t: string = "", index: number) => {
+          {(tabs || []).map((t: string = '', index: number) => {
             const active = index === rankActiveTabIndex
             return (
-                <div
-                    className={`${active ? 'hot-active active' : ''} menu-item pl-2 pr-2 pt-1 pb-1 rounded-lg mr-2 change-color cursor-pointer`}
-                    key={index}
-                    onClick={async () => {
-                      setRankActiveTabIndex(index)
-                      await marketStore.onGetStockRank(item.value || '', t)
-                    }}
-                >
-                  <p className="whitespace-nowrap">{t || ''}</p>
-                </div>
+              <div
+                className={`${active ? 'hot-active active' : ''} menu-item pl-2 pr-2 pt-1 pb-1 rounded-lg mr-2 change-color cursor-pointer`}
+                key={index}
+                onClick={async () => {
+                  setRankActiveTabIndex(index)
+                  await marketStore.onGetStockRank(item.value || '', t)
+                }}
+              >
+                <p className="whitespace-nowrap">{t || ''}</p>
+              </div>
             )
           })}
         </div>
@@ -504,26 +510,24 @@ const MarketCenter = (props: IMarketCenterProps): ReactElement => {
       Math.max(...(data || []).map((d: Record<any, any> = {}) => Math.abs(parseCNNumber(d.mainNetTurnover)))) || 0
     return (
       <GroupTemplate title={`${item.label}主力净流入`} className="mt-8">
-        {
-          (activeTabIndex === items[1].key) && (
-                <div className="flex-align-center flex-wrap gap-2.5">
-                  {(tabs || []).map((t: Record<string, any> = {}, index: number) => {
-                    const active = mainInActiveTabIndex === t.blockType
-                    return (
-                        <div
-                            className={`${active ? 'hot-active active' : ''} menu-item pl-2 pr-2 pt-1 pb-1 rounded-lg mr-2 change-color cursor-pointer`}
-                            key={index}
-                            onClick={async () => {
-                              setMainInActiveTabIndex(t.blockType)
-                            }}
-                        >
-                          <p className="whitespace-nowrap">{t.blockTypeName || ''}</p>
-                        </div>
-                    )
-                  })}
+        {activeTabIndex === items[1].key && (
+          <div className="flex-align-center flex-wrap gap-2.5">
+            {(tabs || []).map((t: Record<string, any> = {}, index: number) => {
+              const active = mainInActiveTabIndex === t.blockType
+              return (
+                <div
+                  className={`${active ? 'hot-active active' : ''} menu-item pl-2 pr-2 pt-1 pb-1 rounded-lg mr-2 change-color cursor-pointer`}
+                  key={index}
+                  onClick={async () => {
+                    setMainInActiveTabIndex(t.blockType)
+                  }}
+                >
+                  <p className="whitespace-nowrap">{t.blockTypeName || ''}</p>
                 </div>
-          )
-        }
+              )
+            })}
+          </div>
+        )}
 
         <div className="flex-align-center mt-4">
           <div className="flex-align-center mr-4">

@@ -206,10 +206,10 @@ const MarketDetail = (): ReactElement => {
       )
 
       queue.push(
-          new Promise(async resolve => {
-            const res = await marketStore.onGetFundDistribution(c, m, t)
-            resolve(res)
-          })
+        new Promise(async resolve => {
+          const res = await marketStore.onGetFundDistribution(c, m, t)
+          resolve(res)
+        })
       )
     }
 
@@ -354,10 +354,29 @@ const MarketDetail = (): ReactElement => {
     }
   }
 
+  const getExtra = () => {
+    const chartTabs = marketStore.openDataInfo?.realInfo?.chartTabs || []
+    if (chartTabs.length === 0) {
+      return {}
+    }
+
+    const nightMarketInfo = marketStore.openDataInfo?.realInfo?.nightMarketInfo || {}
+    const outMarketInfo = marketStore.openDataInfo?.realInfo?.outMarketInfo || {}
+    const postMarketInfo = marketStore.openDataInfo?.realInfo?.postMarketInfo || {}
+    const preMarketInfo = marketStore.openDataInfo?.realInfo?.preMarketInfo || {}
+    return {
+      nightMarketInfo,
+      outMarketInfo,
+      postMarketInfo,
+      preMarketInfo
+    }
+  }
+
   const render = () => {
     const priceChange: Array<Record<string, any>> = marketStore.openDataInfo?.priceChange || [] // 涨跌幅
     const basicInfo: Record<string, any> = getBasicInfo(priceChange || [])
     const currency = getCurrency()
+    const extra = getExtra() || {}
 
     const asset = basicInfo.asset || {} // 资产信息
     const ex = Utils.isBlank(exchange || '') ? asset.exchange || '' : exchange || ''
@@ -379,6 +398,7 @@ const MarketDetail = (): ReactElement => {
               type={type}
               basicInfo={basicInfo}
               currency={currency}
+              extra={extra}
               onAddSelection={async () => {
                 await marketStore.onGetWatchGroupList(() => {
                   setOnOpenSelection(true)

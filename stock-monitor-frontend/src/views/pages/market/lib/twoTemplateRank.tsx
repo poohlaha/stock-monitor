@@ -51,29 +51,27 @@ const TwoTemplateRank = (props: ITwoTemplateRankProps): ReactElement => {
           </div>
 
           {/* 右侧表头 */}
-          {
-            gridCols === 2 && (
-                  <div className="flex-align-center color-gray">
-                    <p className="w-16 text-c pl-2">排名</p>
-                    <p className="flex-2 text-l">名称/代码</p>
-                    {props.type === 4 && (
-                        <>
-                          <p className="flex-1 text-r">最新价</p>
-                          <p className="flex-1 text-r">涨跌幅</p>
-                          <p className="flex-1 text-r pr-2">加自选</p>
-                        </>
-                    )}
-                    {props.type === 1 && (
-                        <>
-                          <p className="flex-1 text-r">涨跌幅</p>
-                          <p className="flex-1 text-r pr-2">热度</p>
-                        </>
-                    )}
+          {gridCols === 2 && (
+            <div className="flex-align-center color-gray">
+              <p className="w-16 text-c pl-2">排名</p>
+              <p className="flex-2 text-l">名称/代码</p>
+              {props.type === 4 && (
+                <>
+                  <p className="flex-1 text-r">最新价</p>
+                  <p className="flex-1 text-r">涨跌幅</p>
+                  <p className="flex-1 text-r pr-2">加自选</p>
+                </>
+              )}
+              {props.type === 1 && (
+                <>
+                  <p className="flex-1 text-r">涨跌幅</p>
+                  <p className="flex-1 text-r pr-2">热度</p>
+                </>
+              )}
 
-                    {props.type === 2 && <p className="flex-1 text-r pr-2">综合评分</p>}
-                  </div>
-              )
-          }
+              {props.type === 2 && <p className="flex-1 text-r pr-2">综合评分</p>}
+            </div>
+          )}
 
           {(props.list || []).map((l: Record<string, any> = {}, index: number) => {
             const rankDiff = l.rankDiff
@@ -117,17 +115,17 @@ const TwoTemplateRank = (props: ITwoTemplateRankProps): ReactElement => {
                   {!Utils.isBlank(logo || '') && (
                     <img src={logo || null} className="w-10 h-10 mr-2 rounded-full border" />
                   )}
-                  {
-                    Utils.isBlank(logo || '') && (
-                          <div
-                              className="default-logo text-xs w-10 h-10 mr-2 rounded-full border flex-center"
-                              style={{
-                                backgroundColor: 'rgb(234, 239, 253)',
-                                color: 'rgb(47, 95, 237)',
-                              }}
-                            >AI</div>
-                    )
-                  }
+                  {Utils.isBlank(logo || '') && (
+                    <div
+                      className="default-logo text-xs w-10 h-10 mr-2 rounded-full border flex-center"
+                      style={{
+                        backgroundColor: 'rgb(234, 239, 253)',
+                        color: 'rgb(47, 95, 237)'
+                      }}
+                    >
+                      AI
+                    </div>
+                  )}
                   <div className="flex-direction-column">
                     <p className="font-bold">{l.name || ''}</p>
                     <div className="mt-1 flex-align-center text-xs">

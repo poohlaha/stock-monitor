@@ -707,12 +707,7 @@ class MarketStore extends BaseStore {
   /**
    * 查询资金分布(实时)
    */
-  async onGetFundDistribution(
-      code: string = '',
-      market: string = '',
-      type: string = '',
-      flowType: string = ''
-  ) {
+  async onGetFundDistribution(code: string = '', market: string = '', type: string = '', flowType: string = '') {
     if (Utils.isBlank(code || '')) {
       return
     }
@@ -723,16 +718,16 @@ class MarketStore extends BaseStore {
 
     try {
       let result: { [K: string]: any } =
-          (await invoke('query_fund_distribution', {
-            args: {
-              code,
-              market,
-              marketType: type,
-              queryType: '',
-              klineType: ''
-            },
-            flowType
-          })) || {}
+        (await invoke('query_fund_distribution', {
+          args: {
+            code,
+            market,
+            marketType: type,
+            queryType: '',
+            klineType: ''
+          },
+          flowType
+        })) || {}
       let data = this.handleResult(result) || {}
       this.fundDistribution = data.content || {}
       console.log('get fund distribution: ', this.fundDistribution)
@@ -741,7 +736,6 @@ class MarketStore extends BaseStore {
       this.loading = false
       throw new Error(e)
     }
-
   }
 
   /**
@@ -1187,15 +1181,15 @@ class MarketStore extends BaseStore {
   async onGeStockConcept(code: string = '', market: string = '') {
     try {
       let result: { [K: string]: any } =
-          (await invoke('query_concept', {
-            args: {
-              code,
-              market,
-              marketType: 'stock',
-              queryType: '',
-              klineType: ''
-            }
-          })) || {}
+        (await invoke('query_concept', {
+          args: {
+            code,
+            market,
+            marketType: 'stock',
+            queryType: '',
+            klineType: ''
+          }
+        })) || {}
       const data = this.handleResult(result) || []
 
       this.stockConceptList = data || []
@@ -1205,7 +1199,6 @@ class MarketStore extends BaseStore {
       this.loading = false
       throw new Error(e)
     }
-
   }
 
   // 查询股票新闻

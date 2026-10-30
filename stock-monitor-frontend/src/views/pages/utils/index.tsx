@@ -177,3 +177,17 @@ export function formatNumberUnit(num: number) {
     return num.toString()
   }
 }
+
+/**
+ * 格式化价格
+ */
+export function formatPrice(value: string | number, needDecimalPoint: boolean = false) {
+  let options: Record<string, any> = {
+    maximumFractionDigits: 4
+  }
+
+  if (needDecimalPoint) {
+    options.minimumFractionDigits = 4
+  }
+  return Number(value).toLocaleString('en-US', options)
+}

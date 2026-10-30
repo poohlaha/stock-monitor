@@ -10,6 +10,7 @@ import { useStore } from '@views/stores'
 import Utils from '@utils/utils'
 import {
   formatNumberUnit,
+  formatPrice,
   formatTimestamp,
   getColor,
   getRateClassName,
@@ -961,12 +962,7 @@ const MarketDetailStock = (props: IMarketDetailStockProps): ReactElement => {
               flowType = 'month'
             }
 
-            await marketStore.onGetFundDistribution(
-              props.code || '',
-              props.market || '',
-              '',
-              flowType || '',
-            )
+            await marketStore.onGetFundDistribution(props.code || '', props.market || '', '', flowType || '')
           }}
         />
 
@@ -1019,111 +1015,106 @@ const MarketDetailStock = (props: IMarketDetailStockProps): ReactElement => {
             </Popover>
           </div>
 
-          {
-            props.market === 'ab' && (
-                <>
-                  <div className="flex-align-center mt-2">
-                    <p className="font-bold shrink-0">公司名称: </p>
-                    <div className="ml-2">{asset.name || ''}</div>
-                  </div>
+          {props.market === 'ab' && (
+            <>
+              <div className="flex-align-center mt-2">
+                <p className="font-bold shrink-0">公司名称: </p>
+                <div className="ml-2">{asset.name || ''}</div>
+              </div>
 
-                  <div className="flex-align-center mt-2">
-                    <p className="font-bold shrink-0">所属行业: </p>
-                    <div className="ml-2">{industryNames.length > 0 ? industryNames.join('') : '-'}</div>
-                  </div>
+              <div className="flex-align-center mt-2">
+                <p className="font-bold shrink-0">所属行业: </p>
+                <div className="ml-2">{industryNames.length > 0 ? industryNames.join('') : '-'}</div>
+              </div>
 
-                  <div className="flex-align-center mt-2">
-                    <p className="font-bold shrink-0">上市日期: </p>
-                    <div className="ml-2">{stockInfo.releaseDate || '-'}</div>
-                  </div>
+              <div className="flex-align-center mt-2">
+                <p className="font-bold shrink-0">上市日期: </p>
+                <div className="ml-2">{stockInfo.releaseDate || '-'}</div>
+              </div>
 
-                  <div className="flex-align-center mt-2">
-                    <p className="font-bold shrink-0">发行数量: </p>
-                    <div className="ml-2">{formatNumberUnit(Number(stockInfo.issueNumber || 0)) || '-'}</div>
-                  </div>
+              <div className="flex-align-center mt-2">
+                <p className="font-bold shrink-0">发行数量: </p>
+                <div className="ml-2">{formatNumberUnit(Number(stockInfo.issueNumber || 0)) || '-'}</div>
+              </div>
 
-                  <div className="flex-align-center mt-2">
-                    <p className="font-bold shrink-0">发行价格: </p>
-                    <div className="ml-2">{Number(stockInfo.issuePrice || 0).toFixed(2)}</div>
-                  </div>
+              <div className="flex-align-center mt-2">
+                <p className="font-bold shrink-0">发行价格: </p>
+                <div className="ml-2">{Number(stockInfo.issuePrice || 0).toFixed(2)}</div>
+              </div>
 
-                  <div className="flex-align-center mt-2">
-                    <p className="font-bold shrink-0">所在地区: </p>
-                    <div className="ml-2">{stockInfo.region || '-'}</div>
-                  </div>
+              <div className="flex-align-center mt-2">
+                <p className="font-bold shrink-0">所在地区: </p>
+                <div className="ml-2">{stockInfo.region || '-'}</div>
+              </div>
 
-                  <div className="flex-align-start mt-2">
-                    <p className="font-bold shrink-0">所属概念: </p>
-                    <div className="ml-2 flex-1 flex-align-center flex-wrap">
-                      {stockConceptList.map((concept: Record<string, any> = {}, index: number) => {
-                        return (
-                            <p className="mr-2 mb-2 notice pt-1 pb-1 pl-2 pr-2 shrink-0" key={index}>
-                              {concept.name || ''}
-                            </p>
-                        )
-                      })}
-                    </div>
-                  </div>
-                </>
-              )
-          }
+              <div className="flex-align-start mt-2">
+                <p className="font-bold shrink-0">所属概念: </p>
+                <div className="ml-2 flex-1 flex-align-center flex-wrap">
+                  {stockConceptList.map((concept: Record<string, any> = {}, index: number) => {
+                    return (
+                      <p className="mr-2 mb-2 notice pt-1 pb-1 pl-2 pr-2 shrink-0" key={index}>
+                        {concept.name || ''}
+                      </p>
+                    )
+                  })}
+                </div>
+              </div>
+            </>
+          )}
 
-          {
-            props.market !== 'ab' && (
-                  <>
-                    <div className="flex-align-center mt-2">
-                      <p className="font-bold shrink-0">行业/板块: </p>
-                      <div className="ml-2">{stockInfo.industry || ''}</div>
-                    </div>
+          {props.market !== 'ab' && (
+            <>
+              <div className="flex-align-center mt-2">
+                <p className="font-bold shrink-0">行业/板块: </p>
+                <div className="ml-2">{stockInfo.industry || ''}</div>
+              </div>
 
-                    <div className="flex-align-center mt-2">
-                      <p className="font-bold shrink-0">中文名称: </p>
-                      <div className="ml-2">{stockInfo.chineseName || ''}</div>
-                    </div>
+              <div className="flex-align-center mt-2">
+                <p className="font-bold shrink-0">中文名称: </p>
+                <div className="ml-2">{stockInfo.chineseName || ''}</div>
+              </div>
 
-                    <div className="flex-align-center mt-2">
-                      <p className="font-bold shrink-0">英文名称: </p>
-                      <div className="ml-2">{stockInfo.englishName || ''}</div>
-                    </div>
+              <div className="flex-align-center mt-2">
+                <p className="font-bold shrink-0">英文名称: </p>
+                <div className="ml-2">{stockInfo.englishName || ''}</div>
+              </div>
 
-                    <div className="flex-align-center mt-2">
-                      <p className="font-bold shrink-0">交易所: </p>
-                      <div className="ml-2">{stockInfo.exchange || ''}</div>
-                    </div>
+              <div className="flex-align-center mt-2">
+                <p className="font-bold shrink-0">交易所: </p>
+                <div className="ml-2">{stockInfo.exchange || ''}</div>
+              </div>
 
-                    <div className="flex-align-center mt-2">
-                      <p className="font-bold shrink-0">流通股本: </p>
-                      <div className="ml-2">{Utils.formatPrice(stockInfo.circulatingShares || '0')}</div>
-                    </div>
+              <div className="flex-align-center mt-2">
+                <p className="font-bold shrink-0">流通股本: </p>
+                <div className="ml-2">{formatPrice(stockInfo.circulatingShares || '0')}</div>
+              </div>
 
-                    <div className="flex-align-center mt-2">
-                      <p className="font-bold shrink-0">成立时间: </p>
-                      <div className="ml-2">{stockInfo.established_date || ''}</div>
-                    </div>
+              <div className="flex-align-center mt-2">
+                <p className="font-bold shrink-0">成立时间: </p>
+                <div className="ml-2">{stockInfo.established_date || ''}</div>
+              </div>
 
-                    <div className="flex-align-center mt-2">
-                      <p className="font-bold shrink-0">网址: </p>
-                      <div className="ml-2">{stockInfo.website || ''}</div>
-                    </div>
+              <div className="flex-align-center mt-2">
+                <p className="font-bold shrink-0">网址: </p>
+                <div className="ml-2">{stockInfo.website || ''}</div>
+              </div>
 
-                    <div className="flex-align-center mt-2">
-                      <p className="font-bold shrink-0">公司电话: </p>
-                      <div className="ml-2">{stockInfo.companyPhone || ''}</div>
-                    </div>
+              <div className="flex-align-center mt-2">
+                <p className="font-bold shrink-0">公司电话: </p>
+                <div className="ml-2">{stockInfo.companyPhone || ''}</div>
+              </div>
 
-                    <div className="flex-align-center mt-2">
-                      <p className="font-bold shrink-0">公司地址: </p>
-                      <div className="ml-2">{stockInfo.companyAddress || ''}</div>
-                    </div>
+              <div className="flex-align-center mt-2">
+                <p className="font-bold shrink-0">公司地址: </p>
+                <div className="ml-2">{stockInfo.companyAddress || ''}</div>
+              </div>
 
-                    <div className="flex-align-center mt-2">
-                      <p className="font-bold shrink-0">业务描述: </p>
-                      <div className="ml-2">{stockInfo.businessDescription || ''}</div>
-                    </div>
-                  </>
-              )
-          }
-
+              <div className="flex-align-center mt-2">
+                <p className="font-bold shrink-0">业务描述: </p>
+                <div className="ml-2">{stockInfo.businessDescription || ''}</div>
+              </div>
+            </>
+          )}
         </div>
       </div>
     )
