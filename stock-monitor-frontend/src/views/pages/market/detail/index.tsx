@@ -22,7 +22,7 @@ import {
 } from 'echarts/components'
 
 import * as echarts from 'echarts/core'
-import { BarChart, PieChart, LineChart, CustomChart } from 'echarts/charts'
+import { BarChart, PieChart, LineChart, CustomChart, GaugeChart } from 'echarts/charts'
 import { LabelLayout, UniversalTransition } from 'echarts/features'
 import { CanvasRenderer } from 'echarts/renderers'
 import RouterUrls from '@route/router.url.toml'
@@ -51,7 +51,8 @@ echarts.use([
   LabelLayout,
   UniversalTransition,
   CanvasRenderer,
-  CustomChart
+  CustomChart,
+  GaugeChart
 ])
 
 const MarketDetail = (): ReactElement => {

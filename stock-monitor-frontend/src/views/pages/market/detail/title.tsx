@@ -39,9 +39,9 @@ const MarketDetailTitle = (props: IMarketDetailTitleProps): ReactElement => {
           <path
             d="M2.526 8.01514C2.44475 7.93389 2.31246 7.9341 2.23108 8.01514L1.72034 8.52588C1.63898 8.60724 1.63898 8.73944 1.72034 8.8208C1.8017 8.90216 1.9339 8.90216 2.01526 8.8208L2.526 8.31006C2.60703 8.22867 2.60725 8.09639 2.526 8.01514ZM5.27112 2.31299C3.63728 2.31299 2.31213 3.63716 2.31213 5.271C2.31222 6.90476 3.63733 8.229 5.27112 8.229C6.90475 8.22883 8.22904 6.90465 8.22913 5.271C8.22913 3.63727 6.90481 2.31316 5.27112 2.31299ZM1.1803 5.06299H0.458618C0.34356 5.06299 0.249634 5.15594 0.249634 5.271C0.249721 5.38598 0.343613 5.479 0.458618 5.479H1.1803C1.29527 5.47896 1.38822 5.38595 1.38831 5.271C1.38831 5.15596 1.29532 5.06303 1.1803 5.06299ZM2.01526 1.72021C1.93395 1.63906 1.80166 1.63908 1.72034 1.72021C1.63903 1.80152 1.63913 1.93377 1.72034 2.01514L2.23108 2.52588C2.31245 2.60709 2.44469 2.60719 2.526 2.52588C2.60713 2.44455 2.60716 2.31227 2.526 2.23096L2.01526 1.72021Z"
             stroke="#B7B9C1"
-            stroke-width="0.5"
-            stroke-linecap="round"
-            stroke-linejoin="round"
+            strokeWidth="0.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
           ></path>
           <path
             d="M5.27079 0C5.01766 0 4.81246 0.205203 4.81246 0.458333V1.18021C4.81246 1.43334 5.01766 1.63854 5.27079 1.63854C5.52392 1.63854 5.72913 1.43334 5.72913 1.18021V0.458333C5.72913 0.205203 5.52392 0 5.27079 0Z"
@@ -89,7 +89,6 @@ const MarketDetailTitle = (props: IMarketDetailTitleProps): ReactElement => {
 
   // 获取当前盘段
   const getCurrentMarket = () => {
-    debugger
     let tradeStatus = (props.currency?.tradeStatus || '').toUpperCase()
     let tradeStatusText = props.currency?.tradeStatusCN || ''
     let label = ''
@@ -160,10 +159,12 @@ const MarketDetailTitle = (props: IMarketDetailTitleProps): ReactElement => {
     const asset = basicInfo.asset || {}
     const tags = basicInfo.tags || []
     const hasInCollect = props.hasInCollect ?? false
-    debugger
     const hasExtra = !Utils.isObjectNull(props.extra || {})
     const selectMarket = getSelectMarket(activeMarketInfoIndex) || {}
     console.log('select market: ', selectMarket)
+
+    const current =
+      MARKET_INFO_LIST.find((item: Record<string, any> = {}) => item.index === activeMarketInfoIndex) || {}
 
     return (
       <div className="fund-info mt-4 relative">
@@ -279,12 +280,21 @@ const MarketDetailTitle = (props: IMarketDetailTitleProps): ReactElement => {
                   <div className="flex-align-end">
                     <div className="flex-align-center mt-2">
                       <div className="text-purple-500 flex-align-center">
-                        {selectMarket.icon && <div className="mr-1 w-4 h-4">{selectMarket.icon}</div>}
+                        {selectMarket.icon && <div className="mr-1 w-4 h-4 flex-center">{selectMarket.icon}</div>}
 
                         <Select
                           style={{ width: 120 }}
-                          value={selectMarket.selectMarketInfoValue || undefined}
-                          onChange={() => {}}
+                          value={current.value || undefined}
+                          className="market-select !h-6"
+                          onChange={(value: string = '') => {
+                            if (value === MARKET_INFO_LIST[1].value) {
+                              setActiveMarketInfoIndex(MARKET_INFO_LIST[1].index)
+                            } else if (value === MARKET_INFO_LIST[2].value) {
+                              setActiveMarketInfoIndex(MARKET_INFO_LIST[2].index)
+                            } else {
+                              setActiveMarketInfoIndex(MARKET_INFO_LIST[0].index)
+                            }
+                          }}
                           options={MARKET_INFO_LIST || []}
                         />
                       </div>

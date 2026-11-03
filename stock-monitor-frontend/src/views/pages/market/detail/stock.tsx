@@ -42,6 +42,8 @@ const MarketDetailStock = (props: IMarketDetailStockProps): ReactElement => {
 
   const gdBarChartRef = useRef(null)
   const gdChartRef = useRef<echarts.ECharts | null>(null)
+  const opinionChartRef = useRef<any>(null)
+  const opinionRef = useRef<echarts.ECharts | null>(null)
 
   useEffect(() => {
     if (!gdBarChartRef.current) {
@@ -59,8 +61,24 @@ const MarketDetailStock = (props: IMarketDetailStockProps): ReactElement => {
   }, [marketStore.shareholders?.shareholders?.list || []])
 
   useEffect(() => {
+    if (!opinionChartRef.current) {
+      return
+    }
+
+    const opinionChart = getOpinionGaugeChart()
+
+    // @ts-ignore
+    opinionRef.current = opinionChart
+
+    return () => {
+      opinionChart?.dispose()
+    }
+  }, [marketStore.openDataInfo?.opinion || {}])
+
+  useEffect(() => {
     const handleResize = () => {
       gdChartRef.current?.resize()
+      opinionRef.current?.resize()
       props.resetSize?.()
     }
 
@@ -141,6 +159,134 @@ const MarketDetailStock = (props: IMarketDetailStockProps): ReactElement => {
       ]
     }
 
+    chart.setOption(option)
+    return chart
+  }
+
+  // 最新舆情
+  const getOpinionGaugeChart = () => {
+    if (!opinionChartRef.current) return
+
+    const opinion = marketStore.openDataInfo?.opinion?.aiSentimentNewsInfo?.sentimentTrendInfo?.todaysTrendInfo || {}
+    const bad = Math.floor(parseInt(opinion.badNewsPercent || '0', 10) / 100)
+    const good = Math.floor(parseInt(opinion.goodNewsPercent || '0', 10) / 100)
+    const neutral = Math.floor(parseInt(opinion.neutralNewsPercent || '0', 10) / 100)
+
+    const colors = {
+      bad: {
+        color: '#00866F',
+        text: '负向'
+      }, // 利空
+      good: {
+        color: '#DF001B',
+        text: '正向'
+      }, // 利好
+      neutral: {
+        color: '#898B98',
+        text: '中性'
+      } // 中性
+    }
+
+    // 获取最大值对应的文字和颜色
+    const items: Array<Record<string, any>> = [
+      { value: bad, ...colors.bad },
+      { value: good, ...colors.good },
+      { value: neutral, ...colors.neutral }
+    ]
+
+    const maxItem = items.reduce((prev, curr) => (curr.value > prev.value ? curr : prev))
+
+    let sentimentColor = ''
+    let sentimentLabelText = '今日舆情偏'
+    let sentimentText = ''
+    let color: Array<any> = []
+    if (bad === 0 && good === 0 && neutral === 0) {
+      color = [[1, '#F5F6FA']]
+      sentimentLabelText = '今日暂无资讯'
+      sentimentColor = '#848691'
+      sentimentText = '--'
+    } else {
+      if (bad > 0) {
+        color.push([bad, colors.bad.color])
+      }
+
+      if (good > 0) {
+        color.push([good, colors.good.color])
+      }
+
+      if (neutral > 0) {
+        color.push([neutral, colors.neutral.color])
+      }
+
+      sentimentColor = maxItem.color || ''
+      sentimentText = maxItem.text || ''
+    }
+
+    // @ts-ignore
+    const chart = echarts.init(opinionChartRef.current)
+    const option = {
+      series: [
+        {
+          type: 'gauge',
+          startAngle: 180,
+          endAngle: 0,
+          axisLine: {
+            lineStyle: {
+              width: 15,
+              color
+            }
+          },
+          pointer: {
+            show: false
+          },
+          axisTick: {
+            show: false
+          },
+          splitLine: {
+            show: false
+          },
+          axisLabel: {
+            show: false
+          },
+          detail: {
+            valueAnimation: true,
+            offsetCenter: [0, '-20%'], // 将文字放在半圆内部
+            formatter: () => {
+              return `{title|${sentimentLabelText}}\n{value|${sentimentText || '--'}}`
+            },
+            rich: {
+              title: {
+                fontSize: 18,
+                color: '#848691',
+                fontWeight: 'normal',
+                lineHeight: 28,
+                align: 'center'
+              },
+              value: {
+                fontSize: 18,
+                color: sentimentColor,
+                fontWeight: 'normal',
+                lineHeight: 28,
+                align: 'center'
+              }
+            }
+          },
+          data: [
+            {
+              value: neutral
+            },
+            {
+              value: bad
+            },
+            {
+              value: good
+            }
+          ]
+        }
+      ]
+    }
+
+    console.log('option', option)
     chart.setOption(option)
     return chart
   }
@@ -989,6 +1135,67 @@ const MarketDetailStock = (props: IMarketDetailStockProps): ReactElement => {
     )
   }
 
+  // 最新舆情
+  const getPublicOpinion = () => {
+    const opinion = marketStore.openDataInfo?.opinion?.aiSentimentNewsInfo?.sentimentTrendInfo?.todaysTrendInfo || {}
+    const rank = Utils.isBlank(`${opinion.rank || ''}`) ? '--' : opinion.rank || '--'
+    const count = Utils.isBlank(`${opinion.count || ''}`) ? '--' : opinion.count || '--'
+    const hasEmpty = Utils.isObjectNull(opinion || {})
+    const good = Utils.isBlank(`${opinion.goodNewsPercent || ''}`) ? '--' : opinion.goodNewsPercent || '--'
+    const bad = Utils.isBlank(`${opinion.badNewsPercent || ''}`) ? '--' : opinion.badNewsPercent || '--'
+    const neutral = Utils.isBlank(`${opinion.neutralNewsPercent || ''}`) ? '--' : opinion.neutralNewsPercent || '--'
+    return (
+      <div className="flex-direction-column flex-1 border rounded-lg p-4">
+        <p className="font-bold text-xl">最新舆情</p>
+
+        <div className="mt-2 w100 flex-center flex-direction-column">
+          <div className="aspect-square h-[250px] w100" ref={opinionChartRef}></div>
+          <div className="mt-2 flex-direction-column flex-center w-[350px]">
+            <div className={`flex-align-center mb-2 text-xs ${hasEmpty ? 'color-gray' : ''}`}>
+              <p className="">舆情排名</p>
+              <p className={`ml-1 ${hasEmpty ? '' : 'text-sm'}`}>{rank}</p>
+              <p className="ml-1">/</p>
+              <p className="ml-1">{count}</p>
+            </div>
+
+            <div className="flex-align-center text-xs w100">
+              <div className="flex-direction-column flex-1 flex-center">
+                <div className="flex-align-center">
+                  <p className="w-2 h-2 min-w-2 min-h-2 mr-1 bg-red rounded-full"></p>
+                  <p className="red">利好</p>
+                </div>
+                <div className="mt-1 red flex-align-center">
+                  <p>{good}</p>
+                  <p>%</p>
+                </div>
+              </div>
+              <div className="flex-direction-column flex-1 flex-center">
+                <div className="flex-align-center">
+                  <p className="w-2 h-2 min-w-2 min-h-2 mr-1 bg-green rounded-full"></p>
+                  <p className="green">利空</p>
+                </div>
+                <div className="mt-1 green flex-align-center">
+                  <p>{bad}</p>
+                  <p>%</p>
+                </div>
+              </div>
+              <div className="flex-direction-column flex-1 flex-center">
+                <div className="flex-align-center">
+                  <p className="w-2 h-2 min-w-2 min-h-2 mr-1 bg-gray rounded-full"></p>
+                  <p className="gray">中性</p>
+                </div>
+                <div className="mt-1 gray flex-align-center">
+                  <p>{neutral}</p>
+                  <p>%</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   const getCompanyProfile = () => {
     const asset = marketStore.openDataInfo?.basicInfo?.asset || {}
     const industryList = marketStore.openDataInfo?.basicInfo?.industry || []
@@ -1781,6 +1988,11 @@ const MarketDetailStock = (props: IMarketDetailStockProps): ReactElement => {
 
           {/* 今日主力流向 */}
           {getTodayZLLXNode()}
+        </div>
+
+        <div className="flex flex-col lg:flex-row gap-5 mt-8">
+          {/* 最新舆情 */}
+          {getPublicOpinion()}
         </div>
 
         <div className="flex flex-col lg:flex-row gap-5 mt-8">

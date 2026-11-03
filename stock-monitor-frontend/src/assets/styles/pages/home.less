@@ -422,3 +422,29 @@ svg {
   align-items: center;
   justify-content: center;
 }
+
+.market-detail-page {
+  .market-select:not(.ant-select-open):not(.ant-select-focused) {
+    &.ant-select-outlined {
+      border-color: #ffffff;
+
+      .ant-select-suffix {
+        display: none;
+      }
+    }
+  }
+
+  .market-select:not(.ant-select-open):not(.ant-select-focused):hover {
+    &.ant-select-outlined {
+      border-color: #d9d9d9;
+
+      .ant-select-suffix {
+        display: block;
+      }
+    }
+  }
+
+  .market-select.ant-select-open {
+    display: flex;
+  }
+}
