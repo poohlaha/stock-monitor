@@ -76,7 +76,7 @@ pub struct StockInfoResult {
 pub struct Stock {}
 
 impl Stock {
-    /*
+    /**
       查询股票信息, 包括分时图等
       例: A股:   https://finance.pae.baidu.com/vapi/v1/getquotation?srcid=5353&pointType=string&group=quotation_minute_ab&query=588710&code=588710&market_type=ab&newFormat=1&name=%E5%8D%8E%E6%B3%B0%E6%9F%8F%E7%91%9E%E4%B8%8A%E8%AF%81%E7%A7%91%E5%88%9B%E6%9D%BF%E5%8D%8A%E5%AF%BC%E4%BD%93%E6%9D%90%E6%96%99%E8%AE%BE%E5%A4%87%E4%B8%BB%E9%A2%98ETF&is_kc=1&finClientType=pc&financeType=etf&finClientType=pc
          其他股: https://finance.pae.baidu.com/vapi/v1/getquotation?srcid=5353&all=1&code=SNDK&query=SNDK&eprop=min&financeType=stock&group=quotation_minute_us&stock_type=us&chartType=minute&finClientType=pc
@@ -122,6 +122,26 @@ impl Stock {
                 url = format!("{}&ktype={}", url, k_line_type);
             }
         }
+
+        // info!("{} request url: {}", LOGGER_PREFIX, url);
+        Utils::get_response(&url).await
+    }
+
+    /**
+      查询最新舆情
+      例: // https://finance.pae.baidu.com/vapi/v1/overviewwidget?market=us&code=SNDK&financeType=stock&modules=sentiment&finClientType=pc
+         https://finance.pae.baidu.com/vapi/async?srcid=52609&from=rating&code=SNDK&type=stock&market=us&query=SNDK&finClientType=pc
+    */
+    pub async fn query_public_opinion(args: &Args) -> Result<Value, String> {
+        if args.code.is_empty() {
+            return Err(Error::Error(String::from("`code` is empty!")).to_string());
+        }
+
+        if args.market.is_empty() {
+            return Err(Error::Error(String::from("`market` is empty!")).to_string());
+        }
+
+        let url = format!("{}vapi/async?srcid=52609&from=rating&code={}&type=stock&market={}&query={}&finClientType=pc", BD_HTTP_URL_PREFIX, args.code, args.market, args.code,);
 
         info!("{} request url: {}", LOGGER_PREFIX, url);
         Utils::get_response(&url).await
@@ -234,7 +254,7 @@ impl Stock {
     */
     pub async fn query_info(args: &Args) -> Result<HttpResponse, String> {
         let result = Self::query(args).await?;
-        info!("result: {:#?}", result);
+        // info!("result: {:#?}", result);
 
         if JsonUtils::is_empty(&result) {
             return Ok(get_success_response(None));
@@ -332,8 +352,8 @@ impl Stock {
         let mut company_address = String::new(); // 公司地址
         let mut business_description = String::new(); // 业务描述
 
-        info!("other_basic_info: {:#?}", other_basic_info);
-        info!("basic_info: {:#?}", basic_info);
+        // info!("other_basic_info: {:#?}", other_basic_info);
+        // info!("basic_info: {:#?}", basic_info);
 
         if !other_basic_info.is_null() {
             industry = JsonUtils::get_string(other_basic_info, "industrySector"); // 行业/板块
@@ -704,10 +724,15 @@ impl Stock {
             }
         };
 
+        // 获取最新舆情信息
+        let opinion_result = Self::query_public_opinion(args).await?;
+        let opinion = opinion_result.get(0).and_then(|item| JsonUtils::get_path(item, &["DisplayData", "resultData", "tplData"])).unwrap_or(&Value::Null);
+
         let result = json!({
             "basicInfo": asset,
             "stockInfo": stock_info,
-            "realInfo": real
+            "realInfo": real,
+            "opinion": opinion
         });
 
         Ok(result)
@@ -807,7 +832,7 @@ impl Stock {
 
         // 通过接口查询
         let result = Self::query(args).await?;
-        info!("result: {:#?}", result);
+        // info!("result: {:#?}", result);
         let market_data = JsonUtils::get_path(&result, &["newMarketData"]).unwrap_or(&Value::Null);
 
         // 五日直接取 newMarketData -> marketData(数组, 需要解析数据中的 p)
